@@ -12,23 +12,25 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-  <script>
-    // Your CWL Sheet URL (edit view is fine for now)
-    const SHEET_URL =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml";
+<script>
+  const SHEET_URL =
+    "YOUR_PUBLISHED_SHEET_URL_HERE";
 
-    // Register the service worker (for installable PWA)
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js");
-      });
-    }
-
-    // Auto-redirect to the sheet as soon as the page loads
+  // Register the service worker
+  if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      window.location.replace(SHEET_URL);
+      navigator.serviceWorker.register("service-worker.js");
     });
-  </script>
+  }
+
+  // Delay redirect so Chrome can see the manifest & SW
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      window.location.href = SHEET_URL;
+    }, 800); // 0.8 seconds (works best across devices)
+  });
+</script>
+
 </head>
 <body>
 </body>
