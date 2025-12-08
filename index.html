@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CWL Leaderboards</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+  <script>
+    // Your CWL Sheet URL (edit view is fine for now)
+    const SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/1kIiKzAF6rfvpLsMtZQlK1s93WM0HMlZ56lSfCk_Gluk/edit?gid=554477179#gid=554477179";
+
+    // Register the service worker (for installable PWA)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+
+    // Auto-redirect to the sheet as soon as the page loads
+    window.addEventListener("load", () => {
+      window.location.replace(SHEET_URL);
+    });
+  </script>
+</head>
+<body>
+</body>
+</html>
