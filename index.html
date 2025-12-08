@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CWL Leaderboards</title>
+  <title>B•A•S•E•D</title>
 
   <!-- Icons -->
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -25,40 +25,75 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+      padding: 24px 16px;
+      box-sizing: border-box;
     }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 999px;
+      object-fit: cover;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-size: 28px;
+      letter-spacing: 0.25em;
+      margin: 0;
+      text-indent: 0.25em; /* offset letter-spacing so B is visible */
+    }
+
+    .subtitle {
+      margin: 8px 0 24px;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 280px;
+    }
+
     button {
-      padding: 14px 28px;
-      font-size: 20px;
+      padding: 12px;
+      font-size: 16px;
       border-radius: 999px;
       border: none;
       cursor: pointer;
       background-color: #ffffff;
-      color: #000;
-      margin-top: 20px;
+      color: #000000;
     }
   </style>
 
   <script>
-    const SHEET_URL =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml";
-
-
-    function openSheet() {
-      window.location.href = SHEET_URL;
-    }
-
-    // Register service worker
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js");
-      });
+    function openLink(url) {
+      window.location.href = url;
     }
   </script>
 </head>
-
 <body>
-  <h1>B•A•S•E•D</h1>
-  <p>Tap below to open clan leaderboards.</p>
-  <button onclick="openSheet()">Leaderboards</button>
+  <!-- If logo.png exists, it will show. If not, only the title appears, which is fine. -->
+  <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
+
+  <h1 class="title">B•A•S•E•D</h1>
+  <p class="subtitle">Clash of Clans Clan Hub</p>
+
+  <div class="button-container">
+    <button onclick="openLink('https://discord.gg/kf6WStbJjK')">
+      Clan Discord
+    </button>
+
+    <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">
+      Leaderboards
+    </button>
+
+    <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">
+      Clan Stats
+    </button>
+  </div>
 </body>
 </html>
