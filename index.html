@@ -30,12 +30,14 @@
     }
 
     .logo {
-      width: 120px;
-      height: 120px;
-      border-radius: 999px;
-      object-fit: cover;
+      width: 100%;
+      max-width: 300px;   /* adjust this number if you want it bigger/smaller */
+      height: auto;
       margin-bottom: 16px;
+      border-radius: 0;   /* removes the circle crop */
+      object-fit: contain;
     }
+
 
     .title {
       font-size: 28px;
@@ -78,9 +80,6 @@
 <body>
   <!-- If logo.png exists, it will show. If not, only the title appears, which is fine. -->
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
-
-  <h1 class="title">B•A•S•E•D</h1>
-  <p class="subtitle">Clash of Clans Clan Hub</p>
 
   <div class="button-container">
     <button onclick="openLink('https://discord.gg/kf6WStbJjK')">
