@@ -4,35 +4,60 @@
   <meta charset="UTF-8" />
   <title>CWL Leaderboards</title>
 
-  <!-- PWA manifest -->
+  <!-- Icons -->
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json" />
 
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-<script>
-  const SHEET_URL =
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml";
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    button {
+      padding: 14px 28px;
+      font-size: 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background-color: #ffffff;
+      color: #000;
+      margin-top: 20px;
+    }
+  </style>
 
-  // Register the service worker
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js");
-    });
-  }
+  <script>
+    const SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pI1rMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFCrkZPE8/pubhtml";
 
-  // Delay redirect so Chrome can see the manifest & SW
-  window.addEventListener("load", () => {
-    setTimeout(() => {
+    function openSheet() {
       window.location.href = SHEET_URL;
-    }, 800); // 0.8 seconds (works best across devices)
-  });
-</script>
+    }
 
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
 </head>
+
 <body>
+  <h1>CWL Leaderboards</h1>
+  <p>Tap below to open the latest stats.</p>
+  <button onclick="openSheet()">Open CWL Sheet</button>
 </body>
 </html>
