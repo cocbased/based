@@ -21,23 +21,30 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       text-align: center;
       padding: 24px 16px;
       box-sizing: border-box;
     }
 
-    .logo {
-      width: 100%;
-      max-width: 300px;   /* adjust this number if you want it bigger/smaller */
-      height: auto;
-      margin-bottom: 16px;
-      border-radius: 0;   /* removes the circle crop */
+    .app-icon {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 12px;
+      border-radius: 24px;
       object-fit: contain;
     }
 
+    .logo {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      margin-bottom: 16px;
+      border-radius: 0;
+      object-fit: contain;
+    }
 
     .title {
       font-size: 28px;
@@ -50,6 +57,41 @@
       margin: 8px 0 24px;
       font-size: 14px;
       opacity: 0.7;
+    }
+
+    /* Timers block */
+    .timers {
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #0b1829;
+      border: 1px solid #2b3b55;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .timers-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .timer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      padding: 2px 0;
+    }
+
+    .timer-label {
+      font-weight: 600;
+    }
+
+    .timer-value {
+      font-family: monospace;
     }
 
     .button-container {
@@ -78,16 +120,45 @@
   </script>
 </head>
 <body>
+  <!-- App icon above logo -->
+  <img src="icon-512.png" alt="B•A•S•E•D icon" class="app-icon" />
+
   <!-- If logo.png exists, it will show. If not, only the title appears, which is fine. -->
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
- <p class="subtitle">EST DECEMBER 2023</p>
-  <p></p>
+
+  <p class="subtitle">EST DECEMBER 2023</p>
+
+  <!-- Recurring In-Game Events -->
+  <div class="timers">
+    <h2 class="timers-title">Recurring In-Game Events</h2>
+
+    <div class="timer-row">
+      <span class="timer-label">Raid Weekend</span>
+      <span id="raid-timer" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Clan Games</span>
+      <span id="clan-games-timer" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Season End</span>
+      <span id="season-end-timer" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">League Reset</span>
+      <span id="league-reset-timer" class="timer-value">Loading…</span>
+    </div>
+  </div>
+
+  <!-- Buttons -->
   <div class="button-container">
-    
     <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">
       CWL Leaderboards
     </button>
-    
+
     <button onclick="openLink('https://discord.gg/kf6WStbJjK')">
       Clan Discord
     </button>
@@ -100,18 +171,139 @@
       Visit B•A•S•E•D 2
     </button>
 
-      <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">
       Visit B•A•S•E•D 3
     </button>
-    
+
     <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">
       Clan Stats
     </button>
-    
-     <button onclick="openLink('https://store.supercell.com/')">
+
+    <button onclick="openLink('https://store.supercell.com/')">
       SuperCell Store
     </button>
-
   </div>
+
+  <!-- Countdown script -->
+  <script>
+    function pad(n) {
+      return n.toString().padStart(2, "0");
+    }
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return "Active now";
+
+      const totalSeconds = Math.floor(ms / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+      return days + "d " + pad(hours) + "h " + pad(minutes) + "m";
+    }
+
+    function makeUTC(year, monthIndex, day, hour, minute = 0) {
+      return new Date(Date.UTC(year, monthIndex, day, hour, minute, 0));
+    }
+
+    // Raid Weekend: Fri 07:00 UTC -> Mon 07:00 UTC
+    function getNextRaidWeekendEnd(now) {
+      const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+      const diffToFriday = (5 - day + 7) % 7;
+
+      let fridayStart = makeUTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + diffToFriday,
+        7
+      );
+      let mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+      if (now >= fridayStart && now <= mondayEnd) {
+        return mondayEnd;
+      }
+
+      if (now > mondayEnd) {
+        fridayStart = new Date(fridayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+        mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
+      }
+
+      return mondayEnd;
+    }
+
+    // Clan Games: 22nd–28th, 08:00 UTC
+    function getNextClanGamesEnd(now) {
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth();
+
+      let start = makeUTC(year, month, 22, 8);
+      let end = makeUTC(year, month, 28, 8);
+
+      if (now < start) {
+        return end;
+      } else if (now >= start && now <= end) {
+        return end;
+      } else {
+        const nextMonth = new Date(Date.UTC(year, month + 1, 1));
+        const ny = nextMonth.getUTCFullYear();
+        const nm = nextMonth.getUTCMonth();
+        return makeUTC(ny, nm, 28, 8);
+      }
+    }
+
+    // Season End: 1st of next calendar month, 08:00 UTC
+    function getNextSeasonEnd(now) {
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth();
+      return makeUTC(year, month + 1, 1, 8);
+    }
+
+    // League Reset: first Monday of the month, 05:00 UTC
+    function getNextLeagueReset(now) {
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth();
+
+      let first = makeUTC(year, month, 1, 5);
+      let day = first.getUTCDay(); // 0=Sun,1=Mon,...
+      const diffToMonday = (1 - day + 7) % 7;
+
+      let reset = makeUTC(year, month, 1 + diffToMonday, 5);
+
+      if (now > reset) {
+        const nextMonth = new Date(Date.UTC(year, month + 1, 1));
+        const ny = nextMonth.getUTCFullYear();
+        const nm = nextMonth.getUTCMonth();
+
+        let firstNext = makeUTC(ny, nm, 1, 5);
+        let dayNext = firstNext.getUTCDay();
+        const diffNext = (1 - dayNext + 7) % 7;
+
+        reset = makeUTC(ny, nm, 1 + diffNext, 5);
+      }
+
+      return reset;
+    }
+
+    function updateTimers() {
+      const now = new Date();
+
+      const raidEnd = getNextRaidWeekendEnd(now);
+      const clanGamesEnd = getNextClanGamesEnd(now);
+      const seasonEnd = getNextSeasonEnd(now);
+      const leagueReset = getNextLeagueReset(now);
+
+      const raidElem = document.getElementById("raid-timer");
+      const cgElem = document.getElementById("clan-games-timer");
+      const seasonElem = document.getElementById("season-end-timer");
+      const leagueElem = document.getElementById("league-reset-timer");
+
+      if (raidElem) raidElem.textContent = formatCountdown(raidEnd - now);
+      if (cgElem) cgElem.textContent = formatCountdown(clanGamesEnd - now);
+      if (seasonElem) seasonElem.textContent = formatCountdown(seasonEnd - now);
+      if (leagueElem) leagueElem.textContent = formatCountdown(leagueReset - now);
+    }
+
+    updateTimers();
+    setInterval(updateTimers, 60 * 1000);
+  </script>
 </body>
 </html>
