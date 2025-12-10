@@ -16,7 +16,7 @@
   <style>
     body {
       margin: 0;
-      background: #000;
+      background: #2C2C2C; /* updated background */
       color: #fff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
@@ -151,6 +151,12 @@
       <span class="timer-label">League Reset</span>
       <span id="league-reset-timer" class="timer-value">Loading…</span>
     </div>
+
+    <!-- New: Current War -->
+    <div class="timer-row">
+      <span class="timer-label">Current War</span>
+      <span id="war-timer" class="timer-value">No war</span>
+    </div>
   </div>
 
   <!-- Buttons -->
@@ -168,7 +174,7 @@
     </button>
 
     <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG')">
-      Visit B•A•S•E•D 2
+      Visit B•A•S•D 2
     </button>
 
     <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">
@@ -203,6 +209,31 @@
 
     function makeUTC(year, monthIndex, day, hour, minute = 0) {
       return new Date(Date.UTC(year, monthIndex, day, hour, minute, 0));
+    }
+
+    // === CURRENT WAR – fetched from war.json ===
+    let warEndDate = null;
+
+    async function fetchWarEnd() {
+      try {
+        // cache-bust to avoid GitHub Pages caching too hard
+        const res = await fetch("war.json?cb=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) {
+          console.log("war.json not available, status:", res.status);
+          warEndDate = null;
+          return;
+        }
+        const data = await res.json();
+        if (data && data.warEndIso) {
+          warEndDate = new Date(data.warEndIso);
+          console.log("Loaded warEndDate:", warEndDate.toISOString());
+        } else {
+          warEndDate = null;
+        }
+      } catch (e) {
+        console.error("Failed to fetch war.json", e);
+        warEndDate = null;
+      }
     }
 
     // Raid Weekend: Fri 07:00 UTC -> Mon 07:00 UTC
@@ -295,15 +326,33 @@
       const cgElem = document.getElementById("clan-games-timer");
       const seasonElem = document.getElementById("season-end-timer");
       const leagueElem = document.getElementById("league-reset-timer");
+      const warElem = document.getElementById("war-timer");
 
       if (raidElem) raidElem.textContent = formatCountdown(raidEnd - now);
       if (cgElem) cgElem.textContent = formatCountdown(clanGamesEnd - now);
       if (seasonElem) seasonElem.textContent = formatCountdown(seasonEnd - now);
       if (leagueElem) leagueElem.textContent = formatCountdown(leagueReset - now);
+
+      if (warElem) {
+        if (!warEndDate) {
+          warElem.textContent = "No war";
+        } else if (now >= warEndDate) {
+          warElem.textContent = "Ended";
+        } else {
+          warElem.textContent = formatCountdown(warEndDate - now);
+        }
+      }
     }
 
+    // initial load
+    fetchWarEnd();
     updateTimers();
+
+    // refresh timers every minute
     setInterval(updateTimers, 60 * 1000);
+
+    // refresh war.json every 10 minutes
+    setInterval(fetchWarEnd, 10 * 60 * 1000);
   </script>
 </body>
 </html>
