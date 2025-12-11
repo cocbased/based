@@ -225,7 +225,12 @@
       const hours = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-      return days + "d " + pad(hours) + "h " + pad(minutes) + "m";
+      return (
+        days + "d " +
+        pad(hours) + "h " +
+        pad(minutes) + "m " +
+        pad(seconds) + "s"
+      );
     }
 
     function makeUTC(year, monthIndex, day, hour, minute = 0) {
