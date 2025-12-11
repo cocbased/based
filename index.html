@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <title>B•A•S•E•D</title>
 
-  <!-- Auto-refresh every 10 seconds -->
-  <meta http-equiv="refresh" content="10">
-
   <!-- Icons -->
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
@@ -148,7 +145,7 @@
     <!-- Current War at top -->
     <div class="timer-row">
       <span class="timer-label">Current War</span>
-      <span id="war-timer" class="timer-value">No war started</span>
+      <span id="war-timer" class="timer-value">Loading…</span>
     </div>
 
     <div class="timer-row">
@@ -238,6 +235,7 @@
 
     // === CURRENT WAR – fetched from war.json ===
     let warEndDate = null;
+    let warFetched = false;  // track if we've tried to load war.json yet
 
     async function fetchWarEnd() {
       try {
@@ -246,19 +244,20 @@
         if (!res.ok) {
           console.log("war.json not available, status:", res.status);
           warEndDate = null;
-          return;
-        }
-        const data = await res.json();
-        if (data && data.warEndIso) {
-          warEndDate = new Date(data.warEndIso);
-          console.log("Loaded warEndDate:", warEndDate.toISOString());
         } else {
-          warEndDate = null;
+          const data = await res.json();
+          if (data && data.warEndIso) {
+            warEndDate = new Date(data.warEndIso);
+            console.log("Loaded warEndDate:", warEndDate.toISOString());
+          } else {
+            warEndDate = null;
+          }
         }
       } catch (e) {
         console.error("Failed to fetch war.json", e);
         warEndDate = null;
       }
+      warFetched = true;
     }
 
     // Raid Weekend: Fri 07:00 UTC -> Mon 07:00 UTC
@@ -359,7 +358,9 @@
       if (leagueElem) leagueElem.textContent = formatCountdown(leagueReset - now);
 
       if (warElem) {
-        if (!warEndDate) {
+        if (!warFetched) {
+          warElem.textContent = "Loading…";
+        } else if (!warEndDate) {
           warElem.textContent = "No war started";
         } else if (now >= warEndDate) {
           warElem.textContent = "War ended";
