@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>B•A•S•E•D</title>
+
   <!-- Auto-refresh every 10 seconds -->
-  
   <meta http-equiv="refresh" content="10">
+
   <!-- Icons -->
-  
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
 
@@ -19,7 +19,7 @@
   <style>
     body {
       margin: 0;
-      background: #2C2C2C; /* updated background */
+      background: #2C2C2C;
       color: #fff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
@@ -115,7 +115,7 @@
       color: #000000;
     }
 
-  .install-button {
+    .install-button {
       background-color: #ffcc00;
       color: #000;
       border: 2px solid #000;
@@ -124,7 +124,6 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
   </style>
 
   <script>
@@ -146,12 +145,12 @@
   <div class="timers">
     <h2 class="timers-title">Recurring In-Game Events</h2>
 
-       <!-- New: Current War -->
+    <!-- Current War at top -->
     <div class="timer-row">
       <span class="timer-label">Current War</span>
-      <span id="war-timer" class="timer-value">No war</span>
+      <span id="war-timer" class="timer-value">No war started</span>
     </div>
-    
+
     <div class="timer-row">
       <span class="timer-label">Raid Weekend</span>
       <span id="raid-timer" class="timer-value">Loading…</span>
@@ -207,8 +206,6 @@
       onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">
       How to install B•A•S•E•D App
     </button>
-
-    
   </div>
 
   <!-- Countdown script -->
@@ -217,6 +214,7 @@
       return n.toString().padStart(2, "0");
     }
 
+    // Show D H M S
     function formatCountdown(ms) {
       if (ms <= 0) return "Active now";
 
@@ -224,6 +222,7 @@
       const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
 
       return (
         days + "d " +
@@ -363,7 +362,7 @@
         if (!warEndDate) {
           warElem.textContent = "No war started";
         } else if (now >= warEndDate) {
-          warElem.textContent = "Ended";
+          warElem.textContent = "War ended";
         } else {
           warElem.textContent = formatCountdown(warEndDate - now);
         }
@@ -374,7 +373,7 @@
     fetchWarEnd();
     updateTimers();
 
-    // refresh timers every minute
+    // refresh timers every second
     setInterval(updateTimers, 1000);
 
     // refresh war.json every 10 minutes
