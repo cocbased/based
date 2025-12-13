@@ -64,9 +64,18 @@
     }
 
     .timers-title {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 16px;
       text-align: center;
+    }
+
+    /* "Last update" back inside the board */
+    .last-update-board {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 6px;
+      font-family: monospace;
     }
 
     .section-title {
@@ -194,12 +203,6 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
-    .last-update-footer {
-      margin-top: 16px;
-      font-size: 12px;
-      opacity: 0.75;
-    }
   </style>
 
   <script>
@@ -214,6 +217,7 @@
 
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
+    <div id="last-update-board" class="last-update-board">Last update: Loading…</div>
 
     <!-- Rankings (trophies only, hidden unless Top 200) -->
     <div id="rankings-block">
@@ -262,7 +266,7 @@
     <div class="war-board">
       <div id="war-timer" class="war-timer">Loading…</div>
 
-      <div id="war-grid" class="war-grid-3">
+      <div class="war-grid-3">
         <div>
           <div id="war-name-us" class="war-name">—</div>
           <div class="war-stat"><span id="war-stars-us">—</span> <span>⭐</span></div>
@@ -311,8 +315,6 @@
     <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
   </div>
 
-  <div id="last-update-footer" class="last-update-footer">Last update: Loading…</div>
-
   <script>
     function pad(n){ return n.toString().padStart(2,"0"); }
 
@@ -333,22 +335,6 @@
       if(el) el.textContent = text;
     }
 
-    function setFooter(text){
-      const el = document.getElementById("last-update-footer");
-      if(el) el.textContent = text;
-    }
-
-    function formatLastUpdate(iso){
-      const d = new Date(iso);
-      if(isNaN(d.getTime())) return "—";
-      return d.toLocaleString();
-    }
-
-    function fmtTop200(v){
-      if(typeof v === "number") return "#" + v;
-      return "Not in top 200";
-    }
-
     function setRankingsVisibility(show){
       const block = document.getElementById("rankings-block");
       if(block) block.style.display = show ? "block" : "none";
@@ -359,13 +345,41 @@
       if(vs) vs.style.display = show ? "block" : "none";
     }
 
+    // ===== live "Last update" inside board =====
+    let lastUpdatedIso = null;
+
+    function updateLastUpdateLine(){
+      const el = document.getElementById("last-update-board");
+      if(!el) return;
+
+      if(!lastUpdatedIso){
+        el.textContent = "Last update: Loading…";
+        return;
+      }
+
+      const d = new Date(lastUpdatedIso);
+      if(isNaN(d.getTime())){
+        el.textContent = "Last update: —";
+        return;
+      }
+
+      const now = new Date();
+      const ageSec = Math.max(0, Math.floor((now - d) / 1000));
+      el.textContent = `Last update: ${d.toLocaleString()} (${ageSec}s ago)`;
+    }
+
+    function fmtTop200(v){
+      if(typeof v === "number") return "#" + v;
+      return "Not in top 200";
+    }
+
     // ---- war.json ----
     let warData = null;
     let warFetched = false;
 
     async function fetchWarData(){
       try{
-        const res = await fetch("war.json?cb="+Date.now(), {cache:"no-store"});
+        const res = await fetch("war.json?cb="+Date.now(), { cache:"no-store" });
         if(!res.ok) warData = null;
         else warData = await res.json();
       } catch(e){
@@ -376,7 +390,6 @@
     }
 
     function renderWarSection(){
-      // default: hide VS until we confirm we're in war
       setWarVsVisibility(false);
 
       if(!warFetched){
@@ -412,10 +425,8 @@
         return;
       }
 
-      // We are in war -> show VS
       setWarVsVisibility(true);
 
-      // names (actual opponent name)
       setText("war-name-us", (warData.ourName || "US"));
       setText("war-name-opp", (warData.oppName || "OPPONENT"));
 
@@ -426,21 +437,17 @@
       const ourStars = (typeof warData.ourStars === "number") ? warData.ourStars : 0;
       const oppStars = (typeof warData.oppStars === "number") ? warData.oppStars : 0;
 
-      const ourStarsTxt = maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`;
-      const oppStarsTxt = maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`;
+      setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
+      setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
-      setText("war-stars-us", ourStarsTxt);
-      setText("war-stars-opp", oppStarsTxt);
+      // ✅ FIX: attacks remaining should be out of (teamSize*2), not teamSize
+      const totalAttacks = (teamSize ? teamSize * 2 : null);
 
-      // attacks USED fraction: (teamSize - remaining) / teamSize  [for BOTH]
       const ourRem = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
       const oppRem = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
 
-      const ourUsed = teamSize ? (teamSize - ourRem) : 0;
-      const oppUsed = teamSize ? (teamSize - oppRem) : 0;
-
-      setText("war-attacks-us", teamSize ? `${ourUsed}/${teamSize}` : `${ourUsed}`);
-      setText("war-attacks-opp", teamSize ? `${oppUsed}/${teamSize}` : `${oppUsed}`);
+      setText("war-attacks-us", totalAttacks ? `${ourRem}/${totalAttacks}` : `${ourRem}`);
+      setText("war-attacks-opp", totalAttacks ? `${oppRem}/${totalAttacks}` : `${oppRem}`);
 
       updateWarTimerOnly();
     }
@@ -471,25 +478,22 @@
     async function fetchClanStats(){
       try{
         const url = "clan_stats.json?cb="+Date.now();
-        const res = await fetch(url, {cache:"no-store"});
+        const res = await fetch(url, { cache:"no-store" });
         if(!res.ok){
           clanStats = null;
-          setFooter(`Last update: ERROR loading clan_stats.json (${res.status})`);
+          lastUpdatedIso = null;
           renderClanStats();
           return;
         }
         clanStats = await res.json();
 
-        if(clanStats && clanStats.updatedAt){
-          setFooter("Last update: " + formatLastUpdate(clanStats.updatedAt));
-        } else {
-          setFooter("Last update: — (missing updatedAt)");
-        }
+        // board "Last update" comes from updatedAt
+        lastUpdatedIso = (clanStats && clanStats.updatedAt) ? clanStats.updatedAt : null;
 
         renderClanStats();
       } catch(e){
         clanStats = null;
-        setFooter("Last update: ERROR loading clan_stats.json");
+        lastUpdatedIso = null;
         renderClanStats();
       }
     }
@@ -588,14 +592,16 @@
     fetchWarData();
     fetchClanStats();
     updateRecurringTimers();
+    updateLastUpdateLine();
 
-    // tick every second for countdowns (including war timer)
+    // tick every second for countdowns + live "last update age"
     setInterval(() => {
       updateRecurringTimers();
       updateWarTimerOnly();
+      updateLastUpdateLine();
     }, 1000);
 
-    // refetch JSON every 60s
+    // refetch JSON every 60s (best-effort; background tabs may throttle)
     setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
   </script>
