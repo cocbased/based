@@ -292,7 +292,7 @@
       warFetched = true;
     }
 
-    // ---- clan_stats.json ----
+    // ---- clan_stats.json (Pi-driven) ----
     let clanStats = null;
 
     async function fetchClanStats(){
@@ -323,10 +323,6 @@
 
     function renderClanStats(){
       if(!clanStats){
-        setText("rank-global-trophies", "—");
-        setText("rank-usa-trophies", "—");
-        setText("rank-global-streak", "—");
-        setText("rank-usa-streak", "—");
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
         setText("war-record", "—");
@@ -334,12 +330,6 @@
         setText("war-longest", "—");
         return;
       }
-
-      const r = clanStats.rankings || {};
-      setText("rank-global-trophies", fmtRank(r.globalTrophies));
-      setText("rank-usa-trophies", fmtRank(r.usaTrophies));
-      setText("rank-global-streak", fmtRank(r.globalWarStreak));
-      setText("rank-usa-streak", fmtRank(r.usaWarStreak));
 
       setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
       setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
@@ -358,6 +348,40 @@
       }
     }
 
+    // ---- rankings.json (GitHub Actions-driven) ----
+    let rankings = null;
+
+    async function fetchRankings(){
+      try{
+        const url = "rankings.json?cb="+Date.now();
+        const res = await fetch(url, {cache:"no-store"});
+        if(!res.ok){
+          rankings = null;
+          renderRankings();
+          return;
+        }
+        rankings = await res.json();
+        renderRankings();
+      } catch(e){
+        rankings = null;
+        renderRankings();
+      }
+    }
+
+    function renderRankings(){
+      if(!rankings){
+        setText("rank-global-trophies", "—");
+        setText("rank-usa-trophies", "—");
+        setText("rank-global-streak", "—");
+        setText("rank-usa-streak", "—");
+        return;
+      }
+      setText("rank-global-trophies", fmtRank(rankings.globalTrophies));
+      setText("rank-usa-trophies", fmtRank(rankings.usaTrophies));
+      setText("rank-global-streak", fmtRank(rankings.globalWarStreak));
+      setText("rank-usa-streak", fmtRank(rankings.usaWarStreak));
+    }
+
     // ---- recurring timers ----
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
@@ -371,6 +395,7 @@
       }
       return mondayEnd;
     }
+
     function getNextClanGamesEnd(now){
       const y=now.getUTCFullYear(), m=now.getUTCMonth();
       const start = makeUTC(y,m,22,8);
@@ -380,9 +405,11 @@
       const nextMonth = new Date(Date.UTC(y, m+1, 1));
       return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
     }
+
     function getNextSeasonEnd(now){
       return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8);
     }
+
     function getNextLeagueReset(now){
       const y=now.getUTCFullYear(), m=now.getUTCMonth();
       let first = makeUTC(y,m,1,5);
@@ -416,14 +443,16 @@
     // Initial load
     fetchWarEnd();
     fetchClanStats();
+    fetchRankings();
     updateTimers();
 
     // Timers tick
     setInterval(updateTimers, 1000);
 
-    // Refetch JSON every 60s
+    // Refetch JSON
     setInterval(fetchWarEnd, 60*1000);
     setInterval(fetchClanStats, 60*1000);
+    setInterval(fetchRankings, 10*60*1000); // rankings update matches GitHub Action schedule
   </script>
 </body>
 </html>
