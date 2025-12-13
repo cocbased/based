@@ -154,25 +154,21 @@
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
 
-    <div class="section-title">Rankings</div>
-    <div class="timer-row">
-      <span class="timer-label">Global Trophies</span>
-      <span id="rank-global-trophies" class="timer-value">Loading…</span>
-    </div>
-    <div class="timer-row">
-      <span class="timer-label">USA Trophies</span>
-      <span id="rank-usa-trophies" class="timer-value">Loading…</span>
-    </div>
-    <div class="timer-row">
-      <span class="timer-label">Global War Streak</span>
-      <span id="rank-global-streak" class="timer-value">Loading…</span>
-    </div>
-    <div class="timer-row">
-      <span class="timer-label">USA War Streak</span>
-      <span id="rank-usa-streak" class="timer-value">Loading…</span>
-    </div>
+    <!-- Rankings section (hidden unless ranked) -->
+    <div id="rankings-block">
+      <div class="section-title">Rankings</div>
 
-    <div class="divider"></div>
+      <div class="timer-row">
+        <span class="timer-label">Global Trophies</span>
+        <span id="rank-global-trophies" class="timer-value">Loading…</span>
+      </div>
+      <div class="timer-row">
+        <span class="timer-label">USA Trophies</span>
+        <span id="rank-usa-trophies" class="timer-value">Loading…</span>
+      </div>
+
+      <div class="divider"></div>
+    </div>
 
     <div class="section-title">CWL</div>
     <div class="timer-row">
@@ -268,10 +264,17 @@
       return d.toLocaleString();
     }
 
-    function fmtRank(v){
-      if(v === null || v === undefined) return "Not ranked";
+    // For official API "top 200 check":
+    // - If the rank exists (number): show "#<rank>"
+    // - If null/undefined: return "Not in top 200"
+    function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
-      return String(v);
+      return "Not in top 200";
+    }
+
+    function setRankingsVisibility(show){
+      const block = document.getElementById("rankings-block");
+      if(block) block.style.display = show ? "block" : "none";
     }
 
     // ---- war.json ----
@@ -292,7 +295,7 @@
       warFetched = true;
     }
 
-    // ---- clan_stats.json (Pi-driven) ----
+    // ---- clan_stats.json ----
     let clanStats = null;
 
     async function fetchClanStats(){
@@ -323,12 +326,29 @@
 
     function renderClanStats(){
       if(!clanStats){
+        // Hide rankings by default if no data loaded
+        setRankingsVisibility(false);
+
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
         setText("war-record", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
         return;
+      }
+
+      // Rankings (top 200 only). Hide the whole section unless any rank exists.
+      const r = clanStats.rankings || {};
+      const hasAnyRank =
+        (typeof r.globalTrophies === "number") ||
+        (typeof r.usaTrophies === "number");
+
+      setRankingsVisibility(hasAnyRank);
+
+      // Only set texts if visible; prevents “flash” / unnecessary updates
+      if(hasAnyRank){
+        setText("rank-global-trophies", fmtTop200(r.globalTrophies));
+        setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
       }
 
       setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
@@ -346,40 +366,6 @@
         setText("war-streak", "—");
         setText("war-longest", "—");
       }
-    }
-
-    // ---- rankings.json (GitHub Actions-driven) ----
-    let rankings = null;
-
-    async function fetchRankings(){
-      try{
-        const url = "rankings.json?cb="+Date.now();
-        const res = await fetch(url, {cache:"no-store"});
-        if(!res.ok){
-          rankings = null;
-          renderRankings();
-          return;
-        }
-        rankings = await res.json();
-        renderRankings();
-      } catch(e){
-        rankings = null;
-        renderRankings();
-      }
-    }
-
-    function renderRankings(){
-      if(!rankings){
-        setText("rank-global-trophies", "—");
-        setText("rank-usa-trophies", "—");
-        setText("rank-global-streak", "—");
-        setText("rank-usa-streak", "—");
-        return;
-      }
-      setText("rank-global-trophies", fmtRank(rankings.globalTrophies));
-      setText("rank-usa-trophies", fmtRank(rankings.usaTrophies));
-      setText("rank-global-streak", fmtRank(rankings.globalWarStreak));
-      setText("rank-usa-streak", fmtRank(rankings.usaWarStreak));
     }
 
     // ---- recurring timers ----
@@ -443,16 +429,14 @@
     // Initial load
     fetchWarEnd();
     fetchClanStats();
-    fetchRankings();
     updateTimers();
 
     // Timers tick
     setInterval(updateTimers, 1000);
 
-    // Refetch JSON
+    // Refetch JSON every 60s
     setInterval(fetchWarEnd, 60*1000);
     setInterval(fetchClanStats, 60*1000);
-    setInterval(fetchRankings, 10*60*1000); // rankings update matches GitHub Action schedule
   </script>
 </body>
 </html>
