@@ -84,14 +84,18 @@
       align-items: center;
       font-size: 14px;
       padding: 2px 0;
+      gap: 12px;
     }
 
     .timer-label {
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .timer-value {
       font-family: monospace;
+      text-align: right;
+      flex: 1;
     }
 
     .button-container {
@@ -169,6 +173,42 @@
     </div>
   </div>
 
+  <!-- NEW: Clan Stats -->
+  <div class="timers">
+    <h2 class="timers-title">Clan Stats</h2>
+
+    <div class="timer-row">
+      <span class="timer-label">War Record</span>
+      <span id="war-record" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Current Streak</span>
+      <span id="war-streak" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Longest Streak</span>
+      <span id="war-longest" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">CWL League</span>
+      <span id="cwl-league" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Last CWL Finish</span>
+      <span id="cwl-finish" class="timer-value">Loading…</span>
+    </div>
+
+    <!-- NEW: last update line -->
+    <div class="timer-row">
+      <span class="timer-label">Last Update</span>
+      <span id="last-update" class="timer-value">Loading…</span>
+    </div>
+  </div>
+
   <!-- Buttons -->
   <div class="button-container">
     <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">
@@ -239,7 +279,6 @@
 
     async function fetchWarEnd() {
       try {
-        // cache-bust to avoid GitHub Pages caching too hard
         const res = await fetch("war.json?cb=" + Date.now(), { cache: "no-store" });
         if (!res.ok) {
           console.log("war.json not available, status:", res.status);
@@ -248,7 +287,6 @@
           const data = await res.json();
           if (data && data.warEndIso) {
             warEndDate = new Date(data.warEndIso);
-            console.log("Loaded warEndDate:", warEndDate.toISOString());
           } else {
             warEndDate = null;
           }
@@ -258,6 +296,76 @@
         warEndDate = null;
       }
       warFetched = true;
+    }
+
+    // === CLAN STATS – fetched from clan_stats.json ===
+    let clanStats = null;
+    let clanStatsFetched = false;
+
+    function setText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
+    function formatLastUpdate(isoString) {
+      // Display in user's local time (browser time)
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleString();
+    }
+
+    async function fetchClanStats() {
+      try {
+        const res = await fetch("clan_stats.json?cb=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) {
+          clanStats = null;
+        } else {
+          clanStats = await res.json();
+        }
+      } catch (e) {
+        console.error("Failed to fetch clan_stats.json", e);
+        clanStats = null;
+      }
+      clanStatsFetched = true;
+      renderClanStats();
+    }
+
+    function renderClanStats() {
+      if (!clanStatsFetched) {
+        setText("war-record", "Loading…");
+        setText("war-streak", "Loading…");
+        setText("war-longest", "Loading…");
+        setText("cwl-league", "Loading…");
+        setText("cwl-finish", "Loading…");
+        setText("last-update", "Loading…");
+        return;
+      }
+
+      if (!clanStats || !clanStats.war || !clanStats.cwl) {
+        setText("war-record", "—");
+        setText("war-streak", "—");
+        setText("war-longest", "—");
+        setText("cwl-league", "—");
+        setText("cwl-finish", "—");
+        setText("last-update", "—");
+        return;
+      }
+
+      const w = clanStats.war.wins ?? 0;
+      const l = clanStats.war.losses ?? 0;
+      const t = clanStats.war.ties ?? 0;
+
+      setText("war-record", `${w}-${l}-${t}`);
+      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+      setText("cwl-league", `${clanStats.cwl.currentLeague || "—"}`);
+      setText("cwl-finish", `${clanStats.cwl.lastFinish || "—"}`);
+
+      if (clanStats.updatedAt) {
+        setText("last-update", formatLastUpdate(clanStats.updatedAt));
+      } else {
+        setText("last-update", "—");
+      }
     }
 
     // Raid Weekend: Fri 07:00 UTC -> Mon 07:00 UTC
@@ -372,13 +480,15 @@
 
     // initial load
     fetchWarEnd();
+    fetchClanStats();
     updateTimers();
 
     // refresh timers every second
     setInterval(updateTimers, 1000);
 
-    // refresh war.json every 10 minutes
-    setInterval(fetchWarEnd, 10 * 60 * 1000);
+    // refresh war.json + clan_stats.json every 60 seconds
+    setInterval(fetchWarEnd, 60 * 1000);
+    setInterval(fetchClanStats, 60 * 1000);
   </script>
 </body>
 </html>
