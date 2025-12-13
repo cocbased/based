@@ -154,10 +154,9 @@
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
 
-    <!-- Rankings section (hidden unless ranked) -->
+    <!-- Rankings section (hidden unless ranked in Top 200 trophies) -->
     <div id="rankings-block">
       <div class="section-title">Rankings</div>
-
       <div class="timer-row">
         <span class="timer-label">Global Trophies</span>
         <span id="rank-global-trophies" class="timer-value">Loading…</span>
@@ -166,7 +165,6 @@
         <span class="timer-label">USA Trophies</span>
         <span id="rank-usa-trophies" class="timer-value">Loading…</span>
       </div>
-
       <div class="divider"></div>
     </div>
 
@@ -194,6 +192,18 @@
     <div class="timer-row">
       <span class="timer-label">Longest Streak</span>
       <span id="war-longest" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Current War Snapshot</div>
+    <div class="timer-row">
+      <span class="timer-label">Stars</span>
+      <span id="war-snap-stars" class="timer-value">Loading…</span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">Attacks Remaining</span>
+      <span id="war-snap-attacks" class="timer-value">Loading…</span>
     </div>
 
     <div class="divider"></div>
@@ -264,9 +274,6 @@
       return d.toLocaleString();
     }
 
-    // For official API "top 200 check":
-    // - If the rank exists (number): show "#<rank>"
-    // - If null/undefined: return "Not in top 200"
     function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
       return "Not in top 200";
@@ -277,22 +284,45 @@
       if(block) block.style.display = show ? "block" : "none";
     }
 
-    // ---- war.json ----
-    let warEndDate = null;
+    // ---- war.json (now includes snapshot fields) ----
+    let warData = null;
     let warFetched = false;
 
-    async function fetchWarEnd(){
+    async function fetchWarData(){
       try{
         const res = await fetch("war.json?cb="+Date.now(), {cache:"no-store"});
-        if(!res.ok){ warEndDate = null; }
-        else{
-          const data = await res.json();
-          warEndDate = (data && data.warEndIso) ? new Date(data.warEndIso) : null;
+        if(!res.ok){
+          warData = null;
+        } else {
+          warData = await res.json();
         }
       } catch(e){
-        warEndDate = null;
+        warData = null;
       }
       warFetched = true;
+      renderWarSnapshot();
+    }
+
+    function renderWarSnapshot(){
+      if(!warFetched){
+        setText("war-snap-stars", "Loading…");
+        setText("war-snap-attacks", "Loading…");
+        return;
+      }
+      if(!warData || !warData.state || warData.state === "notInWar"){
+        setText("war-snap-stars", "No war started");
+        setText("war-snap-attacks", "No war started");
+        return;
+      }
+
+      const ourStars = (typeof warData.ourStars === "number") ? warData.ourStars : 0;
+      const oppStars = (typeof warData.oppStars === "number") ? warData.oppStars : 0;
+
+      const ourRem = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
+      const oppRem = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
+
+      setText("war-snap-stars", `Us ${ourStars} ⭐ — Opp ${oppStars} ⭐`);
+      setText("war-snap-attacks", `Us ${ourRem} left — Opp ${oppRem} left`);
     }
 
     // ---- clan_stats.json ----
@@ -326,9 +356,7 @@
 
     function renderClanStats(){
       if(!clanStats){
-        // Hide rankings by default if no data loaded
         setRankingsVisibility(false);
-
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
         setText("war-record", "—");
@@ -337,7 +365,6 @@
         return;
       }
 
-      // Rankings (top 200 only). Hide the whole section unless any rank exists.
       const r = clanStats.rankings || {};
       const hasAnyRank =
         (typeof r.globalTrophies === "number") ||
@@ -345,7 +372,6 @@
 
       setRankingsVisibility(hasAnyRank);
 
-      // Only set texts if visible; prevents “flash” / unnecessary updates
       if(hasAnyRank){
         setText("rank-global-trophies", fmtTop200(r.globalTrophies));
         setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
@@ -420,22 +446,25 @@
       const warElem = document.getElementById("war-timer");
       if(warElem){
         if(!warFetched) warElem.textContent = "Loading…";
-        else if(!warEndDate) warElem.textContent = "No war started";
-        else if(now >= warEndDate) warElem.textContent = "War ended";
-        else warElem.textContent = formatCountdown(warEndDate - now);
+        else if(!warData || warData.state === "notInWar" || !warData.warEndIso) warElem.textContent = "No war started";
+        else {
+          const end = new Date(warData.warEndIso);
+          if(isNaN(end.getTime())) warElem.textContent = "No war started";
+          else if(now >= end) warElem.textContent = "War ended";
+          else warElem.textContent = formatCountdown(end - now);
+        }
       }
     }
 
     // Initial load
-    fetchWarEnd();
+    fetchWarData();
     fetchClanStats();
     updateTimers();
 
-    // Timers tick
     setInterval(updateTimers, 1000);
 
     // Refetch JSON every 60s
-    setInterval(fetchWarEnd, 60*1000);
+    setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
   </script>
 </body>
