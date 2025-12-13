@@ -125,6 +125,13 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
+    /* Bottom update text */
+    .last-update-footer {
+      margin-top: 16px;
+      font-size: 12px;
+      opacity: 0.75;
+    }
   </style>
 
   <script>
@@ -141,6 +148,38 @@
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
   <p class="subtitle">EST DECEMBER 2023</p>
+
+  <!-- Clan Stats (ABOVE recurring events) -->
+  <div class="timers">
+    <h2 class="timers-title">Clan Stats</h2>
+
+    <!-- CWL stats FIRST -->
+    <div class="timer-row">
+      <span class="timer-label">CWL League</span>
+      <span id="cwl-league" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Last CWL Finish</span>
+      <span id="cwl-finish" class="timer-value">Loading…</span>
+    </div>
+
+    <!-- Regular war stats AFTER -->
+    <div class="timer-row">
+      <span class="timer-label">War Record</span>
+      <span id="war-record" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Current Streak</span>
+      <span id="war-streak" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-label">Longest Streak</span>
+      <span id="war-longest" class="timer-value">Loading…</span>
+    </div>
+  </div>
 
   <!-- Recurring In-Game Events -->
   <div class="timers">
@@ -170,42 +209,6 @@
     <div class="timer-row">
       <span class="timer-label">League Reset</span>
       <span id="league-reset-timer" class="timer-value">Loading…</span>
-    </div>
-  </div>
-
-  <!-- NEW: Clan Stats -->
-  <div class="timers">
-    <h2 class="timers-title">Clan Stats</h2>
-
-    <div class="timer-row">
-      <span class="timer-label">War Record</span>
-      <span id="war-record" class="timer-value">Loading…</span>
-    </div>
-
-    <div class="timer-row">
-      <span class="timer-label">Current Streak</span>
-      <span id="war-streak" class="timer-value">Loading…</span>
-    </div>
-
-    <div class="timer-row">
-      <span class="timer-label">Longest Streak</span>
-      <span id="war-longest" class="timer-value">Loading…</span>
-    </div>
-
-    <div class="timer-row">
-      <span class="timer-label">CWL League</span>
-      <span id="cwl-league" class="timer-value">Loading…</span>
-    </div>
-
-    <div class="timer-row">
-      <span class="timer-label">Last CWL Finish</span>
-      <span id="cwl-finish" class="timer-value">Loading…</span>
-    </div>
-
-    <!-- NEW: last update line -->
-    <div class="timer-row">
-      <span class="timer-label">Last Update</span>
-      <span id="last-update" class="timer-value">Loading…</span>
     </div>
   </div>
 
@@ -245,7 +248,10 @@
     </button>
   </div>
 
-  <!-- Countdown script -->
+  <!-- Last update at very bottom -->
+  <div id="last-update-footer" class="last-update-footer">Last update: Loading…</div>
+
+  <!-- Countdown + fetch scripts -->
   <script>
     function pad(n) {
       return n.toString().padStart(2, "0");
@@ -307,11 +313,15 @@
       if (el) el.textContent = text;
     }
 
+    function setFooter(text) {
+      const el = document.getElementById("last-update-footer");
+      if (el) el.textContent = text;
+    }
+
     function formatLastUpdate(isoString) {
-      // Display in user's local time (browser time)
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return "—";
-      return d.toLocaleString();
+      return d.toLocaleString(); // user's local time
     }
 
     async function fetchClanStats() {
@@ -332,39 +342,42 @@
 
     function renderClanStats() {
       if (!clanStatsFetched) {
+        setText("cwl-league", "Loading…");
+        setText("cwl-finish", "Loading…");
         setText("war-record", "Loading…");
         setText("war-streak", "Loading…");
         setText("war-longest", "Loading…");
-        setText("cwl-league", "Loading…");
-        setText("cwl-finish", "Loading…");
-        setText("last-update", "Loading…");
+        setFooter("Last update: Loading…");
         return;
       }
 
       if (!clanStats || !clanStats.war || !clanStats.cwl) {
+        setText("cwl-league", "—");
+        setText("cwl-finish", "—");
         setText("war-record", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
-        setText("cwl-league", "—");
-        setText("cwl-finish", "—");
-        setText("last-update", "—");
+        setFooter("Last update: —");
         return;
       }
 
-      const w = clanStats.war.wins ?? 0;
-      const l = clanStats.war.losses ?? 0;
-      const t = clanStats.war.ties ?? 0;
-
-      setText("war-record", `${w}-${l}-${t}`);
-      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+      // CWL
       setText("cwl-league", `${clanStats.cwl.currentLeague || "—"}`);
       setText("cwl-finish", `${clanStats.cwl.lastFinish || "—"}`);
 
+      // War
+      const w = clanStats.war.wins ?? 0;
+      const l = clanStats.war.losses ?? 0;
+      const t = clanStats.war.ties ?? 0;
+      setText("war-record", `${w}-${l}-${t}`);
+      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+
+      // Footer update
       if (clanStats.updatedAt) {
-        setText("last-update", formatLastUpdate(clanStats.updatedAt));
+        setFooter("Last update: " + formatLastUpdate(clanStats.updatedAt));
       } else {
-        setText("last-update", "—");
+        setFooter("Last update: —");
       }
     }
 
