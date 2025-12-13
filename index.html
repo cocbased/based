@@ -16,7 +16,7 @@
   <style>
     body {
       margin: 0;
-      background: #000;
+      background: #2C2C2C;
       color: #fff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
@@ -52,7 +52,7 @@
       opacity: 0.7;
     }
 
-    /* Combined block */
+    /* One consolidated box */
     .timers {
       width: 100%;
       max-width: 340px;
@@ -149,17 +149,34 @@
 </head>
 
 <body>
-  <!-- App icon above logo -->
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
-
-  <!-- If logo.png exists, it will show. If not, only the title appears, which is fine. -->
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
-
   <p class="subtitle">EST DECEMBER 2023</p>
 
   <!-- ONE consolidated box -->
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
+
+    <!-- NEW: Rankings (above CWL) -->
+    <div class="section-title">Rankings</div>
+    <div class="timer-row">
+      <span class="timer-label">Global Trophies</span>
+      <span id="rank-global-trophies" class="timer-value">Loading…</span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">USA Trophies</span>
+      <span id="rank-usa-trophies" class="timer-value">Loading…</span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">Global War Streak</span>
+      <span id="rank-global-streak" class="timer-value">Loading…</span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">USA War Streak</span>
+      <span id="rank-usa-streak" class="timer-value">Loading…</span>
+    </div>
+
+    <div class="divider"></div>
 
     <div class="section-title">CWL</div>
     <div class="timer-row">
@@ -214,64 +231,30 @@
 
   <!-- Buttons -->
   <div class="button-container">
-    <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">
-      CWL Leaderboards
-    </button>
-
-    <button onclick="openLink('https://discord.gg/8P96687dPr')">
-      Clan Discord
-    </button>
-
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y')">
-      Visit B•A•S•E•D
-    </button>
-
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG')">
-      Visit B•A•S•E•D 2
-    </button>
-
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">
-      Visit B•A•S•E•D 3
-    </button>
-
-    <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">
-      Clan Stats
-    </button>
-
-    <button onclick="openLink('https://store.supercell.com/')">
-      SuperCell Store
-    </button>
-
-    <button class="install-button"
-      onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">
-      How to install B•A•S•E•D App
-    </button>
+    <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">CWL Leaderboards</button>
+    <button onclick="openLink('https://discord.gg/8P96687dPr')">Clan Discord</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y')">Visit B•A•S•E•D</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG')">Visit B•A•S•E•D 2</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">Visit B•A•S•E•D 3</button>
+    <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">Clan Stats</button>
+    <button onclick="openLink('https://store.supercell.com/')">SuperCell Store</button>
+    <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
   </div>
 
-  <!-- Last update at very bottom -->
+  <!-- Footer last update (fixed to always update when clan_stats.json loads) -->
   <div id="last-update-footer" class="last-update-footer">Last update: Loading…</div>
 
   <script>
-    function pad(n) {
-      return n.toString().padStart(2, "0");
-    }
+    function pad(n) { return n.toString().padStart(2, "0"); }
 
-    // Show D H M S
     function formatCountdown(ms) {
       if (ms <= 0) return "Active now";
-
       const totalSeconds = Math.floor(ms / 1000);
       const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-
-      return (
-        days + "d " +
-        pad(hours) + "h " +
-        pad(minutes) + "m " +
-        pad(seconds) + "s"
-      );
+      return days + "d " + pad(hours) + "h " + pad(minutes) + "m " + pad(seconds) + "s";
     }
 
     function makeUTC(year, monthIndex, day, hour, minute = 0) {
@@ -317,43 +300,80 @@
       return d.toLocaleString();
     }
 
+    function fmtRank(n) {
+      if (n === null || n === undefined) return "—";
+      if (typeof n === "number") return "#" + n;
+      return String(n);
+    }
+
     async function fetchClanStats() {
       try {
         const res = await fetch("clan_stats.json?cb=" + Date.now(), { cache: "no-store" });
         if (!res.ok) {
           clanStats = null;
-        } else {
-          clanStats = await res.json();
+          clanStatsFetched = true;
+          setFooter("Last update: (failed to load clan_stats.json)");
+          renderClanStats();
+          return;
         }
+        clanStats = await res.json();
+        clanStatsFetched = true;
+
+        // ✅ FIX: update footer immediately on successful fetch
+        if (clanStats && clanStats.updatedAt) {
+          setFooter("Last update: " + formatLastUpdate(clanStats.updatedAt));
+        } else {
+          setFooter("Last update: —");
+        }
+
+        renderClanStats();
       } catch (e) {
         clanStats = null;
+        clanStatsFetched = true;
+        setFooter("Last update: (error loading clan_stats.json)");
+        renderClanStats();
       }
-      clanStatsFetched = true;
-      renderClanStats();
     }
 
     function renderClanStats() {
       if (!clanStatsFetched) {
+        setText("rank-global-trophies", "Loading…");
+        setText("rank-usa-trophies", "Loading…");
+        setText("rank-global-streak", "Loading…");
+        setText("rank-usa-streak", "Loading…");
+
         setText("cwl-league", "Loading…");
         setText("cwl-finish", "Loading…");
+
         setText("war-record", "Loading…");
         setText("war-streak", "Loading…");
         setText("war-longest", "Loading…");
-        setFooter("Last update: Loading…");
         return;
       }
 
       if (!clanStats || !clanStats.war || !clanStats.cwl) {
+        setText("rank-global-trophies", "—");
+        setText("rank-usa-trophies", "—");
+        setText("rank-global-streak", "—");
+        setText("rank-usa-streak", "—");
+
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
+
         setText("war-record", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
-        setFooter("Last update: —");
         return;
       }
 
-      // CWL first
+      // Rankings (optional; will show — until your Pi writes them)
+      const r = clanStats.rankings || {};
+      setText("rank-global-trophies", fmtRank(r.globalTrophies));
+      setText("rank-usa-trophies", fmtRank(r.usaTrophies));
+      setText("rank-global-streak", fmtRank(r.globalWarStreak));
+      setText("rank-usa-streak", fmtRank(r.usaWarStreak));
+
+      // CWL
       setText("cwl-league", clanStats.cwl.currentLeague || "—");
       setText("cwl-finish", clanStats.cwl.lastFinish || "—");
 
@@ -364,13 +384,6 @@
       setText("war-record", `${w}-${l}-${t}`);
       setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
       setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
-
-      // Footer update
-      if (clanStats.updatedAt) {
-        setFooter("Last update: " + formatLastUpdate(clanStats.updatedAt));
-      } else {
-        setFooter("Last update: —");
-      }
     }
 
     // ===== Recurring timers =====
@@ -378,12 +391,7 @@
       const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri
       const diffToFriday = (5 - day + 7) % 7;
 
-      let fridayStart = makeUTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate() + diffToFriday,
-        7
-      );
+      let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
       let mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
 
       if (now >= fridayStart && now <= mondayEnd) return mondayEnd;
@@ -398,9 +406,8 @@
     function getNextClanGamesEnd(now) {
       const year = now.getUTCFullYear();
       const month = now.getUTCMonth();
-
-      let start = makeUTC(year, month, 22, 8);
-      let end = makeUTC(year, month, 28, 8);
+      const start = makeUTC(year, month, 22, 8);
+      const end = makeUTC(year, month, 28, 8);
 
       if (now < start) return end;
       if (now >= start && now <= end) return end;
@@ -438,27 +445,17 @@
       const seasonEnd = getNextSeasonEnd(now);
       const leagueReset = getNextLeagueReset(now);
 
-      const raidElem = document.getElementById("raid-timer");
-      const cgElem = document.getElementById("clan-games-timer");
-      const seasonElem = document.getElementById("season-end-timer");
-      const leagueElem = document.getElementById("league-reset-timer");
+      setText("raid-timer", formatCountdown(raidEnd - now));
+      setText("clan-games-timer", formatCountdown(clanGamesEnd - now));
+      setText("season-end-timer", formatCountdown(seasonEnd - now));
+      setText("league-reset-timer", formatCountdown(leagueReset - now));
+
       const warElem = document.getElementById("war-timer");
-
-      if (raidElem) raidElem.textContent = formatCountdown(raidEnd - now);
-      if (cgElem) cgElem.textContent = formatCountdown(clanGamesEnd - now);
-      if (seasonElem) seasonElem.textContent = formatCountdown(seasonEnd - now);
-      if (leagueElem) leagueElem.textContent = formatCountdown(leagueReset - now);
-
       if (warElem) {
-        if (!warFetched) {
-          warElem.textContent = "Loading…";
-        } else if (!warEndDate) {
-          warElem.textContent = "No war started";
-        } else if (now >= warEndDate) {
-          warElem.textContent = "War ended";
-        } else {
-          warElem.textContent = formatCountdown(warEndDate - now);
-        }
+        if (!warFetched) warElem.textContent = "Loading…";
+        else if (!warEndDate) warElem.textContent = "No war started";
+        else if (now >= warEndDate) warElem.textContent = "War ended";
+        else warElem.textContent = formatCountdown(warEndDate - now);
       }
     }
 
