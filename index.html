@@ -140,9 +140,7 @@
   </style>
 
   <script>
-    function openLink(url) {
-      window.location.href = url;
-    }
+    function openLink(url) { window.location.href = url; }
   </script>
 </head>
 
@@ -154,7 +152,7 @@
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
 
-    <!-- Rankings section (hidden unless ranked in Top 200 trophies) -->
+    <!-- Rankings (trophies only, hidden unless Top 200) -->
     <div id="rankings-block">
       <div class="section-title">Rankings</div>
       <div class="timer-row">
@@ -196,23 +194,27 @@
 
     <div class="divider"></div>
 
-    <div class="section-title">Current War Snapshot</div>
+    <div class="section-title">Current War</div>
+
+    <!-- Put "Current War Ends" at top of Current War section -->
+    <div class="timer-row">
+      <span class="timer-label">Current War Ends</span>
+      <span id="war-timer" class="timer-value">Loading…</span>
+    </div>
+
     <div class="timer-row">
       <span class="timer-label">Stars</span>
-      <span id="war-snap-stars" class="timer-value">Loading…</span>
+      <span id="war-snap-stars" class="timer-value">Waiting for update…</span>
     </div>
+
     <div class="timer-row">
       <span class="timer-label">Attacks Remaining</span>
-      <span id="war-snap-attacks" class="timer-value">Loading…</span>
+      <span id="war-snap-attacks" class="timer-value">Waiting for update…</span>
     </div>
 
     <div class="divider"></div>
 
     <div class="section-title">In-Game Events</div>
-    <div class="timer-row">
-      <span class="timer-label">Current War Ends</span>
-      <span id="war-timer" class="timer-value">Loading…</span>
-    </div>
     <div class="timer-row">
       <span class="timer-label">Raid Weekend</span>
       <span id="raid-timer" class="timer-value">Loading…</span>
@@ -263,6 +265,7 @@
       const el = document.getElementById(id);
       if(el) el.textContent = text;
     }
+
     function setFooter(text){
       const el = document.getElementById("last-update-footer");
       if(el) el.textContent = text;
@@ -284,45 +287,81 @@
       if(block) block.style.display = show ? "block" : "none";
     }
 
-    // ---- war.json (now includes snapshot fields) ----
+    // ---- war.json ----
     let warData = null;
     let warFetched = false;
 
     async function fetchWarData(){
       try{
         const res = await fetch("war.json?cb="+Date.now(), {cache:"no-store"});
-        if(!res.ok){
-          warData = null;
-        } else {
-          warData = await res.json();
-        }
+        if(!res.ok) warData = null;
+        else warData = await res.json();
       } catch(e){
         warData = null;
       }
       warFetched = true;
-      renderWarSnapshot();
+      renderWarSection();
     }
 
-    function renderWarSnapshot(){
+    function renderWarSection(){
+      // snapshot
       if(!warFetched){
         setText("war-snap-stars", "Loading…");
         setText("war-snap-attacks", "Loading…");
+        setText("war-timer", "Loading…");
         return;
       }
-      if(!warData || !warData.state || warData.state === "notInWar"){
+
+      if(!warData || !warData.state){
+        setText("war-snap-stars", "Waiting for update…");
+        setText("war-snap-attacks", "Waiting for update…");
+        setText("war-timer", "Waiting for update…");
+        return;
+      }
+
+      if(warData.state === "notInWar"){
         setText("war-snap-stars", "No war started");
         setText("war-snap-attacks", "No war started");
+        setText("war-timer", "No war started");
         return;
       }
+
+      // Stars as fraction: stars / (teamSize*3)
+      const teamSize = (typeof warData.teamSize === "number") ? warData.teamSize : null;
+      const maxStars = (teamSize ? teamSize * 3 : null);
 
       const ourStars = (typeof warData.ourStars === "number") ? warData.ourStars : 0;
       const oppStars = (typeof warData.oppStars === "number") ? warData.oppStars : 0;
 
+      const ourStarsTxt = maxStars ? `${ourStars}/${maxStars} ⭐` : `${ourStars} ⭐`;
+      const oppStarsTxt = maxStars ? `${oppStars}/${maxStars} ⭐` : `${oppStars} ⭐`;
+
+      setText("war-snap-stars", `Us ${ourStarsTxt} — Opp ${oppStarsTxt}`);
+
       const ourRem = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
       const oppRem = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
 
-      setText("war-snap-stars", `Us ${ourStars} ⭐ — Opp ${oppStars} ⭐`);
       setText("war-snap-attacks", `Us ${ourRem} left — Opp ${oppRem} left`);
+    }
+
+    function updateWarTimerOnly(){
+      const warElem = document.getElementById("war-timer");
+      if(!warElem) return;
+
+      if(!warFetched || !warData || !warData.state){
+        warElem.textContent = "Waiting for update…";
+        return;
+      }
+      if(warData.state === "notInWar" || !warData.warEndIso){
+        warElem.textContent = "No war started";
+        return;
+      }
+
+      const end = new Date(warData.warEndIso);
+      const now = new Date();
+      if(isNaN(end.getTime())) warElem.textContent = "No war started";
+      else if(now >= end) warElem.textContent = "War ended";
+      else warElem.textContent = formatCountdown(end - now);
     }
 
     // ---- clan_stats.json ----
@@ -436,34 +475,26 @@
       return reset;
     }
 
-    function updateTimers(){
+    function updateRecurringTimers(){
       const now = new Date();
       setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
       setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
       setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
       setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
-
-      const warElem = document.getElementById("war-timer");
-      if(warElem){
-        if(!warFetched) warElem.textContent = "Loading…";
-        else if(!warData || warData.state === "notInWar" || !warData.warEndIso) warElem.textContent = "No war started";
-        else {
-          const end = new Date(warData.warEndIso);
-          if(isNaN(end.getTime())) warElem.textContent = "No war started";
-          else if(now >= end) warElem.textContent = "War ended";
-          else warElem.textContent = formatCountdown(end - now);
-        }
-      }
     }
 
     // Initial load
     fetchWarData();
     fetchClanStats();
-    updateTimers();
+    updateRecurringTimers();
 
-    setInterval(updateTimers, 1000);
+    // tick every second for countdowns (including war-timer)
+    setInterval(() => {
+      updateRecurringTimers();
+      updateWarTimerOnly();
+    }, 1000);
 
-    // Refetch JSON every 60s
+    // refetch JSON every 60s
     setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
   </script>
