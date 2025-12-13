@@ -46,20 +46,13 @@
       object-fit: contain;
     }
 
-    .title {
-      font-size: 28px;
-      letter-spacing: 0.25em;
-      margin: 0;
-      text-indent: 0.25em; /* offset letter-spacing so B is visible */
-    }
-
     .subtitle {
       margin: 8px 0 24px;
       font-size: 14px;
       opacity: 0.7;
     }
 
-    /* Timers block */
+    /* Combined block */
     .timers {
       width: 100%;
       max-width: 340px;
@@ -76,6 +69,21 @@
       margin: 0 0 8px;
       font-size: 16px;
       text-align: center;
+    }
+
+    .section-title {
+      margin: 10px 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      text-align: center;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+      margin: 10px 0;
     }
 
     .timer-row {
@@ -126,7 +134,6 @@
       cursor: pointer;
     }
 
-    /* Bottom update text */
     .last-update-footer {
       margin-top: 16px;
       font-size: 12px;
@@ -140,6 +147,7 @@
     }
   </script>
 </head>
+
 <body>
   <!-- App icon above logo -->
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
@@ -149,63 +157,55 @@
 
   <p class="subtitle">EST DECEMBER 2023</p>
 
-  <!-- Clan Stats (ABOVE recurring events) -->
+  <!-- ONE consolidated box -->
   <div class="timers">
-    <h2 class="timers-title">Clan Stats</h2>
+    <h2 class="timers-title">Clan Overview</h2>
 
-    <!-- CWL stats FIRST -->
+    <div class="section-title">CWL</div>
     <div class="timer-row">
       <span class="timer-label">CWL League</span>
       <span id="cwl-league" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Last CWL Finish</span>
       <span id="cwl-finish" class="timer-value">Loading…</span>
     </div>
 
-    <!-- Regular war stats AFTER -->
+    <div class="divider"></div>
+
+    <div class="section-title">War</div>
     <div class="timer-row">
       <span class="timer-label">War Record</span>
       <span id="war-record" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Current Streak</span>
       <span id="war-streak" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Longest Streak</span>
       <span id="war-longest" class="timer-value">Loading…</span>
     </div>
-  </div>
 
-  <!-- Recurring In-Game Events -->
-  <div class="timers">
-    <h2 class="timers-title">Recurring In-Game Events</h2>
+    <div class="divider"></div>
 
-    <!-- Current War at top -->
+    <div class="section-title">In-Game Events</div>
     <div class="timer-row">
-      <span class="timer-label">Current War</span>
+      <span class="timer-label">Current War Ends</span>
       <span id="war-timer" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Raid Weekend</span>
       <span id="raid-timer" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Clan Games</span>
       <span id="clan-games-timer" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">Season End</span>
       <span id="season-end-timer" class="timer-value">Loading…</span>
     </div>
-
     <div class="timer-row">
       <span class="timer-label">League Reset</span>
       <span id="league-reset-timer" class="timer-value">Loading…</span>
@@ -251,7 +251,6 @@
   <!-- Last update at very bottom -->
   <div id="last-update-footer" class="last-update-footer">Last update: Loading…</div>
 
-  <!-- Countdown + fetch scripts -->
   <script>
     function pad(n) {
       return n.toString().padStart(2, "0");
@@ -279,32 +278,26 @@
       return new Date(Date.UTC(year, monthIndex, day, hour, minute, 0));
     }
 
-    // === CURRENT WAR – fetched from war.json ===
+    // ===== Current War (war.json) =====
     let warEndDate = null;
-    let warFetched = false;  // track if we've tried to load war.json yet
+    let warFetched = false;
 
     async function fetchWarEnd() {
       try {
         const res = await fetch("war.json?cb=" + Date.now(), { cache: "no-store" });
         if (!res.ok) {
-          console.log("war.json not available, status:", res.status);
           warEndDate = null;
         } else {
           const data = await res.json();
-          if (data && data.warEndIso) {
-            warEndDate = new Date(data.warEndIso);
-          } else {
-            warEndDate = null;
-          }
+          warEndDate = (data && data.warEndIso) ? new Date(data.warEndIso) : null;
         }
       } catch (e) {
-        console.error("Failed to fetch war.json", e);
         warEndDate = null;
       }
       warFetched = true;
     }
 
-    // === CLAN STATS – fetched from clan_stats.json ===
+    // ===== Clan Stats (clan_stats.json) =====
     let clanStats = null;
     let clanStatsFetched = false;
 
@@ -321,7 +314,7 @@
     function formatLastUpdate(isoString) {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return "—";
-      return d.toLocaleString(); // user's local time
+      return d.toLocaleString();
     }
 
     async function fetchClanStats() {
@@ -333,7 +326,6 @@
           clanStats = await res.json();
         }
       } catch (e) {
-        console.error("Failed to fetch clan_stats.json", e);
         clanStats = null;
       }
       clanStatsFetched = true;
@@ -361,9 +353,9 @@
         return;
       }
 
-      // CWL
-      setText("cwl-league", `${clanStats.cwl.currentLeague || "—"}`);
-      setText("cwl-finish", `${clanStats.cwl.lastFinish || "—"}`);
+      // CWL first
+      setText("cwl-league", clanStats.cwl.currentLeague || "—");
+      setText("cwl-finish", clanStats.cwl.lastFinish || "—");
 
       // War
       const w = clanStats.war.wins ?? 0;
@@ -381,9 +373,9 @@
       }
     }
 
-    // Raid Weekend: Fri 07:00 UTC -> Mon 07:00 UTC
+    // ===== Recurring timers =====
     function getNextRaidWeekendEnd(now) {
-      const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+      const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri
       const diffToFriday = (5 - day + 7) % 7;
 
       let fridayStart = makeUTC(
@@ -394,19 +386,15 @@
       );
       let mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-      if (now >= fridayStart && now <= mondayEnd) {
-        return mondayEnd;
-      }
+      if (now >= fridayStart && now <= mondayEnd) return mondayEnd;
 
       if (now > mondayEnd) {
         fridayStart = new Date(fridayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
         mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
       }
-
       return mondayEnd;
     }
 
-    // Clan Games: 22nd–28th, 08:00 UTC
     function getNextClanGamesEnd(now) {
       const year = now.getUTCFullYear();
       const month = now.getUTCMonth();
@@ -414,48 +402,31 @@
       let start = makeUTC(year, month, 22, 8);
       let end = makeUTC(year, month, 28, 8);
 
-      if (now < start) {
-        return end;
-      } else if (now >= start && now <= end) {
-        return end;
-      } else {
-        const nextMonth = new Date(Date.UTC(year, month + 1, 1));
-        const ny = nextMonth.getUTCFullYear();
-        const nm = nextMonth.getUTCMonth();
-        return makeUTC(ny, nm, 28, 8);
-      }
+      if (now < start) return end;
+      if (now >= start && now <= end) return end;
+
+      const nextMonth = new Date(Date.UTC(year, month + 1, 1));
+      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
     }
 
-    // Season End: 1st of next calendar month, 08:00 UTC
     function getNextSeasonEnd(now) {
-      const year = now.getUTCFullYear();
-      const month = now.getUTCMonth();
-      return makeUTC(year, month + 1, 1, 8);
+      return makeUTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 8);
     }
 
-    // League Reset: first Monday of the month, 05:00 UTC
     function getNextLeagueReset(now) {
       const year = now.getUTCFullYear();
       const month = now.getUTCMonth();
 
       let first = makeUTC(year, month, 1, 5);
-      let day = first.getUTCDay(); // 0=Sun,1=Mon,...
-      const diffToMonday = (1 - day + 7) % 7;
-
+      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
       let reset = makeUTC(year, month, 1 + diffToMonday, 5);
 
       if (now > reset) {
         const nextMonth = new Date(Date.UTC(year, month + 1, 1));
-        const ny = nextMonth.getUTCFullYear();
-        const nm = nextMonth.getUTCMonth();
-
-        let firstNext = makeUTC(ny, nm, 1, 5);
-        let dayNext = firstNext.getUTCDay();
-        const diffNext = (1 - dayNext + 7) % 7;
-
-        reset = makeUTC(ny, nm, 1 + diffNext, 5);
+        let firstNext = makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 1, 5);
+        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
+        reset = makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 1 + diffNext, 5);
       }
-
       return reset;
     }
 
@@ -491,15 +462,15 @@
       }
     }
 
-    // initial load
+    // Initial load
     fetchWarEnd();
     fetchClanStats();
     updateTimers();
 
-    // refresh timers every second
+    // Update countdowns every second
     setInterval(updateTimers, 1000);
 
-    // refresh war.json + clan_stats.json every 60 seconds
+    // Refetch JSON every 60 seconds
     setInterval(fetchWarEnd, 60 * 1000);
     setInterval(fetchClanStats, 60 * 1000);
   </script>
