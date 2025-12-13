@@ -105,10 +105,7 @@
     }
 
     /* ===== Current War board ===== */
-    .war-board {
-      text-align: center;
-      margin-top: 6px;
-    }
+    .war-board { text-align: center; margin-top: 6px; }
 
     .war-timer {
       font-family: monospace;
@@ -165,25 +162,6 @@
       gap: 6px;
       opacity: 0.95;
     }
-
-    /* Star progress bar */
-    .starbar {
-      width: 100%;
-      max-width: 130px;
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      overflow: hidden;
-      margin: 6px auto 0;
-    }
-    .starbar-fill {
-      height: 100%;
-      width: 0%;
-      background: rgba(255,255,255,0.75);
-      border-radius: 999px;
-    }
-
-    /* ============================ */
 
     .button-container {
       display: flex;
@@ -281,15 +259,12 @@
           <div class="war-stat">
             <span id="war-stars-us">—</span> <span>⭐</span>
           </div>
-          <div class="starbar">
-            <div id="starbar-us" class="starbar-fill"></div>
-          </div>
 
-          <!-- ✅ NEW: Avg Destruction row -->
           <div class="war-substat">
             <span id="war-destr-us">—</span> <span>％️⃣</span>
           </div>
 
+          <!-- Remaining attacks: remaining/total -->
           <div class="war-substat">
             <span id="war-attacks-us">—</span> <span>⚔️</span>
           </div>
@@ -303,15 +278,12 @@
           <div class="war-stat">
             <span id="war-stars-opp">—</span> <span>⭐</span>
           </div>
-          <div class="starbar">
-            <div id="starbar-opp" class="starbar-fill"></div>
-          </div>
 
-          <!-- ✅ NEW: Avg Destruction row -->
           <div class="war-substat">
             <span id="war-destr-opp">—</span> <span>％️⃣</span>
           </div>
 
+          <!-- Remaining attacks: remaining/total -->
           <div class="war-substat">
             <span id="war-attacks-opp">—</span> <span>⚔️</span>
           </div>
@@ -337,12 +309,6 @@
     <div class="timer-row">
       <span class="timer-label">League Reset</span>
       <span id="league-reset-timer" class="timer-value">Loading…</span>
-    </div>
-
-    <!-- LAST ROW in the board -->
-    <div class="timer-row">
-      <span class="timer-label">Last Update</span>
-      <span id="last-update-board" class="timer-value">Loading…</span>
     </div>
   </div>
 
@@ -387,36 +353,6 @@
       if(vs) vs.style.display = show ? "block" : "none";
     }
 
-    function setBarWidth(id, pct){
-      const el = document.getElementById(id);
-      if(!el) return;
-      const clamped = Math.max(0, Math.min(100, pct));
-      el.style.width = clamped.toFixed(1) + "%";
-    }
-
-    // ===== live "Last update" inside board =====
-    let lastUpdatedIso = null;
-
-    function updateLastUpdateLine(){
-      const el = document.getElementById("last-update-board");
-      if(!el) return;
-
-      if(!lastUpdatedIso){
-        el.textContent = "Loading…";
-        return;
-      }
-
-      const d = new Date(lastUpdatedIso);
-      if(isNaN(d.getTime())){
-        el.textContent = "—";
-        return;
-      }
-
-      const now = new Date();
-      const ageSec = Math.max(0, Math.floor((now - d) / 1000));
-      el.textContent = `${d.toLocaleString()} (${ageSec}s ago)`;
-    }
-
     function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
       return "Not in top 200";
@@ -424,7 +360,6 @@
 
     function fmtPct(v){
       if(typeof v !== "number" || !isFinite(v)) return "—";
-      // show 1 decimal only if needed
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
@@ -445,6 +380,43 @@
       renderWarSection();
     }
 
+    function computeRemainingAndTotalAttacks(teamSize){
+      const total = teamSize * 2;
+
+      // Best case: your JSON provides used attacks (correct)
+      if (typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number") {
+        const ourRem = Math.max(0, total - warData.ourAttacksUsed);
+        const oppRem = Math.max(0, total - warData.oppAttacksUsed);
+        return { total, ourRem, oppRem };
+      }
+
+      // Next best: your JSON provides total remaining attacks (correct)
+      if (typeof warData.ourAttacksRemainingTotal === "number" && typeof warData.oppAttacksRemainingTotal === "number") {
+        const ourRem = Math.max(0, Math.min(total, warData.ourAttacksRemainingTotal));
+        const oppRem = Math.max(0, Math.min(total, warData.oppAttacksRemainingTotal));
+        return { total, ourRem, oppRem };
+      }
+
+      // Fallback: old field (often WRONG because it represents members, not attacks)
+      const fallbackOur = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
+      const fallbackOpp = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
+
+      // If someone is still using the “member count” field, it will usually be <= teamSize.
+      // We refuse to pretend it’s correct remaining attacks if it’s <= teamSize, because that’s exactly the bug you’re seeing.
+      const looksLikeMemberCount = (fallbackOur <= teamSize) && (fallbackOpp <= teamSize);
+
+      if (looksLikeMemberCount) {
+        return { total, ourRem: null, oppRem: null, bad: true };
+      }
+
+      return {
+        total,
+        ourRem: Math.max(0, Math.min(total, fallbackOur)),
+        oppRem: Math.max(0, Math.min(total, fallbackOpp)),
+        bad: false
+      };
+    }
+
     function renderWarSection(){
       setWarVsVisibility(false);
 
@@ -458,8 +430,6 @@
         setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
-        setBarWidth("starbar-us", 0);
-        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -473,8 +443,6 @@
         setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
-        setBarWidth("starbar-us", 0);
-        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -488,8 +456,6 @@
         setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
-        setBarWidth("starbar-us", 0);
-        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -498,7 +464,6 @@
       setText("war-name-us", (warData.ourName || "US"));
       setText("war-name-opp", (warData.oppName || "OPPONENT"));
 
-      // stars fraction: stars / (teamSize*3)
       const teamSize = (typeof warData.teamSize === "number") ? warData.teamSize : null;
       const maxStars = (teamSize ? teamSize * 3 : null);
 
@@ -508,13 +473,6 @@
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
-      // star progress bars
-      const ourStarPct = (maxStars ? (ourStars / maxStars) * 100 : 0);
-      const oppStarPct = (maxStars ? (oppStars / maxStars) * 100 : 0);
-      setBarWidth("starbar-us", ourStarPct);
-      setBarWidth("starbar-opp", oppStarPct);
-
-      // ✅ Avg destruction: supports either ourDestruction or ourDestructionPercentage
       const ourDestr =
         (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
         (typeof warData.ourDestructionPercentage === "number") ? warData.ourDestructionPercentage :
@@ -528,17 +486,21 @@
       setText("war-destr-us", fmtPct(ourDestr));
       setText("war-destr-opp", fmtPct(oppDestr));
 
-      // Attacks USED / TOTAL (40 total in 20v20)
-      const totalAttacks = (teamSize ? teamSize * 2 : null);
+      if (teamSize) {
+        const { total, ourRem, oppRem, bad } = computeRemainingAndTotalAttacks(teamSize);
 
-      const ourRemaining = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
-      const oppRemaining = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
-
-      const ourUsed = (totalAttacks !== null) ? Math.max(0, totalAttacks - ourRemaining) : 0;
-      const oppUsed = (totalAttacks !== null) ? Math.max(0, totalAttacks - oppRemaining) : 0;
-
-      setText("war-attacks-us", totalAttacks ? `${ourUsed}/${totalAttacks}` : `${ourUsed}`);
-      setText("war-attacks-opp", totalAttacks ? `${oppUsed}/${totalAttacks}` : `${oppUsed}`);
+        if (bad || ourRem === null || oppRem === null) {
+          // This indicates your war.json is still using the "members with attacks left" field.
+          setText("war-attacks-us", `Fix war.json`);
+          setText("war-attacks-opp", `Fix war.json`);
+        } else {
+          setText("war-attacks-us", `${ourRem}/${total}`);
+          setText("war-attacks-opp", `${oppRem}/${total}`);
+        }
+      } else {
+        setText("war-attacks-us", "—");
+        setText("war-attacks-opp", "—");
+      }
 
       updateWarTimerOnly();
     }
@@ -572,16 +534,13 @@
         const res = await fetch(url, { cache:"no-store" });
         if(!res.ok){
           clanStats = null;
-          lastUpdatedIso = null;
           renderClanStats();
           return;
         }
         clanStats = await res.json();
-        lastUpdatedIso = (clanStats && clanStats.updatedAt) ? clanStats.updatedAt : null;
         renderClanStats();
       } catch(e){
         clanStats = null;
-        lastUpdatedIso = null;
         renderClanStats();
       }
     }
@@ -680,26 +639,23 @@
     fetchWarData();
     fetchClanStats();
     updateRecurringTimers();
-    updateLastUpdateLine();
 
-    // tick every second for countdowns + live last update age
+    // tick every second for countdowns (including war timer)
     setInterval(() => {
       updateRecurringTimers();
       updateWarTimerOnly();
-      updateLastUpdateLine();
     }, 1000);
 
     // refetch JSON every 60s
     setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
 
-    // SNAP REFRESH when app/tab becomes visible again
+    // snap refresh on focus
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         fetchWarData();
         fetchClanStats();
         updateRecurringTimers();
-        updateLastUpdateLine();
       }
     });
   </script>
