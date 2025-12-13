@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>B•A•S•E•D</title>
 
-  <!-- Icons -->
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
 
@@ -52,7 +51,6 @@
       opacity: 0.7;
     }
 
-    /* One consolidated box */
     .timers {
       width: 100%;
       max-width: 340px;
@@ -153,11 +151,9 @@
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
   <p class="subtitle">EST DECEMBER 2023</p>
 
-  <!-- ONE consolidated box -->
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
 
-    <!-- NEW: Rankings (above CWL) -->
     <div class="section-title">Rankings</div>
     <div class="timer-row">
       <span class="timer-label">Global Trophies</span>
@@ -229,7 +225,6 @@
     </div>
   </div>
 
-  <!-- Buttons -->
   <div class="button-container">
     <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">CWL Leaderboards</button>
     <button onclick="openLink('https://discord.gg/8P96687dPr')">Clan Discord</button>
@@ -241,220 +236,179 @@
     <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
   </div>
 
-  <!-- Footer last update (fixed to always update when clan_stats.json loads) -->
   <div id="last-update-footer" class="last-update-footer">Last update: Loading…</div>
 
   <script>
-    function pad(n) { return n.toString().padStart(2, "0"); }
+    function pad(n){ return n.toString().padStart(2,"0"); }
 
-    function formatCountdown(ms) {
-      if (ms <= 0) return "Active now";
-      const totalSeconds = Math.floor(ms / 1000);
-      const days = Math.floor(totalSeconds / 86400);
-      const hours = Math.floor((totalSeconds % 86400) / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return days + "d " + pad(hours) + "h " + pad(minutes) + "m " + pad(seconds) + "s";
+    function formatCountdown(ms){
+      if(ms<=0) return "Active now";
+      const totalSeconds = Math.floor(ms/1000);
+      const days = Math.floor(totalSeconds/86400);
+      const hours = Math.floor((totalSeconds%86400)/3600);
+      const minutes = Math.floor((totalSeconds%3600)/60);
+      const seconds = totalSeconds%60;
+      return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
 
-    function makeUTC(year, monthIndex, day, hour, minute = 0) {
-      return new Date(Date.UTC(year, monthIndex, day, hour, minute, 0));
+    function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
+
+    function setText(id, text){
+      const el = document.getElementById(id);
+      if(el) el.textContent = text;
+    }
+    function setFooter(text){
+      const el = document.getElementById("last-update-footer");
+      if(el) el.textContent = text;
     }
 
-    // ===== Current War (war.json) =====
+    function formatLastUpdate(iso){
+      const d = new Date(iso);
+      if(isNaN(d.getTime())) return "—";
+      return d.toLocaleString();
+    }
+
+    function fmtRank(v){
+      if(v === null || v === undefined) return "Not ranked";
+      if(typeof v === "number") return "#" + v;
+      return String(v);
+    }
+
+    // ---- war.json ----
     let warEndDate = null;
     let warFetched = false;
 
-    async function fetchWarEnd() {
-      try {
-        const res = await fetch("war.json?cb=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) {
-          warEndDate = null;
-        } else {
+    async function fetchWarEnd(){
+      try{
+        const res = await fetch("war.json?cb="+Date.now(), {cache:"no-store"});
+        if(!res.ok){ warEndDate = null; }
+        else{
           const data = await res.json();
           warEndDate = (data && data.warEndIso) ? new Date(data.warEndIso) : null;
         }
-      } catch (e) {
+      } catch(e){
         warEndDate = null;
       }
       warFetched = true;
     }
 
-    // ===== Clan Stats (clan_stats.json) =====
+    // ---- clan_stats.json ----
     let clanStats = null;
-    let clanStatsFetched = false;
 
-    function setText(id, text) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-    }
-
-    function setFooter(text) {
-      const el = document.getElementById("last-update-footer");
-      if (el) el.textContent = text;
-    }
-
-    function formatLastUpdate(isoString) {
-      const d = new Date(isoString);
-      if (isNaN(d.getTime())) return "—";
-      return d.toLocaleString();
-    }
-
-    function fmtRank(n) {
-      if (n === null || n === undefined) return "—";
-      if (typeof n === "number") return "#" + n;
-      return String(n);
-    }
-
-    async function fetchClanStats() {
-      try {
-        const res = await fetch("clan_stats.json?cb=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) {
+    async function fetchClanStats(){
+      try{
+        const url = "clan_stats.json?cb="+Date.now();
+        const res = await fetch(url, {cache:"no-store"});
+        if(!res.ok){
           clanStats = null;
-          clanStatsFetched = true;
-          setFooter("Last update: (failed to load clan_stats.json)");
+          setFooter(`Last update: ERROR loading clan_stats.json (${res.status})`);
           renderClanStats();
           return;
         }
         clanStats = await res.json();
-        clanStatsFetched = true;
 
-        // ✅ FIX: update footer immediately on successful fetch
-        if (clanStats && clanStats.updatedAt) {
+        if(clanStats && clanStats.updatedAt){
           setFooter("Last update: " + formatLastUpdate(clanStats.updatedAt));
         } else {
-          setFooter("Last update: —");
+          setFooter("Last update: — (missing updatedAt)");
         }
 
         renderClanStats();
-      } catch (e) {
+      } catch(e){
         clanStats = null;
-        clanStatsFetched = true;
-        setFooter("Last update: (error loading clan_stats.json)");
+        setFooter("Last update: ERROR loading clan_stats.json");
         renderClanStats();
       }
     }
 
-    function renderClanStats() {
-      if (!clanStatsFetched) {
-        setText("rank-global-trophies", "Loading…");
-        setText("rank-usa-trophies", "Loading…");
-        setText("rank-global-streak", "Loading…");
-        setText("rank-usa-streak", "Loading…");
-
-        setText("cwl-league", "Loading…");
-        setText("cwl-finish", "Loading…");
-
-        setText("war-record", "Loading…");
-        setText("war-streak", "Loading…");
-        setText("war-longest", "Loading…");
-        return;
-      }
-
-      if (!clanStats || !clanStats.war || !clanStats.cwl) {
+    function renderClanStats(){
+      if(!clanStats){
         setText("rank-global-trophies", "—");
         setText("rank-usa-trophies", "—");
         setText("rank-global-streak", "—");
         setText("rank-usa-streak", "—");
-
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
-
         setText("war-record", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
         return;
       }
 
-      // Rankings (optional; will show — until your Pi writes them)
       const r = clanStats.rankings || {};
       setText("rank-global-trophies", fmtRank(r.globalTrophies));
       setText("rank-usa-trophies", fmtRank(r.usaTrophies));
       setText("rank-global-streak", fmtRank(r.globalWarStreak));
       setText("rank-usa-streak", fmtRank(r.usaWarStreak));
 
-      // CWL
-      setText("cwl-league", clanStats.cwl.currentLeague || "—");
-      setText("cwl-finish", clanStats.cwl.lastFinish || "—");
+      setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
+      setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
 
-      // War
-      const w = clanStats.war.wins ?? 0;
-      const l = clanStats.war.losses ?? 0;
-      const t = clanStats.war.ties ?? 0;
-      setText("war-record", `${w}-${l}-${t}`);
-      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+      if(clanStats.war){
+        const w = clanStats.war.wins ?? 0;
+        const l = clanStats.war.losses ?? 0;
+        const t = clanStats.war.ties ?? 0;
+        setText("war-record", `${w}-${l}-${t}`);
+        setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+        setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+      } else {
+        setText("war-record", "—");
+        setText("war-streak", "—");
+        setText("war-longest", "—");
+      }
     }
 
-    // ===== Recurring timers =====
-    function getNextRaidWeekendEnd(now) {
-      const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri
+    // ---- recurring timers ----
+    function getNextRaidWeekendEnd(now){
+      const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
-
       let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
-      let mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-      if (now >= fridayStart && now <= mondayEnd) return mondayEnd;
-
-      if (now > mondayEnd) {
-        fridayStart = new Date(fridayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
-        mondayEnd = new Date(fridayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
+      let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
+      if(now > mondayEnd){
+        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
+        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
       }
       return mondayEnd;
     }
-
-    function getNextClanGamesEnd(now) {
-      const year = now.getUTCFullYear();
-      const month = now.getUTCMonth();
-      const start = makeUTC(year, month, 22, 8);
-      const end = makeUTC(year, month, 28, 8);
-
-      if (now < start) return end;
-      if (now >= start && now <= end) return end;
-
-      const nextMonth = new Date(Date.UTC(year, month + 1, 1));
+    function getNextClanGamesEnd(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      const start = makeUTC(y,m,22,8);
+      const end   = makeUTC(y,m,28,8);
+      if(now < start) return end;
+      if(now <= end) return end;
+      const nextMonth = new Date(Date.UTC(y, m+1, 1));
       return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
     }
-
-    function getNextSeasonEnd(now) {
-      return makeUTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 8);
+    function getNextSeasonEnd(now){
+      return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8);
     }
-
-    function getNextLeagueReset(now) {
-      const year = now.getUTCFullYear();
-      const month = now.getUTCMonth();
-
-      let first = makeUTC(year, month, 1, 5);
+    function getNextLeagueReset(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      let first = makeUTC(y,m,1,5);
       const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
-      let reset = makeUTC(year, month, 1 + diffToMonday, 5);
-
-      if (now > reset) {
-        const nextMonth = new Date(Date.UTC(year, month + 1, 1));
-        let firstNext = makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 1, 5);
+      let reset = makeUTC(y,m,1+diffToMonday,5);
+      if(now > reset){
+        const nm = new Date(Date.UTC(y, m+1, 1));
+        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
         const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
-        reset = makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 1 + diffNext, 5);
+        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
       }
       return reset;
     }
 
-    function updateTimers() {
+    function updateTimers(){
       const now = new Date();
-
-      const raidEnd = getNextRaidWeekendEnd(now);
-      const clanGamesEnd = getNextClanGamesEnd(now);
-      const seasonEnd = getNextSeasonEnd(now);
-      const leagueReset = getNextLeagueReset(now);
-
-      setText("raid-timer", formatCountdown(raidEnd - now));
-      setText("clan-games-timer", formatCountdown(clanGamesEnd - now));
-      setText("season-end-timer", formatCountdown(seasonEnd - now));
-      setText("league-reset-timer", formatCountdown(leagueReset - now));
+      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
 
       const warElem = document.getElementById("war-timer");
-      if (warElem) {
-        if (!warFetched) warElem.textContent = "Loading…";
-        else if (!warEndDate) warElem.textContent = "No war started";
-        else if (now >= warEndDate) warElem.textContent = "War ended";
+      if(warElem){
+        if(!warFetched) warElem.textContent = "Loading…";
+        else if(!warEndDate) warElem.textContent = "No war started";
+        else if(now >= warEndDate) warElem.textContent = "War ended";
         else warElem.textContent = formatCountdown(warEndDate - now);
       }
     }
@@ -464,12 +418,12 @@
     fetchClanStats();
     updateTimers();
 
-    // Update countdowns every second
+    // Timers tick
     setInterval(updateTimers, 1000);
 
-    // Refetch JSON every 60 seconds
-    setInterval(fetchWarEnd, 60 * 1000);
-    setInterval(fetchClanStats, 60 * 1000);
+    // Refetch JSON every 60s
+    setInterval(fetchWarEnd, 60*1000);
+    setInterval(fetchClanStats, 60*1000);
   </script>
 </body>
 </html>
