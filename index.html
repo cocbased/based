@@ -179,7 +179,7 @@
     .starbar-fill {
       height: 100%;
       width: 0%;
-      background: rgba(255,255,255,0.75); /* no colors requested */
+      background: rgba(255,255,255,0.75);
       border-radius: 999px;
     }
 
@@ -285,6 +285,11 @@
             <div id="starbar-us" class="starbar-fill"></div>
           </div>
 
+          <!-- ✅ NEW: Avg Destruction row -->
+          <div class="war-substat">
+            <span id="war-destr-us">—</span> <span>％️⃣</span>
+          </div>
+
           <div class="war-substat">
             <span id="war-attacks-us">—</span> <span>⚔️</span>
           </div>
@@ -300,6 +305,11 @@
           </div>
           <div class="starbar">
             <div id="starbar-opp" class="starbar-fill"></div>
+          </div>
+
+          <!-- ✅ NEW: Avg Destruction row -->
+          <div class="war-substat">
+            <span id="war-destr-opp">—</span> <span>％️⃣</span>
           </div>
 
           <div class="war-substat">
@@ -329,7 +339,7 @@
       <span id="league-reset-timer" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ LAST ROW in the board (as requested) -->
+    <!-- LAST ROW in the board -->
     <div class="timer-row">
       <span class="timer-label">Last Update</span>
       <span id="last-update-board" class="timer-value">Loading…</span>
@@ -412,6 +422,13 @@
       return "Not in top 200";
     }
 
+    function fmtPct(v){
+      if(typeof v !== "number" || !isFinite(v)) return "—";
+      // show 1 decimal only if needed
+      const rounded = Math.round(v * 10) / 10;
+      return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
+    }
+
     // ---- war.json ----
     let warData = null;
     let warFetched = false;
@@ -437,6 +454,8 @@
         setText("war-name-opp", "Loading…");
         setText("war-stars-us", "—");
         setText("war-stars-opp", "—");
+        setText("war-destr-us", "—");
+        setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
         setBarWidth("starbar-us", 0);
@@ -450,6 +469,8 @@
         setText("war-name-opp", "—");
         setText("war-stars-us", "—");
         setText("war-stars-opp", "—");
+        setText("war-destr-us", "—");
+        setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
         setBarWidth("starbar-us", 0);
@@ -463,6 +484,8 @@
         setText("war-name-opp", "—");
         setText("war-stars-us", "—");
         setText("war-stars-opp", "—");
+        setText("war-destr-us", "—");
+        setText("war-destr-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
         setBarWidth("starbar-us", 0);
@@ -485,13 +508,27 @@
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
-      // ✅ star progress bars
+      // star progress bars
       const ourStarPct = (maxStars ? (ourStars / maxStars) * 100 : 0);
       const oppStarPct = (maxStars ? (oppStars / maxStars) * 100 : 0);
       setBarWidth("starbar-us", ourStarPct);
       setBarWidth("starbar-opp", oppStarPct);
 
-      // ✅ Attacks USED / TOTAL (40 total in 20v20)
+      // ✅ Avg destruction: supports either ourDestruction or ourDestructionPercentage
+      const ourDestr =
+        (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
+        (typeof warData.ourDestructionPercentage === "number") ? warData.ourDestructionPercentage :
+        null;
+
+      const oppDestr =
+        (typeof warData.oppDestruction === "number") ? warData.oppDestruction :
+        (typeof warData.oppDestructionPercentage === "number") ? warData.oppDestructionPercentage :
+        null;
+
+      setText("war-destr-us", fmtPct(ourDestr));
+      setText("war-destr-opp", fmtPct(oppDestr));
+
+      // Attacks USED / TOTAL (40 total in 20v20)
       const totalAttacks = (teamSize ? teamSize * 2 : null);
 
       const ourRemaining = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
@@ -652,11 +689,11 @@
       updateLastUpdateLine();
     }, 1000);
 
-    // refetch JSON every 60s (best-effort; background tabs may throttle)
+    // refetch JSON every 60s
     setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
 
-    // ✅ SNAP REFRESH when app/tab becomes visible again
+    // SNAP REFRESH when app/tab becomes visible again
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         fetchWarData();
