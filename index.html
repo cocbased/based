@@ -104,7 +104,7 @@
       flex: 1;
     }
 
-    /* ===== Current War board (clean like your screenshot, no colors) ===== */
+    /* ===== Current War board ===== */
     .war-board {
       text-align: center;
       margin-top: 6px;
@@ -117,11 +117,19 @@
       margin: 6px 0 10px;
     }
 
-    .war-grid {
+    .war-grid-3 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      align-items: start;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .war-vs {
+      font-weight: 900;
+      font-size: 14px;
+      opacity: 0.7;
+      text-align: center;
+      padding: 0 2px;
     }
 
     .war-name {
@@ -157,7 +165,7 @@
       gap: 6px;
       opacity: 0.9;
     }
-    /* ================================================================ */
+    /* ============================ */
 
     .button-container {
       display: flex;
@@ -251,19 +259,20 @@
 
     <div class="section-title">Current War</div>
 
-    <!-- CLEAN WAR BOARD (replaces the old messy lines) -->
     <div class="war-board">
       <div id="war-timer" class="war-timer">Loading…</div>
 
-      <div class="war-grid">
+      <div id="war-grid" class="war-grid-3">
         <div>
-          <div id="war-name-us" class="war-name">US</div>
+          <div id="war-name-us" class="war-name">—</div>
           <div class="war-stat"><span id="war-stars-us">—</span> <span>⭐</span></div>
           <div class="war-substat"><span id="war-attacks-us">—</span> <span>⚔️</span></div>
         </div>
 
+        <div id="war-vs" class="war-vs">VS</div>
+
         <div>
-          <div id="war-name-opp" class="war-name">OPPONENT</div>
+          <div id="war-name-opp" class="war-name">—</div>
           <div class="war-stat"><span id="war-stars-opp">—</span> <span>⭐</span></div>
           <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
         </div>
@@ -345,6 +354,11 @@
       if(block) block.style.display = show ? "block" : "none";
     }
 
+    function setWarVsVisibility(show){
+      const vs = document.getElementById("war-vs");
+      if(vs) vs.style.display = show ? "block" : "none";
+    }
+
     // ---- war.json ----
     let warData = null;
     let warFetched = false;
@@ -362,6 +376,9 @@
     }
 
     function renderWarSection(){
+      // default: hide VS until we confirm we're in war
+      setWarVsVisibility(false);
+
       if(!warFetched){
         setText("war-timer", "Loading…");
         setText("war-name-us", "Loading…");
@@ -395,6 +412,9 @@
         return;
       }
 
+      // We are in war -> show VS
+      setWarVsVisibility(true);
+
       // names (actual opponent name)
       setText("war-name-us", (warData.ourName || "US"));
       setText("war-name-opp", (warData.oppName || "OPPONENT"));
@@ -412,14 +432,16 @@
       setText("war-stars-us", ourStarsTxt);
       setText("war-stars-opp", oppStarsTxt);
 
-      // attacks remaining fraction: remaining / teamSize
+      // attacks USED fraction: (teamSize - remaining) / teamSize  [for BOTH]
       const ourRem = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
       const oppRem = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
 
-      setText("war-attacks-us", teamSize ? `${ourRem}/${teamSize}` : `${ourRem}`);
-      setText("war-attacks-opp", teamSize ? `${oppRem}/${teamSize}` : `${oppRem}`);
+      const ourUsed = teamSize ? (teamSize - ourRem) : 0;
+      const oppUsed = teamSize ? (teamSize - oppRem) : 0;
 
-      // timer set immediately
+      setText("war-attacks-us", teamSize ? `${ourUsed}/${teamSize}` : `${ourUsed}`);
+      setText("war-attacks-opp", teamSize ? `${oppUsed}/${teamSize}` : `${oppUsed}`);
+
       updateWarTimerOnly();
     }
 
