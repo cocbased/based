@@ -261,10 +261,10 @@
           </div>
 
           <div class="war-substat">
-            <span id="war-destr-us">—</span> <span>％️⃣</span>
+            <span id="war-destr-us">—</span> <span>🎯</span>
           </div>
 
-          <!-- Remaining attacks: remaining/total -->
+          <!-- Attacks used: used/total -->
           <div class="war-substat">
             <span id="war-attacks-us">—</span> <span>⚔️</span>
           </div>
@@ -280,10 +280,10 @@
           </div>
 
           <div class="war-substat">
-            <span id="war-destr-opp">—</span> <span>％️⃣</span>
+            <span id="war-destr-opp">—</span> <span>🎯</span>
           </div>
 
-          <!-- Remaining attacks: remaining/total -->
+          <!-- Attacks used: used/total -->
           <div class="war-substat">
             <span id="war-attacks-opp">—</span> <span>⚔️</span>
           </div>
@@ -380,43 +380,6 @@
       renderWarSection();
     }
 
-    function computeRemainingAndTotalAttacks(teamSize){
-      const total = teamSize * 2;
-
-      // Best case: your JSON provides used attacks (correct)
-      if (typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number") {
-        const ourRem = Math.max(0, total - warData.ourAttacksUsed);
-        const oppRem = Math.max(0, total - warData.oppAttacksUsed);
-        return { total, ourRem, oppRem };
-      }
-
-      // Next best: your JSON provides total remaining attacks (correct)
-      if (typeof warData.ourAttacksRemainingTotal === "number" && typeof warData.oppAttacksRemainingTotal === "number") {
-        const ourRem = Math.max(0, Math.min(total, warData.ourAttacksRemainingTotal));
-        const oppRem = Math.max(0, Math.min(total, warData.oppAttacksRemainingTotal));
-        return { total, ourRem, oppRem };
-      }
-
-      // Fallback: old field (often WRONG because it represents members, not attacks)
-      const fallbackOur = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
-      const fallbackOpp = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
-
-      // If someone is still using the “member count” field, it will usually be <= teamSize.
-      // We refuse to pretend it’s correct remaining attacks if it’s <= teamSize, because that’s exactly the bug you’re seeing.
-      const looksLikeMemberCount = (fallbackOur <= teamSize) && (fallbackOpp <= teamSize);
-
-      if (looksLikeMemberCount) {
-        return { total, ourRem: null, oppRem: null, bad: true };
-      }
-
-      return {
-        total,
-        ourRem: Math.max(0, Math.min(total, fallbackOur)),
-        oppRem: Math.max(0, Math.min(total, fallbackOpp)),
-        bad: false
-      };
-    }
-
     function renderWarSection(){
       setWarVsVisibility(false);
 
@@ -435,14 +398,6 @@
 
       if(!warData || !warData.state){
         setText("war-timer", "Waiting…");
-        setText("war-name-us", "—");
-        setText("war-name-opp", "—");
-        setText("war-stars-us", "—");
-        setText("war-stars-opp", "—");
-        setText("war-destr-us", "—");
-        setText("war-destr-opp", "—");
-        setText("war-attacks-us", "—");
-        setText("war-attacks-opp", "—");
         return;
       }
 
@@ -473,33 +428,30 @@
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
+      // Destruction from war.json
       const ourDestr =
-        (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
         (typeof warData.ourDestructionPercentage === "number") ? warData.ourDestructionPercentage :
+        (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
         null;
 
       const oppDestr =
-        (typeof warData.oppDestruction === "number") ? warData.oppDestruction :
         (typeof warData.oppDestructionPercentage === "number") ? warData.oppDestructionPercentage :
+        (typeof warData.oppDestruction === "number") ? warData.oppDestruction :
         null;
 
       setText("war-destr-us", fmtPct(ourDestr));
       setText("war-destr-opp", fmtPct(oppDestr));
 
-      if (teamSize) {
-        const { total, ourRem, oppRem, bad } = computeRemainingAndTotalAttacks(teamSize);
-
-        if (bad || ourRem === null || oppRem === null) {
-          // This indicates your war.json is still using the "members with attacks left" field.
-          setText("war-attacks-us", `Fix war.json`);
-          setText("war-attacks-opp", `Fix war.json`);
-        } else {
-          setText("war-attacks-us", `${ourRem}/${total}`);
-          setText("war-attacks-opp", `${oppRem}/${total}`);
-        }
+      // ✅ Attacks USED fraction: used/total (total = teamSize*2)
+      if (teamSize && typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number") {
+        const total = teamSize * 2;
+        const ourUsed = Math.max(0, Math.min(total, warData.ourAttacksUsed));
+        const oppUsed = Math.max(0, Math.min(total, warData.oppAttacksUsed));
+        setText("war-attacks-us", `${ourUsed}/${total}`);
+        setText("war-attacks-opp", `${oppUsed}/${total}`);
       } else {
-        setText("war-attacks-us", "—");
-        setText("war-attacks-opp", "—");
+        setText("war-attacks-us", "Updating…");
+        setText("war-attacks-opp", "Updating…");
       }
 
       updateWarTimerOnly();
@@ -640,7 +592,7 @@
     fetchClanStats();
     updateRecurringTimers();
 
-    // tick every second for countdowns (including war timer)
+    // tick every second for countdowns
     setInterval(() => {
       updateRecurringTimers();
       updateWarTimerOnly();
