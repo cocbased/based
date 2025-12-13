@@ -1,0 +1,55 @@
+name: Update Rankings
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch Clash of Stats JSON
+        run: |
+          curl -L \
+            -H "User-Agent: Mozilla/5.0 (compatible; BASEDClanBot/1.0)" \
+            -H "Accept: application/json" \
+            "https://www.clashofstats.com/api/clans/2QQYJC08Y" \
+            -o cos.json
+
+      - name: Build rankings.json
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const cos = JSON.parse(fs.readFileSync('cos.json','utf8'));
+
+          // Defensive parsing: if missing, keep null
+          const rankings = (cos.rankings || {});
+          const trophies = (rankings.trophies || {});
+          const warStreak = (rankings.warStreak || rankings.war_streak || {});
+
+          const out = {
+            globalTrophies: trophies.global ?? null,
+            usaTrophies: trophies.country ?? null,
+            globalWarStreak: warStreak.global ?? null,
+            usaWarStreak: warStreak.country ?? null,
+            updatedAt: new Date().toISOString()
+          };
+
+          fs.writeFileSync('rankings.json', JSON.stringify(out));
+          console.log(out);
+          NODE
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add rankings.json
+          git commit -m "Update rankings.json" || exit 0
+          git push
