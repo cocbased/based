@@ -69,15 +69,6 @@
       text-align: center;
     }
 
-    /* "Last update" back inside the board */
-    .last-update-board {
-      text-align: center;
-      font-size: 12px;
-      opacity: 0.75;
-      margin-bottom: 6px;
-      font-family: monospace;
-    }
-
     .section-title {
       margin: 10px 0 6px;
       font-size: 13px;
@@ -121,7 +112,7 @@
 
     .war-timer {
       font-family: monospace;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 14px;
       margin: 6px 0 10px;
     }
@@ -142,7 +133,7 @@
     }
 
     .war-name {
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -154,7 +145,7 @@
 
     .war-stat {
       font-family: monospace;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 14px;
       margin-top: 6px;
       display: flex;
@@ -165,15 +156,33 @@
 
     .war-substat {
       font-family: monospace;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 14px;
-      margin-top: 6px;
+      margin-top: 8px;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 6px;
-      opacity: 0.9;
+      opacity: 0.95;
     }
+
+    /* Star progress bar */
+    .starbar {
+      width: 100%;
+      max-width: 130px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      margin: 6px auto 0;
+    }
+    .starbar-fill {
+      height: 100%;
+      width: 0%;
+      background: rgba(255,255,255,0.75); /* no colors requested */
+      border-radius: 999px;
+    }
+
     /* ============================ */
 
     .button-container {
@@ -217,7 +226,6 @@
 
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
-    <div id="last-update-board" class="last-update-board">Last update: Loading…</div>
 
     <!-- Rankings (trophies only, hidden unless Top 200) -->
     <div id="rankings-block">
@@ -269,16 +277,34 @@
       <div class="war-grid-3">
         <div>
           <div id="war-name-us" class="war-name">—</div>
-          <div class="war-stat"><span id="war-stars-us">—</span> <span>⭐</span></div>
-          <div class="war-substat"><span id="war-attacks-us">—</span> <span>⚔️</span></div>
+
+          <div class="war-stat">
+            <span id="war-stars-us">—</span> <span>⭐</span>
+          </div>
+          <div class="starbar">
+            <div id="starbar-us" class="starbar-fill"></div>
+          </div>
+
+          <div class="war-substat">
+            <span id="war-attacks-us">—</span> <span>⚔️</span>
+          </div>
         </div>
 
         <div id="war-vs" class="war-vs">VS</div>
 
         <div>
           <div id="war-name-opp" class="war-name">—</div>
-          <div class="war-stat"><span id="war-stars-opp">—</span> <span>⭐</span></div>
-          <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
+
+          <div class="war-stat">
+            <span id="war-stars-opp">—</span> <span>⭐</span>
+          </div>
+          <div class="starbar">
+            <div id="starbar-opp" class="starbar-fill"></div>
+          </div>
+
+          <div class="war-substat">
+            <span id="war-attacks-opp">—</span> <span>⚔️</span>
+          </div>
         </div>
       </div>
     </div>
@@ -301,6 +327,12 @@
     <div class="timer-row">
       <span class="timer-label">League Reset</span>
       <span id="league-reset-timer" class="timer-value">Loading…</span>
+    </div>
+
+    <!-- ✅ LAST ROW in the board (as requested) -->
+    <div class="timer-row">
+      <span class="timer-label">Last Update</span>
+      <span id="last-update-board" class="timer-value">Loading…</span>
     </div>
   </div>
 
@@ -345,6 +377,13 @@
       if(vs) vs.style.display = show ? "block" : "none";
     }
 
+    function setBarWidth(id, pct){
+      const el = document.getElementById(id);
+      if(!el) return;
+      const clamped = Math.max(0, Math.min(100, pct));
+      el.style.width = clamped.toFixed(1) + "%";
+    }
+
     // ===== live "Last update" inside board =====
     let lastUpdatedIso = null;
 
@@ -353,19 +392,19 @@
       if(!el) return;
 
       if(!lastUpdatedIso){
-        el.textContent = "Last update: Loading…";
+        el.textContent = "Loading…";
         return;
       }
 
       const d = new Date(lastUpdatedIso);
       if(isNaN(d.getTime())){
-        el.textContent = "Last update: —";
+        el.textContent = "—";
         return;
       }
 
       const now = new Date();
       const ageSec = Math.max(0, Math.floor((now - d) / 1000));
-      el.textContent = `Last update: ${d.toLocaleString()} (${ageSec}s ago)`;
+      el.textContent = `${d.toLocaleString()} (${ageSec}s ago)`;
     }
 
     function fmtTop200(v){
@@ -400,6 +439,8 @@
         setText("war-stars-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
+        setBarWidth("starbar-us", 0);
+        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -411,6 +452,8 @@
         setText("war-stars-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
+        setBarWidth("starbar-us", 0);
+        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -422,6 +465,8 @@
         setText("war-stars-opp", "—");
         setText("war-attacks-us", "—");
         setText("war-attacks-opp", "—");
+        setBarWidth("starbar-us", 0);
+        setBarWidth("starbar-opp", 0);
         return;
       }
 
@@ -440,14 +485,23 @@
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
-      // ✅ FIX: attacks remaining should be out of (teamSize*2), not teamSize
+      // ✅ star progress bars
+      const ourStarPct = (maxStars ? (ourStars / maxStars) * 100 : 0);
+      const oppStarPct = (maxStars ? (oppStars / maxStars) * 100 : 0);
+      setBarWidth("starbar-us", ourStarPct);
+      setBarWidth("starbar-opp", oppStarPct);
+
+      // ✅ Attacks USED / TOTAL (40 total in 20v20)
       const totalAttacks = (teamSize ? teamSize * 2 : null);
 
-      const ourRem = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
-      const oppRem = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
+      const ourRemaining = (typeof warData.ourAttacksRemaining === "number") ? warData.ourAttacksRemaining : 0;
+      const oppRemaining = (typeof warData.oppAttacksRemaining === "number") ? warData.oppAttacksRemaining : 0;
 
-      setText("war-attacks-us", totalAttacks ? `${ourRem}/${totalAttacks}` : `${ourRem}`);
-      setText("war-attacks-opp", totalAttacks ? `${oppRem}/${totalAttacks}` : `${oppRem}`);
+      const ourUsed = (totalAttacks !== null) ? Math.max(0, totalAttacks - ourRemaining) : 0;
+      const oppUsed = (totalAttacks !== null) ? Math.max(0, totalAttacks - oppRemaining) : 0;
+
+      setText("war-attacks-us", totalAttacks ? `${ourUsed}/${totalAttacks}` : `${ourUsed}`);
+      setText("war-attacks-opp", totalAttacks ? `${oppUsed}/${totalAttacks}` : `${oppUsed}`);
 
       updateWarTimerOnly();
     }
@@ -486,10 +540,7 @@
           return;
         }
         clanStats = await res.json();
-
-        // board "Last update" comes from updatedAt
         lastUpdatedIso = (clanStats && clanStats.updatedAt) ? clanStats.updatedAt : null;
-
         renderClanStats();
       } catch(e){
         clanStats = null;
@@ -594,7 +645,7 @@
     updateRecurringTimers();
     updateLastUpdateLine();
 
-    // tick every second for countdowns + live "last update age"
+    // tick every second for countdowns + live last update age
     setInterval(() => {
       updateRecurringTimers();
       updateWarTimerOnly();
@@ -604,6 +655,16 @@
     // refetch JSON every 60s (best-effort; background tabs may throttle)
     setInterval(fetchWarData, 60*1000);
     setInterval(fetchClanStats, 60*1000);
+
+    // ✅ SNAP REFRESH when app/tab becomes visible again
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        fetchWarData();
+        fetchClanStats();
+        updateRecurringTimers();
+        updateLastUpdateLine();
+      }
+    });
   </script>
 </body>
 </html>
