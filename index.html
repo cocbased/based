@@ -237,13 +237,13 @@
       <span id="war-record" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ NEW: Last 25 Wars (added) -->
+    <!-- ✅ Last 25 Wars -->
     <div class="timer-row">
       <span class="timer-label">Last 25 Wars</span>
       <span id="war-last25" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ Last 50 Wars (kept) -->
+    <!-- ✅ Last 50 Wars -->
     <div class="timer-row">
       <span class="timer-label">Last 50 Wars</span>
       <span id="war-last50" class="timer-value">Loading…</span>
@@ -373,6 +373,16 @@
       if(typeof v !== "number" || !isFinite(v)) return "—";
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
+    }
+
+    function fmtWLT(obj){
+      // expects {wins, losses, ties, sample}
+      if(!obj || typeof obj !== "object") return "—";
+      const w = (typeof obj.wins === "number") ? obj.wins : null;
+      const l = (typeof obj.losses === "number") ? obj.losses : null;
+      const t = (typeof obj.ties === "number") ? obj.ties : null;
+      if(w === null || l === null || t === null) return "—";
+      return `${w}-${l}-${t}`;
     }
 
     // ---- war.json ----
@@ -542,11 +552,12 @@
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-        const last25 = clanStats.war.last25Record;
-        const last50 = clanStats.war.last50Record;
+        // ✅ FIX: read object fields written by the Python ("last25" / "last50")
+        const last25Obj = clanStats.war.last25;
+        const last50Obj = clanStats.war.last50;
 
-        setText("war-last25", (typeof last25 === "string" && last25.length) ? last25 : "—");
-        setText("war-last50", (typeof last50 === "string" && last50.length) ? last50 : "—");
+        setText("war-last25", fmtWLT(last25Obj));
+        setText("war-last50", fmtWLT(last50Obj));
       } else {
         setText("war-record", "—");
         setText("war-last25", "—");
