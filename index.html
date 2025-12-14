@@ -237,7 +237,7 @@
       <span id="war-record" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ NEW: Last 50 Wars -->
+    <!-- ✅ Last 50 Wars -->
     <div class="timer-row">
       <span class="timer-label">Last 50 Wars</span>
       <span id="war-last50" class="timer-value">Loading…</span>
@@ -271,7 +271,6 @@
             <span id="war-destr-us">—</span> <span>🎯</span>
           </div>
 
-          <!-- Attacks used: used/total -->
           <div class="war-substat">
             <span id="war-attacks-us">—</span> <span>⚔️</span>
           </div>
@@ -290,7 +289,6 @@
             <span id="war-destr-opp">—</span> <span>🎯</span>
           </div>
 
-          <!-- Attacks used: used/total -->
           <div class="war-substat">
             <span id="war-attacks-opp">—</span> <span>⚔️</span>
           </div>
@@ -503,6 +501,7 @@
       }
     }
 
+    // ✅ FIXED: reads last50Record as a string like "W-L-T"
     function renderClanStats(){
       if(!clanStats){
         setRankingsVisibility(false);
@@ -538,13 +537,8 @@
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-        // ✅ NEW: Last 50 wars record
-        const last50 = clanStats.war.last50;
-        if(last50 && typeof last50.wins === "number" && typeof last50.losses === "number" && typeof last50.ties === "number"){
-          setText("war-last50", `${last50.wins}-${last50.losses}-${last50.ties}`);
-        } else {
-          setText("war-last50", "—");
-        }
+        const last50Str = clanStats.war.last50Record;
+        setText("war-last50", (typeof last50Str === "string" && last50Str.length) ? last50Str : "—");
       } else {
         setText("war-record", "—");
         setText("war-last50", "—");
