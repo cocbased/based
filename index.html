@@ -236,6 +236,13 @@
       <span class="timer-label">War Record</span>
       <span id="war-record" class="timer-value">Loading…</span>
     </div>
+
+    <!-- ✅ NEW: Last 50 Wars -->
+    <div class="timer-row">
+      <span class="timer-label">Last 50 Wars</span>
+      <span id="war-last50" class="timer-value">Loading…</span>
+    </div>
+
     <div class="timer-row">
       <span class="timer-label">Current Streak</span>
       <span id="war-streak" class="timer-value">Loading…</span>
@@ -428,7 +435,6 @@
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
-      // Destruction from war.json
       const ourDestr =
         (typeof warData.ourDestructionPercentage === "number") ? warData.ourDestructionPercentage :
         (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
@@ -442,7 +448,7 @@
       setText("war-destr-us", fmtPct(ourDestr));
       setText("war-destr-opp", fmtPct(oppDestr));
 
-      // ✅ Attacks USED fraction: used/total (total = teamSize*2)
+      // Attacks USED fraction: used/total (total = teamSize*2)
       if (teamSize && typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number") {
         const total = teamSize * 2;
         const ourUsed = Math.max(0, Math.min(total, warData.ourAttacksUsed));
@@ -503,6 +509,7 @@
         setText("cwl-league", "—");
         setText("cwl-finish", "—");
         setText("war-record", "—");
+        setText("war-last50", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
         return;
@@ -530,8 +537,17 @@
         setText("war-record", `${w}-${l}-${t}`);
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+
+        // ✅ NEW: Last 50 wars record
+        const last50 = clanStats.war.last50;
+        if(last50 && typeof last50.wins === "number" && typeof last50.losses === "number" && typeof last50.ties === "number"){
+          setText("war-last50", `${last50.wins}-${last50.losses}-${last50.ties}`);
+        } else {
+          setText("war-last50", "—");
+        }
       } else {
         setText("war-record", "—");
+        setText("war-last50", "—");
         setText("war-streak", "—");
         setText("war-longest", "—");
       }
