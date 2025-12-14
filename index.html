@@ -104,6 +104,9 @@
       flex: 1;
     }
 
+    /* ✅ SAFETY: hide rankings by default; JS will show only if ranked */
+    #rankings-block { display: none; }
+
     /* ===== Current War board ===== */
     .war-board { text-align: center; margin-top: 6px; }
 
@@ -237,13 +240,11 @@
       <span id="war-record" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ Last 25 Wars -->
     <div class="timer-row">
       <span class="timer-label">Last 25 Wars</span>
       <span id="war-last25" class="timer-value">Loading…</span>
     </div>
 
-    <!-- ✅ Last 50 Wars -->
     <div class="timer-row">
       <span class="timer-label">Last 50 Wars</span>
       <span id="war-last50" class="timer-value">Loading…</span>
@@ -375,12 +376,15 @@
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
 
-    function fmtWLT(obj){
-      // expects {wins, losses, ties, sample}
-      if(!obj || typeof obj !== "object") return "—";
-      const w = (typeof obj.wins === "number") ? obj.wins : null;
-      const l = (typeof obj.losses === "number") ? obj.losses : null;
-      const t = (typeof obj.ties === "number") ? obj.ties : null;
+    function fmtWLTAny(val){
+      // Accept either:
+      // 1) object {wins, losses, ties, sample}
+      // 2) string "W-L-T"
+      if(typeof val === "string" && val.trim().length) return val.trim();
+      if(!val || typeof val !== "object") return "—";
+      const w = (typeof val.wins === "number") ? val.wins : null;
+      const l = (typeof val.losses === "number") ? val.losses : null;
+      const t = (typeof val.ties === "number") ? val.ties : null;
       if(w === null || l === null || t === null) return "—";
       return `${w}-${l}-${t}`;
     }
@@ -552,13 +556,14 @@
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-        // ✅ FIX: read object fields written by the Python ("last25" / "last50")
-        const last25Obj = clanStats.war.last25;
-        const last50Obj = clanStats.war.last50;
+        // ✅ Works with either JSON style
+        const last25Val = (clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record;
+        const last50Val = (clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record;
 
-        setText("war-last25", fmtWLT(last25Obj));
-        setText("war-last50", fmtWLT(last50Obj));
+        setText("war-last25", fmtWLTAny(last25Val));
+        setText("war-last50", fmtWLTAny(last50Val));
       } else {
+        setRankingsVisibility(false);
         setText("war-record", "—");
         setText("war-last25", "—");
         setText("war-last50", "—");
