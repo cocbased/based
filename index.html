@@ -14,190 +14,189 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
   <style>
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      align-items: center;
-      justify-content: flex-start;
-      text-align: center;
-      padding: 24px 16px;
-      box-sizing: border-box;
+    body{
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      padding:24px 16px;
+      box-sizing:border-box;
     }
 
-    .app-icon {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 12px;
-      border-radius: 24px;
-      object-fit: contain;
+    .app-icon{
+      width:120px;height:120px;
+      margin-bottom:12px;
+      border-radius:24px;
+      object-fit:contain;
     }
 
-    .logo {
-      width: 100%;
-      max-width: 300px;
-      height: auto;
-      margin-bottom: 16px;
-      border-radius: 0;
-      object-fit: contain;
+    .logo{
+      width:100%;
+      max-width:300px;
+      height:auto;
+      margin-bottom:16px;
+      border-radius:0;
+      object-fit:contain;
     }
 
-    .subtitle {
-      margin: 8px 0 24px;
-      font-size: 14px;
-      opacity: 0.7;
+    .subtitle{
+      margin:8px 0 24px;
+      font-size:14px;
+      opacity:.7;
     }
 
-    .timers {
-      width: 100%;
-      max-width: 340px;
-      margin-bottom: 24px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      background: #0b1829;
-      border: 1px solid #2b3b55;
-      box-sizing: border-box;
-      text-align: left;
+    .timers{
+      width:100%;
+      max-width:340px;
+      margin-bottom:24px;
+      padding:12px 16px;
+      border-radius:12px;
+      background:#0b1829;
+      border:1px solid #2b3b55;
+      box-sizing:border-box;
+      text-align:left;
     }
 
-    .timers-title {
-      margin: 0 0 6px;
-      font-size: 16px;
-      text-align: center;
+    .timers-title{
+      margin:0 0 6px;
+      font-size:16px;
+      text-align:center;
     }
 
-    .section-title {
-      margin: 10px 0 6px;
-      font-size: 13px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      opacity: 0.75;
-      text-align: center;
+    .section-title{
+      margin:10px 0 6px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
     }
 
-    .divider {
-      height: 1px;
-      background: rgba(255,255,255,0.12);
-      margin: 10px 0;
+    .divider{
+      height:1px;
+      background:rgba(255,255,255,.12);
+      margin:10px 0;
     }
 
-    .timer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-      padding: 2px 0;
-      gap: 12px;
+    .timer-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:14px;
+      padding:2px 0;
+      gap:12px;
     }
 
-    .timer-label {
-      font-weight: 600;
-      white-space: nowrap;
+    .timer-label{
+      font-weight:600;
+      white-space:nowrap;
     }
 
-    .timer-value {
-      font-family: monospace;
-      text-align: right;
-      flex: 1;
+    .timer-value{
+      font-family:monospace;
+      text-align:right;
+      flex:1;
     }
 
     /* ✅ SAFETY: hide rankings by default; JS will show only if ranked */
-    #rankings-block { display: none; }
+    #rankings-block{ display:none; }
 
     /* ===== Current War board ===== */
-    .war-board { text-align: center; margin-top: 6px; }
+    .war-board{ text-align:center; margin-top:6px; }
 
-    .war-timer {
-      font-family: monospace;
-      font-weight: 900;
-      font-size: 14px;
-      margin: 6px 0 10px;
+    .war-timer{
+      font-family:monospace;
+      font-weight:900;
+      font-size:14px;
+      margin:6px 0 10px;
     }
 
-    .war-grid-3 {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items: center;
+    .war-grid-3{
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      gap:10px;
+      align-items:center;
     }
 
-    .war-vs {
-      font-weight: 900;
-      font-size: 14px;
-      opacity: 0.7;
-      text-align: center;
-      padding: 0 2px;
+    .war-vs{
+      font-weight:900;
+      font-size:14px;
+      opacity:.7;
+      text-align:center;
+      padding:0 2px;
     }
 
-    .war-name {
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .war-name{
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      margin-bottom:6px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    .war-stat {
-      font-family: monospace;
-      font-weight: 900;
-      font-size: 14px;
-      margin-top: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
+    .war-stat{
+      font-family:monospace;
+      font-weight:900;
+      font-size:14px;
+      margin-top:6px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
     }
 
-    .war-substat {
-      font-family: monospace;
-      font-weight: 900;
-      font-size: 14px;
-      margin-top: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      opacity: 0.95;
+    .war-substat{
+      font-family:monospace;
+      font-weight:900;
+      font-size:14px;
+      margin-top:8px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      opacity:.95;
     }
 
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 100%;
-      max-width: 280px;
+    .button-container{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      width:100%;
+      max-width:280px;
     }
 
-    button {
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background-color: #ffffff;
-      color: #000000;
+    button{
+      padding:12px;
+      font-size:16px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      background-color:#fff;
+      color:#000;
     }
 
-    .install-button {
-      background-color: #ffcc00;
-      color: #000;
-      border: 2px solid #000;
-      padding: 12px 20px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
+    .install-button{
+      background-color:#ffcc00;
+      color:#000;
+      border:2px solid #000;
+      padding:12px 20px;
+      font-weight:700;
+      border-radius:8px;
+      cursor:pointer;
     }
   </style>
 
   <script>
-    function openLink(url) { window.location.href = url; }
+    function openLink(url){ window.location.href = url; }
   </script>
 </head>
 
@@ -205,10 +204,9 @@
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
   <p class="subtitle">EST DECEMBER 2023</p>
-  <p class="subtitle" style="font-size: 1.5em; font-weight: bold; color: white; background: red; padding: 6px 12px; display: inline-block;">
-  🛠️ UNDER MAINTENANCE 🛠️
+  <p class="subtitle" style="font-size:1.5em;font-weight:bold;color:white;background:red;padding:6px 12px;display:inline-block;">
+    🛠️ UNDER MAINTENANCE 🛠️
   </p>
-
 
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
@@ -267,7 +265,6 @@
     <div class="divider"></div>
 
     <div class="section-title">Current War</div>
-
     <div class="war-board">
       <div id="war-timer" class="war-timer">Loading…</div>
 
@@ -408,8 +405,7 @@
       try{
         const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok) warData = null;
-        else warData = await res.json();
+        warData = res.ok ? await res.json() : null;
       } catch(e){
         warData = null;
       }
@@ -421,43 +417,43 @@
       setWarVsVisibility(false);
 
       if(!warFetched){
-        setText("war-timer", "Loading…");
-        setText("war-name-us", "Loading…");
-        setText("war-name-opp", "Loading…");
-        setText("war-stars-us", "—");
-        setText("war-stars-opp", "—");
-        setText("war-destr-us", "—");
-        setText("war-destr-opp", "—");
-        setText("war-attacks-us", "—");
-        setText("war-attacks-opp", "—");
+        setText("war-timer","Loading…");
+        setText("war-name-us","Loading…");
+        setText("war-name-opp","Loading…");
+        setText("war-stars-us","—");
+        setText("war-stars-opp","—");
+        setText("war-destr-us","—");
+        setText("war-destr-opp","—");
+        setText("war-attacks-us","—");
+        setText("war-attacks-opp","—");
         return;
       }
 
       if(!warData || !warData.state){
-        setText("war-timer", "Waiting…");
+        setText("war-timer","Waiting…");
         return;
       }
 
       if(warData.state === "notInWar"){
-        setText("war-timer", "No war started");
-        setText("war-name-us", "—");
-        setText("war-name-opp", "—");
-        setText("war-stars-us", "—");
-        setText("war-stars-opp", "—");
-        setText("war-destr-us", "—");
-        setText("war-destr-opp", "—");
-        setText("war-attacks-us", "—");
-        setText("war-attacks-opp", "—");
+        setText("war-timer","No war started");
+        setText("war-name-us","—");
+        setText("war-name-opp","—");
+        setText("war-stars-us","—");
+        setText("war-stars-opp","—");
+        setText("war-destr-us","—");
+        setText("war-destr-opp","—");
+        setText("war-attacks-us","—");
+        setText("war-attacks-opp","—");
         return;
       }
 
       setWarVsVisibility(true);
 
-      setText("war-name-us", (warData.ourName || "US"));
-      setText("war-name-opp", (warData.oppName || "OPPONENT"));
+      setText("war-name-us",(warData.ourName || "US"));
+      setText("war-name-opp",(warData.oppName || "OPPONENT"));
 
       const teamSize = (typeof warData.teamSize === "number") ? warData.teamSize : null;
-      const maxStars = (teamSize ? teamSize * 3 : null);
+      const maxStars = teamSize ? teamSize * 3 : null;
 
       const ourStars = (typeof warData.ourStars === "number") ? warData.ourStars : 0;
       const oppStars = (typeof warData.oppStars === "number") ? warData.oppStars : 0;
@@ -478,15 +474,15 @@
       setText("war-destr-us", fmtPct(ourDestr));
       setText("war-destr-opp", fmtPct(oppDestr));
 
-      if (teamSize && typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number") {
+      if(teamSize && typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number"){
         const total = teamSize * 2;
         const ourUsed = Math.max(0, Math.min(total, warData.ourAttacksUsed));
         const oppUsed = Math.max(0, Math.min(total, warData.oppAttacksUsed));
         setText("war-attacks-us", `${ourUsed}/${total}`);
         setText("war-attacks-opp", `${oppUsed}/${total}`);
       } else {
-        setText("war-attacks-us", "Updating…");
-        setText("war-attacks-opp", "Updating…");
+        setText("war-attacks-us","Updating…");
+        setText("war-attacks-opp","Updating…");
       }
 
       updateWarTimerOnly();
@@ -519,37 +515,28 @@
       try{
         const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok){
-          clanStats = null;
-          renderClanStats();
-          return;
-        }
-        clanStats = await res.json();
-        renderClanStats();
+        clanStats = res.ok ? await res.json() : null;
       } catch(e){
         clanStats = null;
-        renderClanStats();
       }
+      renderClanStats();
     }
 
     function renderClanStats(){
       if(!clanStats){
         setRankingsVisibility(false);
-        setText("cwl-league", "—");
-        setText("cwl-finish", "—");
-        setText("war-record", "—");
-        setText("war-last25", "—");
-        setText("war-last50", "—");
-        setText("war-streak", "—");
-        setText("war-longest", "—");
+        setText("cwl-league","—");
+        setText("cwl-finish","—");
+        setText("war-record","—");
+        setText("war-last25","—");
+        setText("war-last50","—");
+        setText("war-streak","—");
+        setText("war-longest","—");
         return;
       }
 
       const r = clanStats.rankings || {};
-      const hasAnyRank =
-        (typeof r.globalTrophies === "number") ||
-        (typeof r.usaTrophies === "number");
-
+      const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
       setRankingsVisibility(hasAnyRank);
 
       if(hasAnyRank){
@@ -564,11 +551,11 @@
         const w = clanStats.war.wins ?? 0;
         const l = clanStats.war.losses ?? 0;
         const t = clanStats.war.ties ?? 0;
+
         setText("war-record", `${w}-${l}-${t}`);
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-        // ✅ Works with either JSON style
         const last25Val = (clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record;
         const last50Val = (clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record;
 
@@ -576,11 +563,11 @@
         setText("war-last50", fmtWLTAny(last50Val));
       } else {
         setRankingsVisibility(false);
-        setText("war-record", "—");
-        setText("war-last25", "—");
-        setText("war-last50", "—");
-        setText("war-streak", "—");
-        setText("war-longest", "—");
+        setText("war-record","—");
+        setText("war-last25","—");
+        setText("war-last50","—");
+        setText("war-streak","—");
+        setText("war-longest","—");
       }
     }
 
@@ -649,7 +636,7 @@
     setInterval(fetchClanStats, 5*1000);
 
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
+      if(document.visibilityState === "visible"){
         fetchWarData();
         fetchClanStats();
         updateRecurringTimers();
