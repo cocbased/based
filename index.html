@@ -634,8 +634,8 @@
       updateWarTimerOnly();
     }, 1000);
 
-    setInterval(fetchWarData, 60*1000);
-    setInterval(fetchClanStats, 60*1000);
+    setInterval(fetchWarData, 5*1000);
+    setInterval(fetchClanStats, 5*1000);
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
