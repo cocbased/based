@@ -166,6 +166,12 @@
       opacity:.95;
     }
 
+    /* ✅ green highlight */
+    .war-green{
+      color:#38d172; /* green */
+      font-weight:900;
+    }
+
     .button-container{
       display:flex;
       flex-direction:column;
@@ -204,10 +210,6 @@
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
   <p class="subtitle">EST DECEMBER 2023</p>
-  <!--
-  <p class="subtitle" style="font-size:1.5em;font-weight:bold;color:white;background:red;padding:6px 12px;display:inline-block;">
-    🛠️ UNDER MAINTENANCE 🛠️
-  </p>-->
 
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
@@ -368,6 +370,12 @@
       if(vs) vs.style.display = show ? "block" : "none";
     }
 
+    function setClass(id, className, on){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+
     function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
       return "Not in top 200";
@@ -380,9 +388,6 @@
     }
 
     function fmtWLTAny(val){
-      // Accept either:
-      // 1) object {wins, losses, ties, sample}
-      // 2) string "W-L-T"
       if(typeof val === "string" && val.trim().length) return val.trim();
       if(!val || typeof val !== "object") return "—";
       const w = (typeof val.wins === "number") ? val.wins : null;
@@ -390,6 +395,17 @@
       const t = (typeof val.ties === "number") ? val.ties : null;
       if(w === null || l === null || t === null) return "—";
       return `${w}-${l}-${t}`;
+    }
+
+    // ✅ exact-only rules
+    function isFullStars(stars, teamSize){
+      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
+      return stars === teamSize * 3; // only full fraction like 75/75
+    }
+
+    function isFullDestruction(pct){
+      if(typeof pct !== "number" || !isFinite(pct)) return false;
+      return pct === 100; // only exact 100%
     }
 
     // ===============================
@@ -485,6 +501,19 @@
         setText("war-attacks-us","Updating…");
         setText("war-attacks-opp","Updating…");
       }
+
+      // ✅ independent greens (stars vs destruction)
+      const ourStarsGreen = isFullStars(ourStars, teamSize);
+      const oppStarsGreen = isFullStars(oppStars, teamSize);
+
+      const ourDestrGreen = isFullDestruction(ourDestr);
+      const oppDestrGreen = isFullDestruction(oppDestr);
+
+      setClass("war-stars-us","war-green",ourStarsGreen);
+      setClass("war-stars-opp","war-green",oppStarsGreen);
+
+      setClass("war-destr-us","war-green",ourDestrGreen);
+      setClass("war-destr-opp","war-green",oppDestrGreen);
 
       updateWarTimerOnly();
     }
