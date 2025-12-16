@@ -168,7 +168,7 @@
 
     /* ✅ green highlight */
     .war-green{
-      color:#38d172; /* green */
+      color:#38d172;
       font-weight:900;
     }
 
@@ -376,6 +376,13 @@
       el.classList.toggle(className, !!on);
     }
 
+    function resetWarHighlights(){
+      // ✅ ensure a new war / notInWar clears any previous green state
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => {
+        setClass(id, "war-green", false);
+      });
+    }
+
     function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
       return "Not in top 200";
@@ -431,6 +438,7 @@
     }
 
     function renderWarSection(){
+      resetWarHighlights();   // ✅ always start clean
       setWarVsVisibility(false);
 
       if(!warFetched){
@@ -503,17 +511,10 @@
       }
 
       // ✅ independent greens (stars vs destruction)
-      const ourStarsGreen = isFullStars(ourStars, teamSize);
-      const oppStarsGreen = isFullStars(oppStars, teamSize);
-
-      const ourDestrGreen = isFullDestruction(ourDestr);
-      const oppDestrGreen = isFullDestruction(oppDestr);
-
-      setClass("war-stars-us","war-green",ourStarsGreen);
-      setClass("war-stars-opp","war-green",oppStarsGreen);
-
-      setClass("war-destr-us","war-green",ourDestrGreen);
-      setClass("war-destr-opp","war-green",oppDestrGreen);
+      setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
+      setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
+      setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
+      setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
 
       updateWarTimerOnly();
     }
