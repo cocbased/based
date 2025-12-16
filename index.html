@@ -377,7 +377,6 @@
     }
 
     function resetWarHighlights(){
-      // ✅ ensure a new war / notInWar clears any previous green state
       ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => {
         setClass(id, "war-green", false);
       });
@@ -404,15 +403,14 @@
       return `${w}-${l}-${t}`;
     }
 
-    // ✅ exact-only rules
     function isFullStars(stars, teamSize){
       if(typeof stars !== "number" || typeof teamSize !== "number") return false;
-      return stars === teamSize * 3; // only full fraction like 75/75
+      return stars === teamSize * 3;
     }
 
     function isFullDestruction(pct){
       if(typeof pct !== "number" || !isFinite(pct)) return false;
-      return pct === 100; // only exact 100%
+      return pct === 100;
     }
 
     // ===============================
@@ -425,11 +423,39 @@
     let warData = null;
     let warFetched = false;
 
+    // ✅ persistent cache for last known non-notInWar
+    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
+    let lastWarSnapshot = null;
+
+    function loadLastWarSnapshot(){
+      try{
+        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(obj && typeof obj === "object" && obj.state && obj.state !== "notInWar") return obj;
+      } catch(e){}
+      return null;
+    }
+
+    function saveLastWarSnapshot(w){
+      try{
+        localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w));
+      } catch(e){}
+    }
+
+    lastWarSnapshot = loadLastWarSnapshot();
+
     async function fetchWarData(){
       try{
         const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         warData = res.ok ? await res.json() : null;
+
+        // ✅ update cache anytime we have a real war state
+        if(warData && warData.state && warData.state !== "notInWar"){
+          lastWarSnapshot = warData;
+          saveLastWarSnapshot(warData);
+        }
       } catch(e){
         warData = null;
       }
@@ -438,7 +464,7 @@
     }
 
     function renderWarSection(){
-      resetWarHighlights();   // ✅ always start clean
+      resetWarHighlights();
       setWarVsVisibility(false);
 
       if(!warFetched){
@@ -454,12 +480,24 @@
         return;
       }
 
-      if(!warData || !warData.state){
+      // ✅ choose what we display:
+      // - show warData if it's active/prep/etc
+      // - if notInWar, fall back to lastWarSnapshot
+      let display = warData;
+
+      if(display && display.state === "notInWar"){
+        if(lastWarSnapshot){
+          display = lastWarSnapshot;
+        }
+      }
+
+      if(!display || !display.state){
         setText("war-timer","Waiting…");
         return;
       }
 
-      if(warData.state === "notInWar"){
+      // If still notInWar and no cache, keep blank
+      if(display.state === "notInWar"){
         setText("war-timer","No war started");
         setText("war-name-us","—");
         setText("war-name-opp","—");
@@ -472,37 +510,40 @@
         return;
       }
 
+      // ✅ if we're showing cached war while not in war, label it clearly
+      const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
+
       setWarVsVisibility(true);
 
-      setText("war-name-us",(warData.ourName || "US"));
-      setText("war-name-opp",(warData.oppName || "OPPONENT"));
+      setText("war-name-us",(display.ourName || "US"));
+      setText("war-name-opp",(display.oppName || "OPPONENT"));
 
-      const teamSize = (typeof warData.teamSize === "number") ? warData.teamSize : null;
+      const teamSize = (typeof display.teamSize === "number") ? display.teamSize : null;
       const maxStars = teamSize ? teamSize * 3 : null;
 
-      const ourStars = (typeof warData.ourStars === "number") ? warData.ourStars : 0;
-      const oppStars = (typeof warData.oppStars === "number") ? warData.oppStars : 0;
+      const ourStars = (typeof display.ourStars === "number") ? display.ourStars : 0;
+      const oppStars = (typeof display.oppStars === "number") ? display.oppStars : 0;
 
       setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
       setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
       const ourDestr =
-        (typeof warData.ourDestructionPercentage === "number") ? warData.ourDestructionPercentage :
-        (typeof warData.ourDestruction === "number") ? warData.ourDestruction :
+        (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
+        (typeof display.ourDestruction === "number") ? display.ourDestruction :
         null;
 
       const oppDestr =
-        (typeof warData.oppDestructionPercentage === "number") ? warData.oppDestructionPercentage :
-        (typeof warData.oppDestruction === "number") ? warData.oppDestruction :
+        (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
+        (typeof display.oppDestruction === "number") ? display.oppDestruction :
         null;
 
       setText("war-destr-us", fmtPct(ourDestr));
       setText("war-destr-opp", fmtPct(oppDestr));
 
-      if(teamSize && typeof warData.ourAttacksUsed === "number" && typeof warData.oppAttacksUsed === "number"){
+      if(teamSize && typeof display.ourAttacksUsed === "number" && typeof display.oppAttacksUsed === "number"){
         const total = teamSize * 2;
-        const ourUsed = Math.max(0, Math.min(total, warData.ourAttacksUsed));
-        const oppUsed = Math.max(0, Math.min(total, warData.oppAttacksUsed));
+        const ourUsed = Math.max(0, Math.min(total, display.ourAttacksUsed));
+        const oppUsed = Math.max(0, Math.min(total, display.oppAttacksUsed));
         setText("war-attacks-us", `${ourUsed}/${total}`);
         setText("war-attacks-opp", `${oppUsed}/${total}`);
       } else {
@@ -510,29 +551,43 @@
         setText("war-attacks-opp","Updating…");
       }
 
-      // ✅ independent greens (stars vs destruction)
       setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
       setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
       setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
       setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
 
-      updateWarTimerOnly();
+      updateWarTimerOnly(showingPrevious, display);
     }
 
-    function updateWarTimerOnly(){
+    function updateWarTimerOnly(isPrevious, displayOverride){
       const warElem = document.getElementById("war-timer");
       if(!warElem) return;
 
-      if(!warFetched || !warData || !warData.state){
+      const src = displayOverride || warData;
+
+      if(!src || !src.state){
         warElem.textContent = "Waiting…";
         return;
       }
-      if(warData.state === "notInWar" || !warData.warEndIso){
+
+      // if we're not in war but showing previous
+      if(isPrevious){
+        if(!src.warEndIso){
+          warElem.textContent = "Previous war";
+          return;
+        }
+        const end = new Date(src.warEndIso);
+        if(isNaN(end.getTime())) warElem.textContent = "Previous war";
+        else warElem.textContent = "Previous war ended";
+        return;
+      }
+
+      if(src.state === "notInWar" || !src.warEndIso){
         warElem.textContent = "No war started";
         return;
       }
 
-      const end = new Date(warData.warEndIso);
+      const end = new Date(src.warEndIso);
       const now = new Date();
       if(isNaN(end.getTime())) warElem.textContent = "No war started";
       else if(now >= end) warElem.textContent = "War ended";
@@ -659,7 +714,7 @@
 
     setInterval(() => {
       updateRecurringTimers();
-      updateWarTimerOnly();
+      updateWarTimerOnly(false, null);
     }, 1000);
 
     // ✅ 5-second JSON refresh
