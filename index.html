@@ -172,6 +172,12 @@
       font-weight:900;
     }
 
+    /* ✅ record green (for 1.000 only) */
+    .record-green{
+      color:#38d172;
+      font-weight:900;
+    }
+
     .button-container{
       display:flex;
       flex-direction:column;
@@ -244,6 +250,12 @@
     <div class="timer-row">
       <span class="timer-label">War Record</span>
       <span id="war-record" class="timer-value">Loading…</span>
+    </div>
+
+    <!-- ✅ NEW: last 10 wars -->
+    <div class="timer-row">
+      <span class="timer-label">Last 10 Wars</span>
+      <span id="war-last10" class="timer-value">Loading…</span>
     </div>
 
     <div class="timer-row">
@@ -414,6 +426,42 @@
     }
 
     // ===============================
+    // ✅ Win% formatting (decimal)
+    // ===============================
+    function winPctFromWLT(w, l, t){
+      const total = (w|0) + (l|0) + (t|0);
+      if(total <= 0) return null;
+      return (w|0) / total;
+    }
+
+    function fmtPctDecimal(p){
+      if(typeof p !== "number" || !isFinite(p)) return "";
+      return ` (${p.toFixed(3)})`;
+    }
+
+    // For lastN objects: {"wins","losses","ties","sample"}
+    function fmtWLTWithPctObj(obj){
+      if(!obj || typeof obj !== "object") return { text: "—", pct: null };
+      const w = (typeof obj.wins === "number") ? obj.wins : null;
+      const l = (typeof obj.losses === "number") ? obj.losses : null;
+      const t = (typeof obj.ties === "number") ? obj.ties : null;
+      if(w === null || l === null || t === null) return { text: "—", pct: null };
+      const pct = winPctFromWLT(w,l,t);
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct };
+    }
+
+    // For all-time record (wins,losses,ties)
+    function fmtWLTWithPctNums(w,l,t){
+      const pct = winPctFromWLT(w,l,t);
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct };
+    }
+
+    function isPerfectPct(p){
+      // exactly 1.000 only
+      return typeof p === "number" && isFinite(p) && p === 1;
+    }
+
+    // ===============================
     // ✅ RAW endpoints (no Pages cache)
     // ===============================
     const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
@@ -480,9 +528,6 @@
         return;
       }
 
-      // ✅ choose what we display:
-      // - show warData if it's active/prep/etc
-      // - if notInWar, fall back to lastWarSnapshot
       let display = warData;
 
       if(display && display.state === "notInWar"){
@@ -496,7 +541,6 @@
         return;
       }
 
-      // If still notInWar and no cache, keep blank
       if(display.state === "notInWar"){
         setText("war-timer","No war started");
         setText("war-name-us","—");
@@ -510,7 +554,6 @@
         return;
       }
 
-      // ✅ if we're showing cached war while not in war, label it clearly
       const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
 
       setWarVsVisibility(true);
@@ -570,7 +613,6 @@
         return;
       }
 
-      // if we're not in war but showing previous
       if(isPrevious){
         if(!src.warEndIso){
           warElem.textContent = "Previous war";
@@ -609,11 +651,18 @@
     }
 
     function renderClanStats(){
+      // clear any prior greens
+      setClass("war-record","record-green", false);
+      setClass("war-last10","record-green", false);
+      setClass("war-last25","record-green", false);
+      setClass("war-last50","record-green", false);
+
       if(!clanStats){
         setRankingsVisibility(false);
         setText("cwl-league","—");
         setText("cwl-finish","—");
         setText("war-record","—");
+        setText("war-last10","—");
         setText("war-last25","—");
         setText("war-last50","—");
         setText("war-streak","—");
@@ -638,18 +687,32 @@
         const l = clanStats.war.losses ?? 0;
         const t = clanStats.war.ties ?? 0;
 
-        setText("war-record", `${w}-${l}-${t}`);
+        const rec = fmtWLTWithPctNums(w,l,t);
+        setText("war-record", rec.text);
+        setClass("war-record", "record-green", isPerfectPct(rec.pct));
+
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
+        const last10Val = clanStats.war.last10;
         const last25Val = (clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record;
         const last50Val = (clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record;
 
-        setText("war-last25", fmtWLTAny(last25Val));
-        setText("war-last50", fmtWLTAny(last50Val));
+        const l10 = fmtWLTWithPctObj(last10Val);
+        const l25 = fmtWLTWithPctObj(last25Val);
+        const l50 = fmtWLTWithPctObj(last50Val);
+
+        setText("war-last10", l10.text);
+        setText("war-last25", l25.text);
+        setText("war-last50", l50.text);
+
+        setClass("war-last10","record-green", isPerfectPct(l10.pct));
+        setClass("war-last25","record-green", isPerfectPct(l25.pct));
+        setClass("war-last50","record-green", isPerfectPct(l50.pct));
       } else {
         setRankingsVisibility(false);
         setText("war-record","—");
+        setText("war-last10","—");
         setText("war-last25","—");
         setText("war-last50","—");
         setText("war-streak","—");
