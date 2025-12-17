@@ -51,6 +51,20 @@
       opacity:.7;
     }
 
+    /* ✅ clickable clan tag style */
+    .clan-tag-link{
+      color:#fff;
+      text-decoration:none;
+      opacity:.85;
+      font-size:14px;
+      display:inline-block;
+      margin:8px 0 24px;
+    }
+    .clan-tag-link:hover{
+      text-decoration:underline;
+      opacity:1;
+    }
+
     .timers{
       width:100%;
       max-width:340px;
@@ -205,6 +219,15 @@
       border-radius:8px;
       cursor:pointer;
     }
+
+    /* ✅ footer pin */
+    .page-footer{
+      margin-top:auto;
+      padding-top:12px;
+      font-size:14px;
+      opacity:.7;
+      text-align:center;
+    }
   </style>
 
   <script>
@@ -215,7 +238,14 @@
 <body>
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
-  <p class="subtitle">EST DECEMBER 2023</p>
+
+  <!-- ✅ Replaces "EST DECEMBER 2023" with clickable clan tag -->
+  <a
+    class="clan-tag-link"
+    href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
+    target="_blank"
+    rel="noopener noreferrer"
+  >#2QQYJC08Y</a>
 
   <div class="timers">
     <h2 class="timers-title">Clan Overview</h2>
@@ -351,6 +381,9 @@
     <button onclick="openLink('https://store.supercell.com/')">SuperCell Store</button>
     <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
   </div>
+
+  <!-- ✅ Move EST DECEMBER 2023 to very bottom -->
+  <div class="page-footer">EST DECEMBER 2023</div>
 
   <script>
     function pad(n){ return n.toString().padStart(2,"0"); }
