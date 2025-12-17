@@ -172,7 +172,7 @@
       font-weight:900;
     }
 
-    /* ✅ record green (for 1.000 only) */
+    /* ✅ record green */
     .record-green{
       color:#38d172;
       font-weight:900;
@@ -426,12 +426,14 @@
     }
 
     // ===============================
-    // ✅ Win% formatting (decimal)
+    // ✅ Win% formatting (decimal) — ties count as 0.5 win
+    // pct = (W + 0.5*T) / (W + L + T)
     // ===============================
     function winPctFromWLT(w, l, t){
-      const total = (w|0) + (l|0) + (t|0);
+      const W = (w|0), L = (l|0), T = (t|0);
+      const total = W + L + T;
       if(total <= 0) return null;
-      return (w|0) / total;
+      return (W + 0.5*T) / total;
     }
 
     function fmtPctDecimal(p){
@@ -441,24 +443,24 @@
 
     // For lastN objects: {"wins","losses","ties","sample"}
     function fmtWLTWithPctObj(obj){
-      if(!obj || typeof obj !== "object") return { text: "—", pct: null };
+      if(!obj || typeof obj !== "object") return { text: "—", pct: null, losses: null };
       const w = (typeof obj.wins === "number") ? obj.wins : null;
       const l = (typeof obj.losses === "number") ? obj.losses : null;
       const t = (typeof obj.ties === "number") ? obj.ties : null;
-      if(w === null || l === null || t === null) return { text: "—", pct: null };
+      if(w === null || l === null || t === null) return { text: "—", pct: null, losses: null };
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: l };
     }
 
     // For all-time record (wins,losses,ties)
     function fmtWLTWithPctNums(w,l,t){
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: (l|0) };
     }
 
-    function isPerfectPct(p){
-      // exactly 1.000 only
-      return typeof p === "number" && isFinite(p) && p === 1;
+    // ✅ Green rule: NO LOSSES (not 1.000)
+    function hasNoLosses(losses){
+      return typeof losses === "number" && isFinite(losses) && losses === 0;
     }
 
     // ===============================
@@ -689,7 +691,7 @@
 
         const rec = fmtWLTWithPctNums(w,l,t);
         setText("war-record", rec.text);
-        setClass("war-record", "record-green", isPerfectPct(rec.pct));
+        setClass("war-record", "record-green", hasNoLosses(l));
 
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
@@ -706,9 +708,9 @@
         setText("war-last25", l25.text);
         setText("war-last50", l50.text);
 
-        setClass("war-last10","record-green", isPerfectPct(l10.pct));
-        setClass("war-last25","record-green", isPerfectPct(l25.pct));
-        setClass("war-last50","record-green", isPerfectPct(l50.pct));
+        setClass("war-last10","record-green", hasNoLosses(l10.losses));
+        setClass("war-last25","record-green", hasNoLosses(l25.losses));
+        setClass("war-last50","record-green", hasNoLosses(l50.losses));
       } else {
         setRankingsVisibility(false);
         setText("war-record","—");
