@@ -34,7 +34,7 @@
 
     /* =========================
        Header
-       (50% smaller per request)
+       (smaller)
     ========================= */
     .app-icon{
       width:90px;
@@ -71,7 +71,6 @@
 
     /* =========================
        Card + Rows (generic)
-       (removed "timer" naming)
     ========================= */
     .cards{
       width:100%;
@@ -126,7 +125,7 @@
       flex:1;
     }
 
-    /* ✅ SAFETY: hide rankings by default; JS will show only if ranked */
+    /* hide rankings by default */
     #rankings-block{ display:none; }
 
     /* =========================
@@ -190,58 +189,146 @@
       opacity:.95;
     }
 
-    /* ✅ green highlight */
     .war-green{
       color:#38d172;
       font-weight:900;
     }
 
-    /* ✅ record green */
     .record-green{
       color:#38d172;
       font-weight:900;
     }
 
-    /* =========================
-       Buttons
-    ========================= */
-    .button-container{
+    /* =========================================================
+       NAV UI (PWA bottom tabs + non-PWA hamburger/side drawer)
+       ========================================================= */
+    :root{ --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
+    .pwa-tabbar{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 10px calc(10px + var(--safe-bottom));
+      background: rgba(11, 24, 41, 0.96);
+      border-top: 1px solid rgba(43, 59, 85, 0.9);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: none;
+    }
+
+    .pwa-tabbar .tabs{
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .pwa-tabbar a{
       display:flex;
       flex-direction:column;
-      gap:12px;
-      width:100%;
-      max-width:280px;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      padding:10px 6px;
+      border-radius:12px;
+      text-decoration:none;
+      color:#fff;
+      font-size:12px;
+      opacity:0.9;
+      border:1px solid rgba(255,255,255,0.10);
     }
 
-    button{
-      padding:12px;
-      font-size:16px;
-      border-radius:999px;
-      border:none;
-      cursor:pointer;
-      background-color:#fff;
-      color:#000;
-    }
-
-    .install-button{
-      background-color:#ffcc00;
-      color:#000;
-      border:2px solid #000;
-      padding:12px 20px;
+    .pwa-tabbar a:active{ transform: scale(0.98); }
+    .pwa-tabbar a.active{
+      opacity:1;
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.08);
       font-weight:700;
-      border-radius:8px;
-      cursor:pointer;
     }
 
-    /* =========================
-       Footer
-    ========================= */
-    .page-footer{
-      margin-top:auto;
-      padding-top:12px;
-      font-size:14px;
-      opacity:.7;
-      text-align:center;
+    body.has-pwa-tabs{
+      padding-bottom: calc(80px + var(--safe-bottom));
+    }
+
+    .hamburger-btn{
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 10000;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(11,24,41,0.70);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .hamburger-btn span{ font-size:22px; line-height:1; }
+
+    .drawer-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 9998;
+      display: none;
+    }
+
+    .drawer{
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: min(320px, 85vw);
+      background: #0b1829;
+      border-left: 1px solid rgba(43, 59, 85, 0.9);
+      z-index: 9999;
+      transform: translateX(100%);
+      transition: transform 200ms ease;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .drawer.open{ transform: translateX(0); }
+
+    .drawer h3{
+      margin: 6px 0 12px;
+      font-size: 14px;
+      opacity: 0.85;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .drawer a{
+      display:block;
+      padding:12px 12px;
+      margin:6px 0;
+      border-radius:12px;
+      text-decoration:none;
+      color:#fff;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    .drawer a:hover{ background: rgba(255,255,255,0.07); }
+
+    .drawer .close-row{
+      display:flex;
+      justify-content:flex-end;
+      margin-bottom:8px;
+    }
+
+    .drawer .close-btn{
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      cursor: pointer;
     }
   </style>
 
@@ -256,7 +343,6 @@
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
-  <!-- clickable clan tag -->
   <a
     class="clan-tag-link"
     href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
@@ -267,7 +353,6 @@
   <div class="cards">
     <h2 class="cards-title">Clan Overview</h2>
 
-    <!-- Rankings (trophies only, hidden unless Top 200) -->
     <div id="rankings-block">
       <div class="section-title">Rankings</div>
       <div class="row">
@@ -298,22 +383,18 @@
       <span class="row-label">War Record</span>
       <span id="war-record" class="row-value">Loading…</span>
     </div>
-
     <div class="row">
       <span class="row-label">Last 10 Wars</span>
       <span id="war-last10" class="row-value">Loading…</span>
     </div>
-
     <div class="row">
       <span class="row-label">Last 25 Wars</span>
       <span id="war-last25" class="row-value">Loading…</span>
     </div>
-
     <div class="row">
       <span class="row-label">Last 50 Wars</span>
       <span id="war-last50" class="row-value">Loading…</span>
     </div>
-
     <div class="row">
       <span class="row-label">Current Streak</span>
       <span id="war-streak" class="row-value">Loading…</span>
@@ -332,15 +413,12 @@
       <div class="war-grid-3">
         <div>
           <div id="war-name-us" class="war-name">—</div>
-
           <div class="war-stat">
             <span id="war-stars-us">—</span> <span>⭐</span>
           </div>
-
           <div class="war-substat">
             <span id="war-destr-us">—</span> <span>🎯</span>
           </div>
-
           <div class="war-substat">
             <span id="war-attacks-us">—</span> <span>⚔️</span>
           </div>
@@ -350,15 +428,12 @@
 
         <div>
           <div id="war-name-opp" class="war-name">—</div>
-
           <div class="war-stat">
             <span id="war-stars-opp">—</span> <span>⭐</span>
           </div>
-
           <div class="war-substat">
             <span id="war-destr-opp">—</span> <span>🎯</span>
           </div>
-
           <div class="war-substat">
             <span id="war-attacks-opp">—</span> <span>⚔️</span>
           </div>
@@ -387,20 +462,94 @@
     </div>
   </div>
 
-  <div class="button-container">
-    <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">CWL Leaderboards</button>
-    <button onclick="openLink('https://discord.gg/8P96687dPr')">Clan Discord</button>
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y')">Visit B•A•S•E•D</button>
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG')">Visit B•A•S•E•D 2</button>
-    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">Visit B•A•S•E•D 3</button>
-    <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">Clan Stats</button>
-    <button onclick="openLink('https://store.supercell.com/')">SuperCell Store</button>
-    <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
-  </div>
+  <!-- NAV UI -->
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+    <span>☰</span>
+  </button>
 
-  <div class="page-footer">EST DECEMBER 2023</div>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <nav class="drawer" id="drawer">
+    <div class="close-row">
+      <button class="close-btn" id="drawerCloseBtn" aria-label="Close menu">✕</button>
+    </div>
+
+    <h3>Menu</h3>
+    <a href="index.html">Dashboard</a>
+    <a href="cwl.html">CWL</a>
+    <a href="war.html">WAR</a>
+    <a href="my-stats.html">My Stats</a>
+    <a href="more.html">More</a>
+  </nav>
+
+  <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
+    <div class="tabs">
+      <a href="index.html" data-tab="dashboard">Dashboard</a>
+      <a href="cwl.html" data-tab="cwl">CWL</a>
+      <a href="war.html" data-tab="war">WAR</a>
+      <a href="my-stats.html" data-tab="mystats">My Stats</a>
+      <a href="more.html" data-tab="more">More</a>
+    </div>
+  </nav>
 
   <script>
+    // ============================================================
+    // NAV UI: PWA bottom tabs vs non-PWA drawer
+    // ============================================================
+    function isPwaInstalled(){
+      const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
+      return !!(standaloneDisplay || iosStandalone);
+    }
+
+    function setupNavUI(){
+      const pwa = isPwaInstalled();
+
+      const pwaTabbar = document.getElementById("pwaTabbar");
+      const hamburgerBtn = document.getElementById("hamburgerBtn");
+      const drawer = document.getElementById("drawer");
+      const overlay = document.getElementById("drawerOverlay");
+      const closeBtn = document.getElementById("drawerCloseBtn");
+
+      if(pwa){
+        if(pwaTabbar) pwaTabbar.style.display = "block";
+        if(hamburgerBtn) hamburgerBtn.style.display = "none";
+        if(overlay) overlay.style.display = "none";
+        if(drawer) drawer.classList.remove("open");
+        document.body.classList.add("has-pwa-tabs");
+
+        const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+        const links = pwaTabbar ? pwaTabbar.querySelectorAll("a") : [];
+        links.forEach(a => {
+          const href = (a.getAttribute("href") || "").toLowerCase();
+          a.classList.toggle("active", href === path);
+        });
+      } else {
+        if(pwaTabbar) pwaTabbar.style.display = "none";
+        if(hamburgerBtn) hamburgerBtn.style.display = "flex";
+        document.body.classList.remove("has-pwa-tabs");
+
+        const openDrawer = () => {
+          if(overlay) overlay.style.display = "block";
+          if(drawer) drawer.classList.add("open");
+        };
+        const closeDrawer = () => {
+          if(drawer) drawer.classList.remove("open");
+          if(overlay) overlay.style.display = "none";
+        };
+
+        if(hamburgerBtn) hamburgerBtn.onclick = openDrawer;
+        if(overlay) overlay.onclick = closeDrawer;
+        if(closeBtn) closeBtn.onclick = closeDrawer;
+
+        document.addEventListener("keydown", (e) => {
+          if(e.key === "Escape") closeDrawer();
+        });
+      }
+    }
+
+    setupNavUI();
+
     // ============================================================
     // Utilities
     // ============================================================
@@ -463,7 +612,6 @@
       return pct === 100;
     }
 
-    // Win% formatting (decimal) — ties count as 0.5 win
     function winPctFromWLT(w, l, t){
       const W = (w|0), L = (l|0), T = (t|0);
       const total = W + L + T;
@@ -688,7 +836,6 @@
     }
 
     function renderClanStats(){
-      // clear any prior greens
       setClass("war-record","record-green", false);
       setClass("war-last10","record-green", false);
       setClass("war-last25","record-green", false);
@@ -821,7 +968,6 @@
       updateWarTimerOnly(false, null);
     }, 1000);
 
-    // 5-second JSON refresh
     setInterval(fetchWarData, 5*1000);
     setInterval(fetchClanStats, 5*1000);
 
