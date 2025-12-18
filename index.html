@@ -14,6 +14,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
   <style>
+    /* =========================
+       Base / Layout
+    ========================= */
     body{
       margin:0;
       background:#000;
@@ -29,29 +32,30 @@
       box-sizing:border-box;
     }
 
+    /* =========================
+       Header
+       (50% smaller per request)
+    ========================= */
     .app-icon{
-      width:120px;height:120px;
+      width:60px;
+      height:60px;
       margin-bottom:12px;
-      border-radius:24px;
+      border-radius:16px;
       object-fit:contain;
     }
 
     .logo{
       width:100%;
-      max-width:300px;
+      max-width:150px;
       height:auto;
       margin-bottom:16px;
       border-radius:0;
       object-fit:contain;
     }
 
-    .subtitle{
-      margin:8px 0 24px;
-      font-size:14px;
-      opacity:.7;
-    }
-
-    /* ✅ clickable clan tag style */
+    /* =========================
+       Clan Tag Link
+    ========================= */
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
@@ -65,7 +69,11 @@
       opacity:1;
     }
 
-    .timers{
+    /* =========================
+       Card + Rows (generic)
+       (removed "timer" naming)
+    ========================= */
+    .cards{
       width:100%;
       max-width:340px;
       margin-bottom:24px;
@@ -77,7 +85,7 @@
       text-align:left;
     }
 
-    .timers-title{
+    .cards-title{
       margin:0 0 6px;
       font-size:16px;
       text-align:center;
@@ -98,7 +106,7 @@
       margin:10px 0;
     }
 
-    .timer-row{
+    .row{
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -107,12 +115,12 @@
       gap:12px;
     }
 
-    .timer-label{
+    .row-label{
       font-weight:600;
       white-space:nowrap;
     }
 
-    .timer-value{
+    .row-value{
       font-family:monospace;
       text-align:right;
       flex:1;
@@ -121,7 +129,9 @@
     /* ✅ SAFETY: hide rankings by default; JS will show only if ranked */
     #rankings-block{ display:none; }
 
-    /* ===== Current War board ===== */
+    /* =========================
+       Current War board
+    ========================= */
     .war-board{ text-align:center; margin-top:6px; }
 
     .war-timer{
@@ -192,6 +202,9 @@
       font-weight:900;
     }
 
+    /* =========================
+       Buttons
+    ========================= */
     .button-container{
       display:flex;
       flex-direction:column;
@@ -220,7 +233,9 @@
       cursor:pointer;
     }
 
-    /* ✅ footer pin */
+    /* =========================
+       Footer
+    ========================= */
     .page-footer{
       margin-top:auto;
       padding-top:12px;
@@ -241,7 +256,7 @@
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
-  <!-- ✅ Replaces "EST DECEMBER 2023" with clickable clan tag -->
+  <!-- clickable clan tag -->
   <a
     class="clan-tag-link"
     href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
@@ -249,64 +264,63 @@
     rel="noopener noreferrer"
   >#2QQYJC08Y</a>
 
-  <div class="timers">
-    <h2 class="timers-title">Clan Overview</h2>
+  <div class="cards">
+    <h2 class="cards-title">Clan Overview</h2>
 
     <!-- Rankings (trophies only, hidden unless Top 200) -->
     <div id="rankings-block">
       <div class="section-title">Rankings</div>
-      <div class="timer-row">
-        <span class="timer-label">Global Trophies</span>
-        <span id="rank-global-trophies" class="timer-value">Loading…</span>
+      <div class="row">
+        <span class="row-label">Global Trophies</span>
+        <span id="rank-global-trophies" class="row-value">Loading…</span>
       </div>
-      <div class="timer-row">
-        <span class="timer-label">USA Trophies</span>
-        <span id="rank-usa-trophies" class="timer-value">Loading…</span>
+      <div class="row">
+        <span class="row-label">USA Trophies</span>
+        <span id="rank-usa-trophies" class="row-value">Loading…</span>
       </div>
       <div class="divider"></div>
     </div>
 
     <div class="section-title">CWL</div>
-    <div class="timer-row">
-      <span class="timer-label">CWL League</span>
-      <span id="cwl-league" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">CWL League</span>
+      <span id="cwl-league" class="row-value">Loading…</span>
     </div>
-    <div class="timer-row">
-      <span class="timer-label">Last CWL Finish</span>
-      <span id="cwl-finish" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Last CWL Finish</span>
+      <span id="cwl-finish" class="row-value">Loading…</span>
     </div>
 
     <div class="divider"></div>
 
     <div class="section-title">War</div>
-    <div class="timer-row">
-      <span class="timer-label">War Record</span>
-      <span id="war-record" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">War Record</span>
+      <span id="war-record" class="row-value">Loading…</span>
     </div>
 
-    <!-- ✅ NEW: last 10 wars -->
-    <div class="timer-row">
-      <span class="timer-label">Last 10 Wars</span>
-      <span id="war-last10" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Last 10 Wars</span>
+      <span id="war-last10" class="row-value">Loading…</span>
     </div>
 
-    <div class="timer-row">
-      <span class="timer-label">Last 25 Wars</span>
-      <span id="war-last25" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Last 25 Wars</span>
+      <span id="war-last25" class="row-value">Loading…</span>
     </div>
 
-    <div class="timer-row">
-      <span class="timer-label">Last 50 Wars</span>
-      <span id="war-last50" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Last 50 Wars</span>
+      <span id="war-last50" class="row-value">Loading…</span>
     </div>
 
-    <div class="timer-row">
-      <span class="timer-label">Current Streak</span>
-      <span id="war-streak" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Current Streak</span>
+      <span id="war-streak" class="row-value">Loading…</span>
     </div>
-    <div class="timer-row">
-      <span class="timer-label">Longest Streak</span>
-      <span id="war-longest" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Longest Streak</span>
+      <span id="war-longest" class="row-value">Loading…</span>
     </div>
 
     <div class="divider"></div>
@@ -355,21 +369,21 @@
     <div class="divider"></div>
 
     <div class="section-title">In-Game Events</div>
-    <div class="timer-row">
-      <span class="timer-label">Raid Weekend</span>
-      <span id="raid-timer" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Raid Weekend</span>
+      <span id="raid-timer" class="row-value">Loading…</span>
     </div>
-    <div class="timer-row">
-      <span class="timer-label">Clan Games</span>
-      <span id="clan-games-timer" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Clan Games</span>
+      <span id="clan-games-timer" class="row-value">Loading…</span>
     </div>
-    <div class="timer-row">
-      <span class="timer-label">Season End</span>
-      <span id="season-end-timer" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">Season End</span>
+      <span id="season-end-timer" class="row-value">Loading…</span>
     </div>
-    <div class="timer-row">
-      <span class="timer-label">League Reset</span>
-      <span id="league-reset-timer" class="timer-value">Loading…</span>
+    <div class="row">
+      <span class="row-label">League Reset</span>
+      <span id="league-reset-timer" class="row-value">Loading…</span>
     </div>
   </div>
 
@@ -384,10 +398,12 @@
     <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
   </div>
 
-  <!-- ✅ Move EST DECEMBER 2023 to very bottom -->
   <div class="page-footer">EST DECEMBER 2023</div>
 
   <script>
+    // ============================================================
+    // Utilities
+    // ============================================================
     function pad(n){ return n.toString().padStart(2,"0"); }
 
     function formatCountdown(ms){
@@ -407,6 +423,12 @@
       if(el) el.textContent = text;
     }
 
+    function setClass(id, className, on){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+
     function setRankingsVisibility(show){
       const block = document.getElementById("rankings-block");
       if(block) block.style.display = show ? "block" : "none";
@@ -417,18 +439,9 @@
       if(vs) vs.style.display = show ? "block" : "none";
     }
 
-    function setClass(id, className, on){
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.classList.toggle(className, !!on);
-    }
-
-    function resetWarHighlights(){
-      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => {
-        setClass(id, "war-green", false);
-      });
-    }
-
+    // ============================================================
+    // Formatting helpers
+    // ============================================================
     function fmtTop200(v){
       if(typeof v === "number") return "#" + v;
       return "Not in top 200";
@@ -438,16 +451,6 @@
       if(typeof v !== "number" || !isFinite(v)) return "—";
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
-    }
-
-    function fmtWLTAny(val){
-      if(typeof val === "string" && val.trim().length) return val.trim();
-      if(!val || typeof val !== "object") return "—";
-      const w = (typeof val.wins === "number") ? val.wins : null;
-      const l = (typeof val.losses === "number") ? val.losses : null;
-      const t = (typeof val.ties === "number") ? val.ties : null;
-      if(w === null || l === null || t === null) return "—";
-      return `${w}-${l}-${t}`;
     }
 
     function isFullStars(stars, teamSize){
@@ -460,10 +463,7 @@
       return pct === 100;
     }
 
-    // ===============================
-    // ✅ Win% formatting (decimal) — ties count as 0.5 win
-    // pct = (W + 0.5*T) / (W + L + T)
-    // ===============================
+    // Win% formatting (decimal) — ties count as 0.5 win
     function winPctFromWLT(w, l, t){
       const W = (w|0), L = (l|0), T = (t|0);
       const total = W + L + T;
@@ -476,7 +476,6 @@
       return ` (${p.toFixed(3)})`;
     }
 
-    // For lastN objects: {"wins","losses","ties","sample"}
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text: "—", pct: null, losses: null };
       const w = (typeof obj.wins === "number") ? obj.wins : null;
@@ -487,28 +486,33 @@
       return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: l };
     }
 
-    // For all-time record (wins,losses,ties)
     function fmtWLTWithPctNums(w,l,t){
       const pct = winPctFromWLT(w,l,t);
       return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: (l|0) };
     }
 
-    // ✅ Green rule: NO LOSSES (not 1.000)
     function hasNoLosses(losses){
       return typeof losses === "number" && isFinite(losses) && losses === 0;
     }
 
-    // ===============================
-    // ✅ RAW endpoints (no Pages cache)
-    // ===============================
+    function resetWarHighlights(){
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => {
+        setClass(id, "war-green", false);
+      });
+    }
+
+    // ============================================================
+    // Data endpoints (RAW = no Pages caching)
+    // ============================================================
     const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
     const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
 
-    // ---- war.json ----
+    // ============================================================
+    // War module
+    // ============================================================
     let warData = null;
     let warFetched = false;
 
-    // ✅ persistent cache for last known non-notInWar
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
 
@@ -523,9 +527,7 @@
     }
 
     function saveLastWarSnapshot(w){
-      try{
-        localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w));
-      } catch(e){}
+      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
     }
 
     lastWarSnapshot = loadLastWarSnapshot();
@@ -536,7 +538,6 @@
         const res = await fetch(url, { cache:"no-store" });
         warData = res.ok ? await res.json() : null;
 
-        // ✅ update cache anytime we have a real war state
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
@@ -566,11 +567,8 @@
       }
 
       let display = warData;
-
-      if(display && display.state === "notInWar"){
-        if(lastWarSnapshot){
-          display = lastWarSnapshot;
-        }
+      if(display && display.state === "notInWar" && lastWarSnapshot){
+        display = lastWarSnapshot;
       }
 
       if(!display || !display.state){
@@ -673,7 +671,9 @@
       else warElem.textContent = formatCountdown(end - now);
     }
 
-    // ---- clan_stats.json ----
+    // ============================================================
+    // Clan stats module
+    // ============================================================
     let clanStats = null;
 
     async function fetchClanStats(){
@@ -757,7 +757,9 @@
       }
     }
 
-    // ---- recurring timers ----
+    // ============================================================
+    // Recurring events module
+    // ============================================================
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -807,7 +809,9 @@
       setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
-    // Initial load
+    // ============================================================
+    // Boot + intervals
+    // ============================================================
     fetchWarData();
     fetchClanStats();
     updateRecurringTimers();
@@ -817,7 +821,7 @@
       updateWarTimerOnly(false, null);
     }, 1000);
 
-    // ✅ 5-second JSON refresh
+    // 5-second JSON refresh
     setInterval(fetchWarData, 5*1000);
     setInterval(fetchClanStats, 5*1000);
 
