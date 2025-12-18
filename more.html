@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <title>B•A•S•E•D — More</title>
+
+  <style>
+    body{
+      margin:0;background:#000;color:#fff;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      min-height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:flex-start;text-align:center;
+      padding:24px 16px;box-sizing:border-box;
+    }
+    .button-container{
+      display:flex;flex-direction:column;gap:12px;
+      width:100%;max-width:280px;margin-top:12px;
+    }
+    button{
+      padding:12px;font-size:16px;border-radius:999px;border:none;cursor:pointer;
+      background-color:#fff;color:#000;
+    }
+    .install-button{
+      background-color:#ffcc00;color:#000;border:2px solid #000;
+      padding:12px 20px;font-weight:700;border-radius:8px;cursor:pointer;
+    }
+    a{color:#fff;opacity:.85;text-decoration:none}
+    a:hover{text-decoration:underline;opacity:1}
+    .toplink{position:fixed;top:14px;left:14px;font-size:14px}
+    .title{
+      width:100%;max-width:340px;padding:12px 16px;border-radius:12px;
+      background:#0b1829;border:1px solid #2b3b55;box-sizing:border-box;
+      margin-top:40px;
+    }
+    .title h1{margin:0;font-size:18px;}
+    .page-footer{margin-top:auto;padding-top:12px;font-size:14px;opacity:.7;text-align:center;}
+    script{display:none;}
+  </style>
+
+  <script>
+    function openLink(url){ window.location.href = url; }
+  </script>
+</head>
+<body>
+  <a class="toplink" href="index.html">← Dashboard</a>
+
+  <div class="title">
+    <h1>More</h1>
+  </div>
+
+  <div class="button-container">
+    <button onclick="openLink('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml')">CWL Leaderboards</button>
+    <button onclick="openLink('https://discord.gg/8P96687dPr')">Clan Discord</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y')">Visit B•A•S•E•D</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG')">Visit B•A•S•E•D 2</button>
+    <button onclick="openLink('https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU')">Visit B•A•S•E•D 3</button>
+    <button onclick="openLink('https://www.clashofstats.com/clans/based-2QQYJC08Y/summary')">Clan Stats</button>
+    <button onclick="openLink('https://store.supercell.com/')">SuperCell Store</button>
+    <button class="install-button" onclick="openLink('https://www.youtube.com/watch?v=gIC30U39zpA')">How to install B•A•S•E•D App</button>
+  </div>
+
+  <div class="page-footer">EST DECEMBER 2023</div>
+</body>
+</html>
