@@ -2,24 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>B•A•S•E•D — WAR</title>
+
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="/favicon.png">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#000000" />
-  <title>B•A•S•E•D — War</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
   <style>
-    body{margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
-      min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
-      padding:24px 16px;box-sizing:border-box;}
-    .box{width:100%;max-width:360px;padding:18px 16px;border-radius:12px;background:#0b1829;border:1px solid #2b3b55;}
-    h1{margin:0 0 8px;font-size:18px;} p{margin:0;opacity:.8}
-    a{color:#fff;opacity:.85;text-decoration:none} a:hover{text-decoration:underline;opacity:1}
-    .toplink{position:fixed;top:14px;left:14px;font-size:14px}
+    :root{ --safe-bottom: env(safe-area-inset-bottom, 0px); }
+    body{ margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      display:flex;flex-direction:column;min-height:100vh;align-items:center;justify-content:flex-start;
+      text-align:center;padding:24px 16px;box-sizing:border-box;}
+    body.has-pwa-tabs{ padding-bottom: calc(80px + var(--safe-bottom)); }
+    .app-icon{ width:90px;height:90px;margin-bottom:12px;border-radius:20px;object-fit:contain; }
+    .logo{ width:100%;max-width:225px;height:auto;margin-bottom:16px;object-fit:contain; }
+    .clan-tag-link{ color:#fff;text-decoration:none;opacity:.85;font-size:14px;display:inline-block;margin:8px 0 10px; }
+    .clan-tag-link:hover{ text-decoration:underline;opacity:1; }
+    .top-nav{ width:100%;max-width:760px;margin:0 0 18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap; }
+    .top-nav a{ color:#fff;text-decoration:none;opacity:.9;font-size:14px;padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);background: rgba(255,255,255,0.04); }
+    .top-nav a.active{ opacity:1;font-weight:700;border-color: rgba(255,255,255,0.22);background: rgba(255,255,255,0.12); }
+    .cards{ width:100%;max-width:340px;margin-bottom:24px;padding:16px;border-radius:12px;background:#0b1829;
+      border:1px solid #2b3b55;box-sizing:border-box;text-align:center; }
+    .cards h2{ margin:0 0 8px;font-size:18px; }
+    .cards p{ margin:0;opacity:.8; }
+    .pwa-tabbar{ position:fixed;left:0;right:0;bottom:0;padding:10px 10px calc(10px + var(--safe-bottom));
+      background: rgba(11,24,41,0.96);border-top:1px solid rgba(43,59,85,0.9);backdrop-filter: blur(8px);
+      z-index:9999;display:none;}
+    .pwa-tabbar .tabs{ display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:520px;margin:0 auto; }
+    .pwa-tabbar a{ display:flex;align-items:center;justify-content:center;padding:10px 6px;border-radius:12px;
+      text-decoration:none;color:#fff;font-size:12px;opacity:.9;border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);}
+    .pwa-tabbar a.active{ opacity:1;font-weight:700;border-color: rgba(255,255,255,0.25);background: rgba(255,255,255,0.10); }
   </style>
+
+  <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
-  <a class="toplink" href="index.html">← Dashboard</a>
-  <div class="box">
-    <h1>War</h1>
+  <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
+  <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
+
+  <a class="clan-tag-link"
+     href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
+     target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
+
+  <nav class="top-nav" aria-label="Top navigation">
+    <a href="index.html" data-route="dashboard">Dashboard</a>
+    <a href="cwl.html" data-route="cwl">CWL</a>
+    <a href="war.html" data-route="war">WAR</a>
+    <a href="my-stats.html" data-route="mystats">My Stats</a>
+    <a href="more.html" data-route="more">More</a>
+  </nav>
+
+  <div class="cards">
+    <h2>WAR</h2>
     <p>Coming Soon!</p>
   </div>
+
+  <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
+    <div class="tabs">
+      <a href="index.html" data-route="dashboard">Dashboard</a>
+      <a href="cwl.html" data-route="cwl">CWL</a>
+      <a href="war.html" data-route="war">WAR</a>
+      <a href="my-stats.html" data-route="mystats">My Stats</a>
+      <a href="more.html" data-route="more">More</a>
+    </div>
+  </nav>
+
+  <script>
+    function isPwaInstalled(){
+      const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
+      return !!(standaloneDisplay || iosStandalone);
+    }
+    function currentRoute(){
+      const file = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+      if(file === "index.html" || file === "") return "dashboard";
+      if(file === "cwl.html") return "cwl";
+      if(file === "war.html") return "war";
+      if(file === "my-stats.html") return "mystats";
+      if(file === "more.html") return "more";
+      return null;
+    }
+    function setupNav(){
+      const pwa = isPwaInstalled();
+      const tabbar = document.getElementById("pwaTabbar");
+      if(pwa){
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
+      const route = currentRoute();
+      document.querySelectorAll("[data-route]").forEach(a=>{
+        a.classList.toggle("active", a.dataset.route === route);
+      });
+    }
+    setupNav();
+  </script>
 </body>
 </html>
