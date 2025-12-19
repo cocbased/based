@@ -8,7 +8,8 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="/favicon.png">
 
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Disable pinch-zoom (best-effort; iOS may still allow in some cases) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
@@ -94,11 +95,15 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* App content area */
+    /* App content area
+       IMPORTANT: make this a true column so "More" footer can pin to bottom */
     #app{
       width:100%;
+      max-width:560px;
       display:flex;
-      justify-content:center;
+      flex-direction:column;
+      align-items:center;
+      flex:1;
     }
 
     /* Card + rows (Home page) */
@@ -178,7 +183,6 @@
     /* Generic pages */
     .page{
       width:100%;
-      max-width:560px;
       text-align:center;
       padding:24px 10px;
       box-sizing:border-box;
@@ -194,7 +198,7 @@
       font-size:14px;
     }
 
-    /* More links */
+    /* More links (centered correctly) */
     .links{
       width:100%;
       max-width:280px;
@@ -202,8 +206,11 @@
       display:flex;
       flex-direction:column;
       gap:12px;
+      align-items:center;  /* center children */
     }
     .link-btn{
+      width:100%;          /* fill the 280px container */
+      text-align:center;   /* center text */
       display:block;
       padding:12px;
       font-size:16px;
@@ -213,6 +220,7 @@
       background-color:#fff;
       color:#000;
       text-decoration:none;
+      box-sizing:border-box;
     }
     .install-btn{
       background-color:#ffcc00;
@@ -222,8 +230,11 @@
       font-weight:700;
       border-radius:12px;
     }
+
+    /* Footer pinned at bottom of the app column */
     .page-footer{
       margin-top:auto;
+      width:100%;
       padding:18px 0 0;
       font-size:14px;
       opacity:.7;
@@ -414,7 +425,6 @@
 
     // ============================================================
     // PWA-only: icon swapping (cached + preloaded)
-    // - IMPORTANT: do NOT use Date.now() cache-buster every time.
     // - Bump ICON_VER only when you upload new icon files.
     // ============================================================
     const ICON_VER = "v1";
@@ -467,6 +477,70 @@
     }
 
     // ============================================================
+    // Swipe navigation between sections
+    // ============================================================
+    const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
+
+    function goRoute(name){
+      const map = {
+        home: "#/home",
+        cwl: "#/cwl",
+        war: "#/war",
+        mystats: "#/my-stats",
+        more: "#/more"
+      };
+      location.hash = map[name] || "#/home";
+    }
+
+    (function enableSwipeNav(){
+      let startX = 0, startY = 0, tracking = false;
+
+      function isInteractive(el){
+        if(!el) return false;
+        return !!el.closest("a, button, input, textarea, select, label");
+      }
+
+      window.addEventListener("touchstart", (e) => {
+        if(!e.touches || e.touches.length !== 1) return;
+        if(isInteractive(e.target)) return;
+
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        tracking = true;
+      }, { passive: true });
+
+      window.addEventListener("touchend", (e) => {
+        if(!tracking) return;
+        tracking = false;
+
+        const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+        if(!t) return;
+
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+
+        // Mostly horizontal swipe
+        if(Math.abs(dx) < 60) return;
+        if(Math.abs(dy) > 45) return;
+
+        const current = normalizeRoute(location.hash);
+        const idx = ROUTE_ORDER.indexOf(current);
+        if(idx === -1) return;
+
+        if(dx < 0){
+          // swipe left -> next
+          const next = ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
+          if(next !== current) goRoute(next);
+        } else {
+          // swipe right -> prev
+          const prev = ROUTE_ORDER[Math.max(idx - 1, 0)];
+          if(prev !== current) goRoute(prev);
+        }
+      }, { passive: true });
+    })();
+
+    // ============================================================
     // Page templates (rendered into #app)
     // ============================================================
     const app = document.getElementById("app");
@@ -482,8 +556,9 @@
 
     function renderMore(){
       return `
-        <main class="page">
-          <h1>More</h1>
+        <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
+          <h1 style="margin: 8px 0 14px;">More</h1>
+
           <div class="links">
             <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
             <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
@@ -494,8 +569,9 @@
             <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
             <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
           </div>
+
+          <div class="page-footer">EST DECEMBER 2023</div>
         </main>
-        <div class="page-footer">EST DECEMBER 2023</div>
       `;
     }
 
@@ -789,7 +865,6 @@
     }
 
     function renderWarSection(){
-      // If home isn't mounted, skip
       if(!document.getElementById("war-timer")) return;
 
       resetWarHighlights();
@@ -885,7 +960,6 @@
     }
 
     function renderClanStats(){
-      // If home isn't mounted, skip
       if(!document.getElementById("war-record")) return;
 
       setClass("war-record","record-green", false);
@@ -987,11 +1061,9 @@
     }
 
     function startHomeDataLoop(){
-      // Clean slate
       clearHomeIntervals();
       warFetched = false;
 
-      // Kick off
       fetchWarData();
       fetchClanStats();
       updateRecurringTimers();
@@ -1027,7 +1099,6 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
-      // Stop home loops if leaving home
       if(route !== "home") clearHomeIntervals();
 
       if(route === "home"){
@@ -1056,18 +1127,15 @@
         return;
       }
 
-      // fallback
       location.hash = "#/home";
     }
 
     // Initial route
     if(!location.hash) location.hash = "#/home";
+    setupNavUI();
     renderRoute();
 
-    // Listen for navigation
     window.addEventListener("hashchange", renderRoute);
-
-    // iOS resume behavior
     window.addEventListener("pageshow", renderRoute);
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible") renderRoute();
