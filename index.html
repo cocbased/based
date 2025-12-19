@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>B•A•S•E•D — Dashboard</title>
+  <title>B•A•S•E•D — Home</title>
 
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
@@ -94,7 +94,14 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* Card + rows */
+    /* App content area */
+    #app{
+      width:100%;
+      display:flex;
+      justify-content:center;
+    }
+
+    /* Card + rows (Home page) */
     .cards{
       width:100%;
       max-width:340px;
@@ -168,8 +175,63 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
+    /* Generic pages */
+    .page{
+      width:100%;
+      max-width:560px;
+      text-align:center;
+      padding:24px 10px;
+      box-sizing:border-box;
+    }
+    .page h1{
+      margin:0 0 10px;
+      font-size:18px;
+      letter-spacing:.02em;
+    }
+    .page p{
+      margin:0;
+      opacity:.75;
+      font-size:14px;
+    }
+
+    /* More links */
+    .links{
+      width:100%;
+      max-width:280px;
+      margin: 12px auto 0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .link-btn{
+      display:block;
+      padding:12px;
+      font-size:16px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      background-color:#fff;
+      color:#000;
+      text-decoration:none;
+    }
+    .install-btn{
+      background-color:#ffcc00;
+      color:#000;
+      border:2px solid #000;
+      padding:12px 20px;
+      font-weight:700;
+      border-radius:12px;
+    }
+    .page-footer{
+      margin-top:auto;
+      padding:18px 0 0;
+      font-size:14px;
+      opacity:.7;
+      text-align:center;
+    }
+
     /* =========================
-       PWA Bottom Tabs (Reddit-ish, NO active highlight)
+       PWA Bottom Tabs
        ========================= */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
@@ -215,7 +277,6 @@
       user-select: none;
     }
 
-    /* fixed geometry so nothing shifts */
     .tab-inner{
       width: 100%;
       height: 100%;
@@ -255,10 +316,7 @@
       font-weight: 500;
     }
 
-    /* ACTIVE: no pill, no border, no background — only opacity */
-    .pwa-tabbar a.active{
-      opacity: 1;
-    }
+    .pwa-tabbar a.active{ opacity: 1; }
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count"
@@ -275,161 +333,48 @@
 
   <!-- Top nav (only when NOT PWA) -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
-    <!-- Dashboard renamed to Home -->
-    <a href="index.html" data-route="dashboard">Home</a>
-    <a href="cwl.html" data-route="cwl">CWL</a>
-    <a href="war.html" data-route="war">WAR</a>
-    <a href="my-stats.html" data-route="mystats">My Stats</a>
-    <a href="more.html" data-route="more">More</a>
+    <a href="#/home" data-route="home">Home</a>
+    <a href="#/cwl" data-route="cwl">CWL</a>
+    <a href="#/war" data-route="war">WAR</a>
+    <a href="#/my-stats" data-route="mystats">My Stats</a>
+    <a href="#/more" data-route="more">More</a>
   </nav>
 
-  <div class="cards">
-    <h2 class="cards-title">Clan Overview</h2>
-
-    <div id="rankings-block">
-      <div class="section-title">Rankings</div>
-      <div class="row">
-        <span class="row-label">Global Trophies</span>
-        <span id="rank-global-trophies" class="row-value">Loading…</span>
-      </div>
-      <div class="row">
-        <span class="row-label">USA Trophies</span>
-        <span id="rank-usa-trophies" class="row-value">Loading…</span>
-      </div>
-      <div class="divider"></div>
-    </div>
-
-    <div class="section-title">CWL</div>
-    <div class="row">
-      <span class="row-label">CWL League</span>
-      <span id="cwl-league" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Last CWL Finish</span>
-      <span id="cwl-finish" class="row-value">Loading…</span>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-title">War</div>
-    <div class="row">
-      <span class="row-label">War Record</span>
-      <span id="war-record" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Last 10 Wars</span>
-      <span id="war-last10" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Last 25 Wars</span>
-      <span id="war-last25" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Last 50 Wars</span>
-      <span id="war-last50" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Current Streak</span>
-      <span id="war-streak" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Longest Streak</span>
-      <span id="war-longest" class="row-value">Loading…</span>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-title">Current War</div>
-    <div class="war-board">
-      <div id="war-timer" class="war-timer">Loading…</div>
-
-      <div class="war-grid-3">
-        <div>
-          <div id="war-name-us" class="war-name">—</div>
-          <div class="war-stat">
-            <span id="war-stars-us">—</span> <span>⭐</span>
-          </div>
-          <div class="war-substat">
-            <span id="war-destr-us">—</span> <span>🎯</span>
-          </div>
-          <div class="war-substat">
-            <span id="war-attacks-us">—</span> <span>⚔️</span>
-          </div>
-        </div>
-
-        <div id="war-vs" class="war-vs">VS</div>
-
-        <div>
-          <div id="war-name-opp" class="war-name">—</div>
-          <div class="war-stat">
-            <span id="war-stars-opp">—</span> <span>⭐</span>
-          </div>
-          <div class="war-substat">
-            <span id="war-destr-opp">—</span> <span>🎯</span>
-          </div>
-          <div class="war-substat">
-            <span id="war-attacks-opp">—</span> <span>⚔️</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-title">In-Game Events</div>
-    <div class="row">
-      <span class="row-label">Raid Weekend</span>
-      <span id="raid-timer" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Clan Games</span>
-      <span id="clan-games-timer" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">Season End</span>
-      <span id="season-end-timer" class="row-value">Loading…</span>
-    </div>
-    <div class="row">
-      <span class="row-label">League Reset</span>
-      <span id="league-reset-timer" class="row-value">Loading…</span>
-    </div>
-  </div>
+  <!-- App "pages" mount here (no reloads) -->
+  <div id="app" role="main" aria-live="polite"></div>
 
   <!-- PWA Bottom Nav (ONLY shown in PWA by JS) -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
-      <a href="index.html" data-route="dashboard" data-img-key="home">
+      <a href="#/home" data-route="home" data-img-key="home">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
-          <!-- Dashboard renamed to Home -->
           <span class="label">Home</span>
         </div>
       </a>
 
-      <a href="cwl.html" data-route="cwl" data-img-key="cwl">
+      <a href="#/cwl" data-route="cwl" data-img-key="cwl">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">CWL</span>
         </div>
       </a>
 
-      <a href="war.html" data-route="war" data-img-key="war">
+      <a href="#/war" data-route="war" data-img-key="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">War</span>
         </div>
       </a>
 
-      <!-- MY STATS now uses repo-root images -->
-      <a href="my-stats.html" data-route="mystats" data-img-key="my-stats">
+      <a href="#/my-stats" data-route="mystats" data-img-key="my-stats">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">My Stats</span>
         </div>
       </a>
 
-      <!-- MORE now uses repo-root images -->
-      <a href="more.html" data-route="more" data-img-key="more">
+      <a href="#/more" data-route="more" data-img-key="more">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">More</span>
@@ -440,62 +385,66 @@
 
   <script>
     // ============================================================
-    // NAV: top nav only in browser, bottom tabs only in PWA
+    // SPA + PWA nav (NO full reloads)
     // ============================================================
+
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
       return !!(standaloneDisplay || iosStandalone);
     }
 
-    function currentRoute(){
-      const file = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-      if(file === "index.html" || file === "") return "dashboard";
-      if(file === "cwl.html") return "cwl";
-      if(file === "war.html") return "war";
-      if(file === "my-stats.html") return "mystats";
-      if(file === "more.html") return "more";
-      return "dashboard";
+    function normalizeRoute(hash){
+      // Accept: #/home, #/cwl, #/war, #/my-stats, #/more
+      const raw = (hash || "").replace(/^#\/?/, "").trim().toLowerCase();
+      if(!raw || raw === "index.html") return "home";
+      if(raw === "home") return "home";
+      if(raw === "cwl") return "cwl";
+      if(raw === "war") return "war";
+      if(raw === "my-stats" || raw === "mystats") return "mystats";
+      if(raw === "more") return "more";
+      return "home";
     }
 
-    function setActiveNav(){
-      const route = currentRoute();
+    function setActiveNav(route){
       document.querySelectorAll("[data-route]").forEach(a => {
         a.classList.toggle("active", (a.getAttribute("data-route") || "") === route);
       });
     }
 
     // ============================================================
-    // PWA-only: swap tab icon IMAGES (repo root)
-    // expects for each key:
-    //   <key>-active.png
-    //   <key>-inactive.png
-    //
-    // Supports:
-    //   home-active.png / home-inactive.png
-    //   cwl-active.png  / cwl-inactive.png
-    //   war-active.png  / war-inactive.png
-    //   my-stats-active.png / my-stats-inactive.png
-    //   more-active.png / more-inactive.png
-    //
-    // Includes cache-busting so updated images show in installed PWAs.
+    // PWA-only: icon swapping (cached + preloaded)
+    // - IMPORTANT: do NOT use Date.now() cache-buster every time.
+    // - Bump ICON_VER only when you upload new icon files.
     // ============================================================
-    function applyPwaImageIconStates(){
-      if(!isPwaInstalled()) return;
+    const ICON_VER = "v1";
 
+    const ICON_FILES = [
+      "home-active.png","home-inactive.png",
+      "cwl-active.png","cwl-inactive.png",
+      "war-active.png","war-inactive.png",
+      "my-stats-active.png","my-stats-inactive.png",
+      "more-active.png","more-inactive.png"
+    ];
+
+    (function preloadTabIcons(){
+      ICON_FILES.forEach(src => { const i = new Image(); i.src = `${src}?v=${ICON_VER}`; });
+    })();
+
+    function applyPwaImageIconStates(route){
+      if(!isPwaInstalled()) return;
       const tabbar = document.getElementById("pwaTabbar");
       if(!tabbar) return;
 
-      const ver = Date.now(); // cache-buster
       tabbar.querySelectorAll("a[data-img-key]").forEach(a => {
         const key = a.getAttribute("data-img-key");
         const img = a.querySelector(".icon img");
         if(!key || !img) return;
 
-        const isActive = a.classList.contains("active");
+        const isActive = (a.getAttribute("data-route") === route);
         const file = isActive ? `${key}-active.png` : `${key}-inactive.png`;
 
-        img.src = `${file}?v=${ver}`;
+        img.src = `${file}?v=${ICON_VER}`;
         img.loading = "eager";
         img.decoding = "async";
       });
@@ -515,29 +464,176 @@
         if(tabbar) tabbar.style.display = "none";
         document.body.classList.remove("has-pwa-tabs");
       }
-
-      setActiveNav();
-      applyPwaImageIconStates();
     }
 
-    setupNavUI();
+    // ============================================================
+    // Page templates (rendered into #app)
+    // ============================================================
+    const app = document.getElementById("app");
 
-    // Re-apply on iOS/Safari resume + bfcache restores
-    window.addEventListener("pageshow", () => {
-      setActiveNav();
-      applyPwaImageIconStates();
-    });
+    function pageShell(title, subtitle){
+      return `
+        <main class="page">
+          <h1>${title}</h1>
+          <p>${subtitle}</p>
+        </main>
+      `;
+    }
 
-    document.addEventListener("visibilitychange", () => {
-      if(document.visibilityState === "visible"){
-        setActiveNav();
-        applyPwaImageIconStates();
-      }
-    });
+    function renderMore(){
+      return `
+        <main class="page">
+          <h1>More</h1>
+          <div class="links">
+            <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
+            <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
+            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
+            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 2</a>
+            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 3</a>
+            <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
+            <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
+            <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
+          </div>
+        </main>
+        <div class="page-footer">EST DECEMBER 2023</div>
+      `;
+    }
+
+    // Home page markup (your original dashboard content)
+    function renderHome(){
+      return `
+        <div class="cards">
+          <h2 class="cards-title">Clan Overview</h2>
+
+          <div id="rankings-block">
+            <div class="section-title">Rankings</div>
+            <div class="row">
+              <span class="row-label">Global Trophies</span>
+              <span id="rank-global-trophies" class="row-value">Loading…</span>
+            </div>
+            <div class="row">
+              <span class="row-label">USA Trophies</span>
+              <span id="rank-usa-trophies" class="row-value">Loading…</span>
+            </div>
+            <div class="divider"></div>
+          </div>
+
+          <div class="section-title">CWL</div>
+          <div class="row">
+            <span class="row-label">CWL League</span>
+            <span id="cwl-league" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last CWL Finish</span>
+            <span id="cwl-finish" class="row-value">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">War</div>
+          <div class="row">
+            <span class="row-label">War Record</span>
+            <span id="war-record" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last 10 Wars</span>
+            <span id="war-last10" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last 25 Wars</span>
+            <span id="war-last25" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last 50 Wars</span>
+            <span id="war-last50" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Current Streak</span>
+            <span id="war-streak" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Longest Streak</span>
+            <span id="war-longest" class="row-value">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">Current War</div>
+          <div class="war-board">
+            <div id="war-timer" class="war-timer">Loading…</div>
+
+            <div class="war-grid-3">
+              <div>
+                <div id="war-name-us" class="war-name">—</div>
+                <div class="war-stat">
+                  <span id="war-stars-us">—</span> <span>⭐</span>
+                </div>
+                <div class="war-substat">
+                  <span id="war-destr-us">—</span> <span>🎯</span>
+                </div>
+                <div class="war-substat">
+                  <span id="war-attacks-us">—</span> <span>⚔️</span>
+                </div>
+              </div>
+
+              <div id="war-vs" class="war-vs">VS</div>
+
+              <div>
+                <div id="war-name-opp" class="war-name">—</div>
+                <div class="war-stat">
+                  <span id="war-stars-opp">—</span> <span>⭐</span>
+                </div>
+                <div class="war-substat">
+                  <span id="war-destr-opp">—</span> <span>🎯</span>
+                </div>
+                <div class="war-substat">
+                  <span id="war-attacks-opp">—</span> <span>⚔️</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">In-Game Events</div>
+          <div class="row">
+            <span class="row-label">Raid Weekend</span>
+            <span id="raid-timer" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Clan Games</span>
+            <span id="clan-games-timer" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Season End</span>
+            <span id="season-end-timer" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">League Reset</span>
+            <span id="league-reset-timer" class="row-value">Loading…</span>
+          </div>
+        </div>
+      `;
+    }
 
     // ============================================================
-    // Utilities
+    // Home data modules (only run while on Home)
     // ============================================================
+    const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
+    const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
+
+    let homeIntervals = [];
+    let warData = null;
+    let warFetched = false;
+
+    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
+    let lastWarSnapshot = null;
+
+    function clearHomeIntervals(){
+      homeIntervals.forEach(id => clearInterval(id));
+      homeIntervals = [];
+    }
+
     function pad(n){ return n.toString().padStart(2,"0"); }
 
     function formatCountdown(ms){
@@ -631,21 +727,6 @@
       });
     }
 
-    // ============================================================
-    // Data endpoints (RAW = no Pages caching)
-    // ============================================================
-    const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
-    const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
-
-    // ============================================================
-    // War module
-    // ============================================================
-    let warData = null;
-    let warFetched = false;
-
-    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
-    let lastWarSnapshot = null;
-
     function loadLastWarSnapshot(){
       try{
         const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
@@ -679,7 +760,38 @@
       renderWarSection();
     }
 
+    function updateWarTimerOnly(isPrevious, displayOverride){
+      const warElem = document.getElementById("war-timer");
+      if(!warElem) return;
+
+      const src = displayOverride || warData;
+
+      if(!src || !src.state){
+        warElem.textContent = "Waiting…";
+        return;
+      }
+
+      if(isPrevious){
+        warElem.textContent = "Previous war ended";
+        return;
+      }
+
+      if(src.state === "notInWar" || !src.warEndIso){
+        warElem.textContent = "No war started";
+        return;
+      }
+
+      const end = new Date(src.warEndIso);
+      const now = new Date();
+      if(isNaN(end.getTime())) warElem.textContent = "No war started";
+      else if(now >= end) warElem.textContent = "War ended";
+      else warElem.textContent = formatCountdown(end - now);
+    }
+
     function renderWarSection(){
+      // If home isn't mounted, skip
+      if(!document.getElementById("war-timer")) return;
+
       resetWarHighlights();
       setWarVsVisibility(false);
 
@@ -759,37 +871,6 @@
       updateWarTimerOnly(showingPrevious, display);
     }
 
-    function updateWarTimerOnly(isPrevious, displayOverride){
-      const warElem = document.getElementById("war-timer");
-      if(!warElem) return;
-
-      const src = displayOverride || warData;
-
-      if(!src || !src.state){
-        warElem.textContent = "Waiting…";
-        return;
-      }
-
-      if(isPrevious){
-        warElem.textContent = "Previous war ended";
-        return;
-      }
-
-      if(src.state === "notInWar" || !src.warEndIso){
-        warElem.textContent = "No war started";
-        return;
-      }
-
-      const end = new Date(src.warEndIso);
-      const now = new Date();
-      if(isNaN(end.getTime())) warElem.textContent = "No war started";
-      else if(now >= end) warElem.textContent = "War ended";
-      else warElem.textContent = formatCountdown(end - now);
-    }
-
-    // ============================================================
-    // Clan stats module
-    // ============================================================
     let clanStats = null;
 
     async function fetchClanStats(){
@@ -804,6 +885,9 @@
     }
 
     function renderClanStats(){
+      // If home isn't mounted, skip
+      if(!document.getElementById("war-record")) return;
+
       setClass("war-record","record-green", false);
       setClass("war-last10","record-green", false);
       setClass("war-last25","record-green", false);
@@ -852,9 +936,6 @@
       }
     }
 
-    // ============================================================
-    // Recurring events module
-    // ============================================================
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -897,6 +978,7 @@
     }
 
     function updateRecurringTimers(){
+      if(!document.getElementById("raid-timer")) return;
       const now = new Date();
       setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
       setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
@@ -904,18 +986,92 @@
       setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
-    // Boot + intervals
-    fetchWarData();
-    fetchClanStats();
-    updateRecurringTimers();
+    function startHomeDataLoop(){
+      // Clean slate
+      clearHomeIntervals();
+      warFetched = false;
 
-    setInterval(() => {
+      // Kick off
+      fetchWarData();
+      fetchClanStats();
       updateRecurringTimers();
-      updateWarTimerOnly(false, null);
-    }, 1000);
 
-    setInterval(fetchWarData, 5*1000);
-    setInterval(fetchClanStats, 5*1000);
+      homeIntervals.push(setInterval(() => {
+        updateRecurringTimers();
+        updateWarTimerOnly(false, null);
+      }, 1000));
+
+      homeIntervals.push(setInterval(fetchWarData, 5*1000));
+      homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+    }
+
+    // ============================================================
+    // Router
+    // ============================================================
+    function setDocTitle(route){
+      const map = {
+        home: "B•A•S•E•D — Home",
+        cwl: "B•A•S•E•D — CWL",
+        war: "B•A•S•E•D — War",
+        mystats: "B•A•S•E•D — My Stats",
+        more: "B•A•S•E•D — More",
+      };
+      document.title = map[route] || "B•A•S•E•D";
+    }
+
+    function renderRoute(){
+      const route = normalizeRoute(location.hash);
+
+      setupNavUI();
+      setActiveNav(route);
+      applyPwaImageIconStates(route);
+      setDocTitle(route);
+
+      // Stop home loops if leaving home
+      if(route !== "home") clearHomeIntervals();
+
+      if(route === "home"){
+        app.innerHTML = renderHome();
+        startHomeDataLoop();
+        return;
+      }
+
+      if(route === "cwl"){
+        app.innerHTML = pageShell("CWL", "Coming Soon!");
+        return;
+      }
+
+      if(route === "war"){
+        app.innerHTML = pageShell("WAR", "Coming Soon!");
+        return;
+      }
+
+      if(route === "mystats"){
+        app.innerHTML = pageShell("My Stats", "Coming Soon!");
+        return;
+      }
+
+      if(route === "more"){
+        app.innerHTML = renderMore();
+        return;
+      }
+
+      // fallback
+      location.hash = "#/home";
+    }
+
+    // Initial route
+    if(!location.hash) location.hash = "#/home";
+    renderRoute();
+
+    // Listen for navigation
+    window.addEventListener("hashchange", renderRoute);
+
+    // iOS resume behavior
+    window.addEventListener("pageshow", renderRoute);
+    document.addEventListener("visibilitychange", () => {
+      if(document.visibilityState === "visible") renderRoute();
+    });
   </script>
 </body>
 </html>
