@@ -239,7 +239,6 @@
       width: 100%;
       height: 100%;
       display:block;
-      fill: currentColor;
     }
 
     .pwa-tabbar a .label{
@@ -392,11 +391,9 @@
   <!-- PWA Bottom Nav (ONLY shown in PWA by JS) -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
-      <a href="index.html" data-route="dashboard">
+      <a href="index.html" data-route="dashboard" data-icon-key="home">
         <div class="tab-inner">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 3.2 2.5 11.1c-.3.2-.5.6-.5 1v8.2c0 .9.7 1.7 1.7 1.7h5.2c.6 0 1-.4 1-1v-5.5c0-.6.5-1.1 1.1-1.1h2c.6 0 1.1.5 1.1 1.1V21c0 .6.4 1 1 1h5.2c.9 0 1.7-.7 1.7-1.7v-8.2c0-.4-.2-.8-.5-1L12 3.2z"/></svg>
-          </span>
+          <span class="icon" aria-hidden="true"><!-- injected by JS --></span>
           <span class="label">Dashboard</span>
         </div>
       </a>
@@ -404,7 +401,7 @@
       <a href="cwl.html" data-route="cwl">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M18 4h2a1 1 0 0 1 1 1v2a5 5 0 0 1-5 5 6 6 0 0 1-4 3.9V18h3a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h3v-2.1A6 6 0 0 1 8 12a5 5 0 0 1-5-5V5a1 1 0 0 1 1-1h2V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1zm0 2H6v1a3 3 0 0 0 6 0V4h4v3a3 3 0 0 0 2-3V6zm-12 0H4v1a3 3 0 0 0 2 3V6z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4h2a1 1 0 0 1 1 1v2a5 5 0 0 1-5 5 6 6 0 0 1-4 3.9V18h3a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h3v-2.1A6 6 0 0 1 8 12a5 5 0 0 1-5-5V5a1 1 0 0 1 1-1h2V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1zm0 2H6v1a3 3 0 0 0 6 0V4h4v3a3 3 0 0 0 2-3V6zm-12 0H4v1a3 3 0 0 0 2 3V6z"/></svg>
           </span>
           <span class="label">CWL</span>
         </div>
@@ -413,7 +410,7 @@
       <a href="war.html" data-route="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M21 3l-7.2 7.2 1.8 1.8L22.8 4.8 21 3zM3 21l7.2-7.2-1.8-1.8L1.2 19.2 3 21zm8.5-8.5 2-2L12 9l-2 2 1.5 1.5zm-6 1.5 3 3-1.4 1.4-3-3L5.5 14zM19 8l-3-3 1.4-1.4 3 3L19 8z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3l-7.2 7.2 1.8 1.8L22.8 4.8 21 3zM3 21l7.2-7.2-1.8-1.8L1.2 19.2 3 21zm8.5-8.5 2-2L12 9l-2 2 1.5 1.5zm-6 1.5 3 3-1.4 1.4-3-3L5.5 14zM19 8l-3-3 1.4-1.4 3 3L19 8z"/></svg>
           </span>
           <span class="label">War</span>
         </div>
@@ -422,7 +419,7 @@
       <a href="my-stats.html" data-route="mystats">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12zm0 2c-4.4 0-8 2.2-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.8-3.6-5-8-5z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12zm0 2c-4.4 0-8 2.2-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.8-3.6-5-8-5z"/></svg>
           </span>
           <span class="label">My Stats</span>
         </div>
@@ -431,7 +428,7 @@
       <a href="more.html" data-route="more">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M6 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
           </span>
           <span class="label">More</span>
         </div>
@@ -440,6 +437,64 @@
   </nav>
 
   <script>
+    // ============================================================
+    // PWA-only: active/inactive SVG swapping for tab icons
+    // - This only runs when installed (standalone display mode).
+    // - Uses inline SVG (best practice) so no network fetch + crisp rendering.
+    // ============================================================
+    const PWA_ICONS = {
+      home: {
+        // Inactive: outline-only (currentColor stroke)
+        inactive: `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <!-- roof -->
+              <path d="M4.5 11.2L12 5.2l7.5 6.0" />
+              <!-- body -->
+              <path d="M6.5 10.8h11c.9 0 1.5.6 1.5 1.5v7.2c0 .9-.6 1.5-1.5 1.5h-11c-.9 0-1.5-.6-1.5-1.5v-7.2c0-.9.6-1.5 1.5-1.5z" />
+              <!-- door cutout outline -->
+              <path d="M14.3 21v-4.2c0-.8.6-1.4 1.4-1.4h1.3c.8 0 1.4.6 1.4 1.4V21" />
+              <!-- chimney -->
+              <path d="M14.2 6.1h3.0v2.6" />
+            </g>
+          </svg>
+        `,
+        // Active: filled (currentColor fill) with door as "hole"
+        active: `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" fill-rule="evenodd" d="
+              M12 4.8
+              3.9 11.2
+              a1 1 0 0 0 .6 1.8
+              h.7v7.2
+              a2.5 2.5 0 0 0 2.5 2.5h8.1
+              a2.5 2.5 0 0 0 2.5-2.5V13h.7
+              a1 1 0 0 0 .6-1.8L12 4.8z
+              M15.1 21
+              v-4.4
+              a1.6 1.6 0 0 1 1.6-1.6
+              h1.0
+              a1.6 1.6 0 0 1 1.6 1.6
+              V21
+              z
+            " />
+            <!-- carve the door out (black via transparency) -->
+            <path fill="#000" fill-rule="evenodd" d="
+              M16.0 21
+              v-4.1
+              c0-.4.3-.7.7-.7
+              h.8
+              c.4 0 .7.3.7.7
+              V21
+              z
+            " />
+            <!-- chimney -->
+            <path fill="currentColor" d="M14.2 5.9h3.4c.4 0 .7.3.7.7v2.7c0 .4-.3.7-.7.7h-1.2c-.4 0-.7-.3-.7-.7V7.3h-1.5c-.4 0-.7-.3-.7-.7s.3-.7.7-.7z"/>
+          </svg>
+        `
+      }
+    };
+
     // ============================================================
     // NAV: top nav only in browser, bottom tabs only in PWA
     // ============================================================
@@ -466,6 +521,24 @@
       });
     }
 
+    function applyPwaIconStates(){
+      // Only affect the PWA tabbar icons (NOT web/top nav)
+      if(!isPwaInstalled()) return;
+
+      const tabbar = document.getElementById("pwaTabbar");
+      if(!tabbar) return;
+
+      tabbar.querySelectorAll("a[data-icon-key]").forEach(a => {
+        const key = a.getAttribute("data-icon-key");
+        const wrap = a.querySelector(".icon");
+        const set = key && PWA_ICONS[key];
+        if(!wrap || !set) return;
+
+        const isActive = a.classList.contains("active");
+        wrap.innerHTML = isActive ? set.active : set.inactive;
+      });
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -480,7 +553,9 @@
         if(tabbar) tabbar.style.display = "none";
         document.body.classList.remove("has-pwa-tabs");
       }
+
       setActiveNav();
+      applyPwaIconStates(); // <- swap active/inactive SVGs (PWA only)
     }
 
     setupNavUI();
@@ -872,6 +947,9 @@
         fetchWarData();
         fetchClanStats();
         updateRecurringTimers();
+        // ensure icons are still correct if iOS resumes oddly
+        setActiveNav();
+        applyPwaIconStates();
       }
     });
   </script>
