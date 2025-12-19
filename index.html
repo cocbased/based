@@ -37,6 +37,7 @@
       text-align:center;
       padding:24px 16px;
       box-sizing:border-box;
+      overscroll-behavior-x: none; /* reduce iOS rubber-band feel */
     }
 
     /* Header */
@@ -96,7 +97,7 @@
     }
 
     /* App content area
-       IMPORTANT: make this a true column so "More" footer can pin to bottom */
+       IMPORTANT: true column so "More" footer can pin to bottom */
     #app{
       width:100%;
       max-width:560px;
@@ -104,7 +105,40 @@
       flex-direction:column;
       align-items:center;
       flex:1;
+
+      /* Swipe feel */
+      will-change: transform;
+      transform: translate3d(0,0,0);
+      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
     }
+
+    /* The "underlay" (next/prev) that peeks while swiping */
+    #underlay{
+      width:100%;
+      max-width:560px;
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%);
+      top:0;
+      pointer-events:none;
+      opacity:0;
+      will-change: transform, opacity;
+    }
+
+    /* Wrap app+underlay into a stage so underlay can sit behind app */
+    .stage{
+      width:100%;
+      max-width:560px;
+      position:relative;
+      flex:1;
+      display:flex;
+      justify-content:center;
+    }
+
+    /* dragging / spring */
+    #app.is-dragging{ transition:none !important; }
+    #app.snap{ transition: transform 420ms cubic-bezier(.16,1,.3,1); } /* springy */
+    #app.slide-out{ transition: transform 260ms cubic-bezier(.2,.8,.2,1); }
 
     /* Card + rows (Home page) */
     .cards{
@@ -206,11 +240,11 @@
       display:flex;
       flex-direction:column;
       gap:12px;
-      align-items:center;  /* center children */
+      align-items:center;
     }
     .link-btn{
-      width:100%;          /* fill the 280px container */
-      text-align:center;   /* center text */
+      width:100%;
+      text-align:center;
       display:block;
       padding:12px;
       font-size:16px;
@@ -308,7 +342,6 @@
       transform: translateY(-3px);
     }
 
-    /* PWA icon images */
     .pwa-tabbar a .icon img{
       width: 22px;
       height: 22px;
@@ -351,8 +384,11 @@
     <a href="#/more" data-route="more">More</a>
   </nav>
 
-  <!-- App "pages" mount here (no reloads) -->
-  <div id="app" role="main" aria-live="polite"></div>
+  <!-- Stage: underlay (peek next/prev) + app (dragged) -->
+  <div class="stage" id="stage">
+    <div id="underlay" aria-hidden="true"></div>
+    <div id="app" role="main" aria-live="polite"></div>
+  </div>
 
   <!-- PWA Bottom Nav (ONLY shown in PWA by JS) -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
@@ -406,7 +442,6 @@
     }
 
     function normalizeRoute(hash){
-      // Accept: #/home, #/cwl, #/war, #/my-stats, #/more
       const raw = (hash || "").replace(/^#\/?/, "").trim().toLowerCase();
       if(!raw || raw === "index.html") return "home";
       if(raw === "home") return "home";
@@ -428,7 +463,6 @@
     // - Bump ICON_VER only when you upload new icon files.
     // ============================================================
     const ICON_VER = "v1";
-
     const ICON_FILES = [
       "home-active.png","home-inactive.png",
       "cwl-active.png","cwl-inactive.png",
@@ -436,7 +470,6 @@
       "my-stats-active.png","my-stats-inactive.png",
       "more-active.png","more-inactive.png"
     ];
-
     (function preloadTabIcons(){
       ICON_FILES.forEach(src => { const i = new Image(); i.src = `${src}?v=${ICON_VER}`; });
     })();
@@ -477,7 +510,7 @@
     }
 
     // ============================================================
-    // Swipe navigation between sections
+    // Route order + router helpers
     // ============================================================
     const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
 
@@ -492,58 +525,20 @@
       location.hash = map[name] || "#/home";
     }
 
-    (function enableSwipeNav(){
-      let startX = 0, startY = 0, tracking = false;
-
-      function isInteractive(el){
-        if(!el) return false;
-        return !!el.closest("a, button, input, textarea, select, label");
-      }
-
-      window.addEventListener("touchstart", (e) => {
-        if(!e.touches || e.touches.length !== 1) return;
-        if(isInteractive(e.target)) return;
-
-        const t = e.touches[0];
-        startX = t.clientX;
-        startY = t.clientY;
-        tracking = true;
-      }, { passive: true });
-
-      window.addEventListener("touchend", (e) => {
-        if(!tracking) return;
-        tracking = false;
-
-        const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
-        if(!t) return;
-
-        const dx = t.clientX - startX;
-        const dy = t.clientY - startY;
-
-        // Mostly horizontal swipe
-        if(Math.abs(dx) < 60) return;
-        if(Math.abs(dy) > 45) return;
-
-        const current = normalizeRoute(location.hash);
-        const idx = ROUTE_ORDER.indexOf(current);
-        if(idx === -1) return;
-
-        if(dx < 0){
-          // swipe left -> next
-          const next = ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
-          if(next !== current) goRoute(next);
-        } else {
-          // swipe right -> prev
-          const prev = ROUTE_ORDER[Math.max(idx - 1, 0)];
-          if(prev !== current) goRoute(prev);
-        }
-      }, { passive: true });
-    })();
+    function nextRoute(direction){
+      const current = normalizeRoute(location.hash);
+      const idx = ROUTE_ORDER.indexOf(current);
+      if(idx === -1) return null;
+      if(direction === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
+      if(direction === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
+      return null;
+    }
 
     // ============================================================
     // Page templates (rendered into #app)
     // ============================================================
     const app = document.getElementById("app");
+    const underlay = document.getElementById("underlay");
 
     function pageShell(title, subtitle){
       return `
@@ -575,7 +570,6 @@
       `;
     }
 
-    // Home page markup (your original dashboard content)
     function renderHome(){
       return `
         <div class="cards">
@@ -692,6 +686,15 @@
       `;
     }
 
+    function renderRouteContent(route){
+      if(route === "home")   return renderHome();
+      if(route === "cwl")    return pageShell("CWL", "Coming Soon!");
+      if(route === "war")    return pageShell("WAR", "Coming Soon!");
+      if(route === "mystats")return pageShell("My Stats", "Coming Soon!");
+      if(route === "more")   return renderMore();
+      return renderHome();
+    }
+
     // ============================================================
     // Home data modules (only run while on Home)
     // ============================================================
@@ -701,9 +704,9 @@
     let homeIntervals = [];
     let warData = null;
     let warFetched = false;
-
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
+    let clanStats = null;
 
     function clearHomeIntervals(){
       homeIntervals.forEach(id => clearInterval(id));
@@ -946,8 +949,6 @@
       updateWarTimerOnly(showingPrevious, display);
     }
 
-    let clanStats = null;
-
     async function fetchClanStats(){
       try{
         const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
@@ -1101,36 +1102,190 @@
 
       if(route !== "home") clearHomeIntervals();
 
-      if(route === "home"){
-        app.innerHTML = renderHome();
-        startHomeDataLoop();
-        return;
-      }
-
-      if(route === "cwl"){
-        app.innerHTML = pageShell("CWL", "Coming Soon!");
-        return;
-      }
-
-      if(route === "war"){
-        app.innerHTML = pageShell("WAR", "Coming Soon!");
-        return;
-      }
-
-      if(route === "mystats"){
-        app.innerHTML = pageShell("My Stats", "Coming Soon!");
-        return;
-      }
-
-      if(route === "more"){
-        app.innerHTML = renderMore();
-        return;
-      }
-
-      location.hash = "#/home";
+      app.innerHTML = renderRouteContent(route);
+      if(route === "home") startHomeDataLoop();
     }
 
-    // Initial route
+    // ============================================================
+    // Native-feeling swipe: live drag + underlay peek + spring snap
+    // ============================================================
+    (function enableSwipeNavNative(){
+      let startX=0, startY=0, lastX=0;
+      let tracking=false, lockedAxis=null;
+      let currentRouteAtStart="home";
+      let targetRoute=null;
+      let raf=0;
+      let dx=0;
+
+      function isInteractive(el){
+        if(!el) return false;
+        return !!el.closest("a, button, input, textarea, select, label");
+      }
+
+      function setAppTranslate(px){
+        app.style.transform = `translate3d(${px}px,0,0)`;
+      }
+
+      function setUnderlay(route, direction){
+        if(!route){
+          underlay.style.opacity = "0";
+          underlay.innerHTML = "";
+          return;
+        }
+        underlay.innerHTML = renderRouteContent(route);
+        underlay.style.opacity = "1";
+        // Slight parallax so it feels like it's "behind"
+        const w = Math.max(320, window.innerWidth);
+        const par = (direction === "left") ? 0.18 : -0.18; // move opposite a bit
+        underlay.style.transform = `translateX(${par * w}px)`;
+      }
+
+      function rubberBand(px){
+        const w = Math.max(320, window.innerWidth);
+        const x = px / w;
+        const damp = 1 - Math.min(0.6, Math.abs(x) * 0.6);
+        return px * damp;
+      }
+
+      function clearSwipeState(){
+        app.classList.remove("is-dragging","snap","slide-out");
+        app.style.transform = "translate3d(0,0,0)";
+        underlay.style.opacity = "0";
+        underlay.innerHTML = "";
+        underlay.style.transform = "translateX(-50%)"; // overwritten by setUnderlay anyway
+        dx = 0;
+      }
+
+      window.addEventListener("touchstart", (e) => {
+        if(!e.touches || e.touches.length !== 1) return;
+        if(isInteractive(e.target)) return;
+
+        tracking = true;
+        lockedAxis = null;
+        const t = e.touches[0];
+        startX = lastX = t.clientX;
+        startY = t.clientY;
+        currentRouteAtStart = normalizeRoute(location.hash);
+        targetRoute = null;
+
+        app.classList.add("is-dragging");
+        app.classList.remove("snap","slide-out");
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (e) => {
+        if(!tracking || !e.touches || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        const _dx = t.clientX - startX;
+        const _dy = t.clientY - startY;
+
+        if(!lockedAxis){
+          if(Math.abs(_dx) > 10 || Math.abs(_dy) > 10){
+            lockedAxis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
+          } else {
+            return;
+          }
+        }
+        if(lockedAxis !== "x") return;
+
+        lastX = t.clientX;
+        dx = _dx;
+
+        const dir = (dx < 0) ? "left" : "right";
+        const candidate = nextRoute(dir);
+
+        // Underlay peek (only if there's a real neighbor)
+        targetRoute = (candidate && candidate !== currentRouteAtStart) ? candidate : null;
+        setUnderlay(targetRoute, dir);
+
+        // Live drag with resistance
+        const px = rubberBand(dx);
+
+        // Underlay parallax follows drag slightly
+        if(targetRoute){
+          const w = Math.max(320, window.innerWidth);
+          const amt = clamp(Math.abs(px) / (w * 0.55), 0, 1);
+          underlay.style.opacity = String(0.25 + 0.75 * amt);
+          const par = (dir === "left") ? (w * 0.12 * (1-amt)) : (-w * 0.12 * (1-amt));
+          underlay.style.transform = `translateX(${par}px)`;
+        }
+
+        if(!raf){
+          raf = requestAnimationFrame(() => {
+            setAppTranslate(px);
+            raf = 0;
+          });
+        }
+      }, { passive: true });
+
+      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+      window.addEventListener("touchend", () => {
+        if(!tracking) return;
+        tracking = false;
+
+        // Not a horizontal gesture
+        if(lockedAxis !== "x"){
+          clearSwipeState();
+          lockedAxis = null;
+          return;
+        }
+
+        const w = Math.max(320, window.innerWidth);
+        const absDx = Math.abs(dx);
+        const commit = absDx > Math.min(120, w * 0.22);
+
+        // If no neighbor or not far enough -> spring back
+        if(!targetRoute || !commit){
+          app.classList.remove("is-dragging");
+          app.classList.add("snap");
+          setAppTranslate(0);
+          setTimeout(clearSwipeState, 460);
+          lockedAxis = null;
+          return;
+        }
+
+        // Commit: slide out then navigate
+        const dir = (dx < 0) ? "left" : "right";
+        app.classList.remove("is-dragging","snap");
+        app.classList.add("slide-out");
+
+        // Slide fully off-screen
+        const out = (dir === "left") ? (-1.15 * w) : (1.15 * w);
+        setAppTranslate(out);
+
+        setTimeout(() => {
+          clearSwipeState();
+          goRoute(targetRoute);
+        }, 260);
+
+        lockedAxis = null;
+      }, { passive: true });
+
+      window.addEventListener("touchcancel", () => {
+        tracking = false;
+        lockedAxis = null;
+        clearSwipeState();
+      }, { passive: true });
+    })();
+
+    // ============================================================
+    // Prevent double-tap zoom on iOS (best-effort)
+    // ============================================================
+    (function preventDoubleTapZoom(){
+      let lastTouchEnd = 0;
+      document.addEventListener("touchend", function(e){
+        const now = Date.now();
+        if(now - lastTouchEnd <= 300){
+          // prevent quick double tap (doesn't block scroll)
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+    })();
+
+    // ============================================================
+    // Boot
+    // ============================================================
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
     renderRoute();
