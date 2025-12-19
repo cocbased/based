@@ -34,9 +34,13 @@
     .app-icon{width:90px;height:90px;margin-bottom:12px;border-radius:20px;object-fit:contain;}
     .logo{width:100%;max-width:225px;height:auto;margin-bottom:16px;object-fit:contain;}
 
-    .clan-tag-link{color:#fff;text-decoration:none;opacity:.85;font-size:14px;display:inline-block;margin:8px 0 10px;}
+    .clan-tag-link{
+      color:#fff;text-decoration:none;opacity:.85;font-size:14px;
+      display:inline-block;margin:8px 0 10px;
+    }
     .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
 
+    /* Top nav (non-PWA only) */
     .topnav{
       width:100%;max-width:560px;display:flex;justify-content:center;flex-wrap:wrap;
       gap:10px;padding:10px 8px 18px;box-sizing:border-box;
@@ -45,30 +49,26 @@
       text-decoration:none;color:#fff;opacity:.82;font-size:13px;padding:8px 12px;border-radius:999px;
       border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);white-space:nowrap;
     }
-    .topnav a.active{opacity:1;font-weight:700;border-color:rgba(255,255,255,0.22);background:rgba(255,255,255,0.08);}
+    .topnav a.active{
+      opacity:1;font-weight:700;border-color:rgba(255,255,255,0.22);background:rgba(255,255,255,0.08);
+    }
 
-    .panel{
+    /* Page title */
+    .page-title{
+      margin: 6px 0 12px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    /* Links directly on page bg (no blue panel) */
+    .more-links{
       width:100%;
       max-width:340px;
-      border-radius:12px;
-      background:#0b1829;
-      border:1px solid #2b3b55;
-      box-sizing:border-box;
-      padding:14px;
-      text-align:left;
-      margin-bottom:18px;
-    }
-    .panel h2{
-      margin:0 0 10px;
-      text-align:center;
-      font-size:16px;
-    }
-
-    .more-links{
       display:flex;
       flex-direction:column;
       gap:10px;
-      margin-top:8px;
+      margin-top:6px;
     }
 
     .more-links a{
@@ -97,6 +97,7 @@
       text-align:center;
     }
 
+    /* PWA Bottom Tabs (Reddit-ish) */
     body.has-pwa-tabs{ padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px); }
     .pwa-tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tabbar-h);padding-bottom:var(--safe-bottom);
@@ -143,24 +144,22 @@
     <a href="more.html" data-route="more">More</a>
   </nav>
 
-  <div class="panel">
-    <h2>More</h2>
+  <div class="page-title">More</div>
 
-    <div class="more-links">
-      <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener">CWL Leaderboards</a>
-      <a href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener">Clan Discord</a>
-      <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener">Visit B•A•S•E•D</a>
-      <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener">Visit B•A•S•E•D 2</a>
-      <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener">Visit B•A•S•E•D 3</a>
-      <a href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener">Clan Stats</a>
-      <a href="https://store.supercell.com/" target="_blank" rel="noopener">SuperCell Store</a>
-      <a class="install" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener">How to install B•A•S•E•D App</a>
-    </div>
-
-    <div class="footer">EST DECEMBER 2023</div>
+  <div class="more-links">
+    <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener">CWL Leaderboards</a>
+    <a href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener">Clan Discord</a>
+    <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener">Visit B•A•S•E•D</a>
+    <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener">Visit B•A•S•E•D 2</a>
+    <a href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener">Visit B•A•S•E•D 3</a>
+    <a href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener">Clan Stats</a>
+    <a href="https://store.supercell.com/" target="_blank" rel="noopener">SuperCell Store</a>
+    <a class="install" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener">How to install B•A•S•E•D App</a>
   </div>
 
-  <nav class="pwa-tabbar" id="pwaTabbar">
+  <div class="footer">EST DECEMBER 2023</div>
+
+  <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="index.html" data-route="dashboard"><div class="tab-inner"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 3.2 2.5 11.1c-.3.2-.5.6-.5 1v8.2c0 .9.7 1.7 1.7 1.7h5.2c.6 0 1-.4 1-1v-5.5c0-.6.5-1.1 1.1-1.1h2c.6 0 1.1.5 1.1 1.1V21c0 .6.4 1 1 1h5.2c.9 0 1.7-.7 1.7-1.7v-8.2c0-.4-.2-.8-.5-1L12 3.2z"/></svg></span><span class="label">Dashboard</span></div></a>
       <a href="cwl.html" data-route="cwl"><div class="tab-inner"><span class="icon"><svg viewBox="0 0 24 24"><path d="M18 4h2a1 1 0 0 1 1 1v2a5 5 0 0 1-5 5 6 6 0 0 1-4 3.9V18h3a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h3v-2.1A6 6 0 0 1 8 12a5 5 0 0 1-5-5V5a1 1 0 0 1 1-1h2V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1zm0 2H6v1a3 3 0 0 0 6 0V4h4v3a3 3 0 0 0 2-3V6zm-12 0H4v1a3 3 0 0 0 2 3V6z"/></svg></span><span class="label">CWL</span></div></a>
@@ -195,6 +194,7 @@
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
       const tabbar = document.getElementById("pwaTabbar");
+
       if(pwa){
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
