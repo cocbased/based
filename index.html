@@ -1047,21 +1047,39 @@
 
     let enterFromSwipeDir = null; // "left" or "right" (direction user swiped)
 
+    // ✅ FIXED: deterministic enter direction + cancels stale animations
     function animateEnterIfNeeded(){
       if(!enterFromSwipeDir) return;
-      const offset = (enterFromSwipeDir === "left") ? 26 : -26; // new page comes from opposite side
+
+      // Cancel any previous animations that might have fill-state
+      try{
+        app.getAnimations().forEach(a => a.cancel());
+      } catch(e){}
+
+      // Swipe left -> new page enters from right (+)
+      // Swipe right -> new page enters from left (-)
+      const from = (enterFromSwipeDir === "left") ? 26 : -26;
       enterFromSwipeDir = null;
 
-      try{
-        app.animate([
-          { transform: `translate3d(${offset}px,0,0)`, opacity: 0.88 },
-          { transform: `translate3d(0,0,0)`, opacity: 1 }
-        ], {
-          duration: 280,
-          easing: "cubic-bezier(.2,.9,.2,1)",
-          fill: "both"
-        });
-      } catch(e){}
+      // Force start state
+      app.style.transform = `translate3d(${from}px,0,0)`;
+      app.style.opacity = "0.92";
+
+      requestAnimationFrame(() => {
+        try{
+          app.animate([
+            { transform: `translate3d(${from}px,0,0)`, opacity: 0.92 },
+            { transform: `translate3d(0,0,0)`, opacity: 1 }
+          ], {
+            duration: 340,
+            easing: "cubic-bezier(.2,.9,.2,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
+        }
+      });
     }
 
     function renderRoute(){
@@ -1114,11 +1132,11 @@
         const w = Math.max(320, window.innerWidth);
         const t = clamp(px / (w * 0.8), -1, 1);
 
-        // Small, native-feeling tilt + slight scale
-        const rot = t * 1.15;               // degrees
+        const rot = t * 1.15;                 // degrees
         const scale = 1 - Math.abs(t) * 0.02; // down to ~0.98
 
         app.style.transform = `translate3d(${px}px,0,0) rotateZ(${rot}deg) scale(${scale})`;
+        app.style.opacity = "1";
       }
 
       function setUnderlay(route, direction, px){
@@ -1132,10 +1150,9 @@
         }
 
         const w = Math.max(320, window.innerWidth);
-        const amt = clamp(Math.abs(px) / (w * 0.75), 0, 1); // slow ramp
+        const amt = clamp(Math.abs(px) / (w * 0.75), 0, 1);
         underlay.style.opacity = String(0.12 + 0.88 * amt);
 
-        // Parallax: underlay drifts slightly opposite for depth
         const par = (direction === "left")
           ? (w * 0.12 * (1-amt))
           : (-w * 0.12 * (1-amt));
@@ -1146,14 +1163,14 @@
       function clearUnderlay(){
         underlay.style.opacity = "0";
         underlay.innerHTML = "";
+        underlay.style.transform = "translateX(0px)";
       }
 
       function springBack(px){
-        // iOS-like: overshoot slightly past 0 then settle
         try{
           app.animate([
-            { transform: `translate3d(${px}px,0,0) rotateZ(${(px/Math.max(320,window.innerWidth))*1.15}deg) scale(${1 - Math.min(0.02, Math.abs(px)/(Math.max(320,window.innerWidth))*0.02)})`, opacity: 1 },
-            { transform: `translate3d(${(-px)*0.04}px,0,0) rotateZ(${(-px/Math.max(320,window.innerWidth))*0.12}deg) scale(1)`, opacity: 1 },
+            { transform: app.style.transform || `translate3d(${px}px,0,0)`, opacity: 1 },
+            { transform: `translate3d(${(-px)*0.04}px,0,0) rotateZ(0deg) scale(1)`, opacity: 1 },
             { transform: `translate3d(0,0,0) rotateZ(0deg) scale(1)`, opacity: 1 }
           ], {
             duration: 560,
@@ -1181,16 +1198,13 @@
         startY = t.clientY;
         startT = performance.now();
 
-        // Lock route at swipe start (prevents direction bugs)
         fromRoute = normalizeRoute(location.hash);
 
-        // Reset underlay
         clearUnderlay();
         toRoute = null;
         dir = null;
         dx = 0;
 
-        // Make sure inline transform is active
         app.style.willChange = "transform";
       }, { passive: true });
 
@@ -1212,13 +1226,6 @@
 
         const candidate = neighborRoute(fromRoute, dir);
         toRoute = (candidate && candidate !== fromRoute) ? candidate : null;
-
-        // If route changes, refresh underlay content
-        if(toRoute){
-          // If underlay currently showing a different route, rebuild
-          // (simpler: just rebuild if empty; route order is stable)
-          if(!underlay.innerHTML) underlay.innerHTML = renderRouteContent(toRoute);
-        }
 
         const px = rubberBand(dx);
         setUnderlay(toRoute, dir, px);
@@ -1245,7 +1252,7 @@
         const absDx = Math.abs(dx);
 
         const dt = Math.max(1, performance.now() - startT);
-        const vx = absDx / dt; // px per ms
+        const vx = absDx / dt;
 
         const commitByDistance = absDx > Math.min(150, w * 0.28);
         const commitByVelocity = vx > 0.62;
@@ -1260,10 +1267,14 @@
           return;
         }
 
-        // Commit: haptic + slide out, then new page animates in
         lightHaptic();
 
         const out = (dir === "left") ? (-1.10 * w) : (1.10 * w);
+
+        try{
+          // cancel any lingering animations so we don't "inherit" transforms
+          app.getAnimations().forEach(a => a.cancel());
+        } catch(e){}
 
         try{
           app.animate([
@@ -1278,12 +1289,12 @@
           app.style.transform = `translate3d(${out}px,0,0)`;
         }
 
-        // Ensure next render animates in from correct side
+        // ✅ next page enters from correct side
         enterFromSwipeDir = dir;
 
         setTimeout(() => {
-          // Clean state and navigate
           app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
           clearUnderlay();
           goRoute(toRoute);
           app.style.willChange = "auto";
@@ -1297,6 +1308,7 @@
         lockedAxis = null;
         clearUnderlay();
         app.style.transform = "translate3d(0,0,0)";
+        app.style.opacity = "1";
         app.style.willChange = "auto";
       }, { passive: true });
     })();
