@@ -37,7 +37,7 @@
       text-align:center;
       padding:24px 16px;
       box-sizing:border-box;
-      overscroll-behavior-x: none; /* reduce iOS rubber-band feel */
+      overscroll-behavior-x: none;
     }
 
     /* Header */
@@ -96,23 +96,17 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* App content area
-       IMPORTANT: true column so "More" footer can pin to bottom */
-    #app{
+    /* Stage: underlay (peek next/prev) + app (dragged) */
+    .stage{
       width:100%;
       max-width:560px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+      position:relative;
       flex:1;
-
-      /* Swipe feel */
-      will-change: transform;
-      transform: translate3d(0,0,0);
-      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
+      display:flex;
+      justify-content:center;
     }
 
-    /* The "underlay" (next/prev) that peeks while swiping */
+    /* Underlay page preview behind swipe */
     #underlay{
       width:100%;
       max-width:560px;
@@ -125,22 +119,26 @@
       will-change: transform, opacity;
     }
 
-    /* Wrap app+underlay into a stage so underlay can sit behind app */
-    .stage{
+    /* App mount */
+    #app{
       width:100%;
       max-width:560px;
-      position:relative;
-      flex:1;
       display:flex;
-      justify-content:center;
+      flex-direction:column;
+      align-items:center;
+      flex:1;
+
+      will-change: transform;
+      transform: translate3d(0,0,0);
+      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
     }
 
     /* dragging / spring */
     #app.is-dragging{ transition:none !important; }
-    #app.snap{ transition: transform 420ms cubic-bezier(.16,1,.3,1); } /* springy */
+    #app.snap{ transition: transform 420ms cubic-bezier(.16,1,.3,1); }
     #app.slide-out{ transition: transform 260ms cubic-bezier(.2,.8,.2,1); }
 
-    /* Card + rows (Home page) */
+    /* Card + rows (Home + other sections wrapper) */
     .cards{
       width:100%;
       max-width:340px;
@@ -214,11 +212,11 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* Generic pages */
+    /* Generic pages (inside cards) */
     .page{
       width:100%;
       text-align:center;
-      padding:24px 10px;
+      padding:14px 6px 6px;
       box-sizing:border-box;
     }
     .page h1{
@@ -232,7 +230,7 @@
       font-size:14px;
     }
 
-    /* More links (centered correctly) */
+    /* More links */
     .links{
       width:100%;
       max-width:280px;
@@ -276,7 +274,7 @@
     }
 
     /* =========================
-       PWA Bottom Tabs
+       PWA Bottom Tabs + hide-on-scroll behavior
        ========================= */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
@@ -295,6 +293,15 @@
       display: none;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+
+      will-change: transform;
+      transform: translate3d(0,0,0);
+      transition: transform 160ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    /* while user scrolls, we set transform inline for "reddit-like" progressive slide */
+    .pwa-tabbar.is-scrolling{
+      transition: none;
     }
 
     .pwa-tabbar .tabs{
@@ -384,13 +391,12 @@
     <a href="#/more" data-route="more">More</a>
   </nav>
 
-  <!-- Stage: underlay (peek next/prev) + app (dragged) -->
   <div class="stage" id="stage">
     <div id="underlay" aria-hidden="true"></div>
     <div id="app" role="main" aria-live="polite"></div>
   </div>
 
-  <!-- PWA Bottom Nav (ONLY shown in PWA by JS) -->
+  <!-- PWA Bottom Nav -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="#/home" data-route="home" data-img-key="home">
@@ -460,7 +466,6 @@
 
     // ============================================================
     // PWA-only: icon swapping (cached + preloaded)
-    // - Bump ICON_VER only when you upload new icon files.
     // ============================================================
     const ICON_VER = "v1";
     const ICON_FILES = [
@@ -540,33 +545,44 @@
     const app = document.getElementById("app");
     const underlay = document.getElementById("underlay");
 
-    function pageShell(title, subtitle){
+    function wrapInCards(innerHtml){
       return `
+        <div class="cards">
+          ${innerHtml}
+        </div>
+      `;
+    }
+
+    function pageShellCards(title, subtitle){
+      return wrapInCards(`
         <main class="page">
           <h1>${title}</h1>
           <p>${subtitle}</p>
         </main>
-      `;
+      `);
     }
 
     function renderMore(){
+      // keep More as full-height column so footer pins to bottom
       return `
-        <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
-          <h1 style="margin: 8px 0 14px;">More</h1>
+        <div class="cards" style="max-width:340px; width:100%; display:flex; flex-direction:column; flex:1;">
+          <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
+            <h1 style="margin: 8px 0 14px;">More</h1>
 
-          <div class="links">
-            <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
-            <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
-            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
-            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 2</a>
-            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 3</a>
-            <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
-            <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
-            <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
-          </div>
+            <div class="links">
+              <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
+              <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
+              <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
+              <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 2</a>
+              <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 3</a>
+              <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
+              <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
+              <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
+            </div>
 
-          <div class="page-footer">EST DECEMBER 2023</div>
-        </main>
+            <div class="page-footer">EST DECEMBER 2023</div>
+          </main>
+        </div>
       `;
     }
 
@@ -688,9 +704,9 @@
 
     function renderRouteContent(route){
       if(route === "home")   return renderHome();
-      if(route === "cwl")    return pageShell("CWL", "Coming Soon!");
-      if(route === "war")    return pageShell("WAR", "Coming Soon!");
-      if(route === "mystats")return pageShell("My Stats", "Coming Soon!");
+      if(route === "cwl")    return pageShellCards("CWL", "Coming Soon!");
+      if(route === "war")    return pageShellCards("WAR", "Coming Soon!");
+      if(route === "mystats")return pageShellCards("My Stats", "Coming Soon!");
       if(route === "more")   return renderMore();
       return renderHome();
     }
@@ -1100,6 +1116,9 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
+      // show tabbar when route changes
+      tabbarReveal();
+
       if(route !== "home") clearHomeIntervals();
 
       app.innerHTML = renderRouteContent(route);
@@ -1107,10 +1126,10 @@
     }
 
     // ============================================================
-    // Native-feeling swipe: live drag + underlay peek + spring snap
+    // Swipe navigation: live drag + underlay peek + spring snap
     // ============================================================
     (function enableSwipeNavNative(){
-      let startX=0, startY=0, lastX=0;
+      let startX=0, startY=0;
       let tracking=false, lockedAxis=null;
       let currentRouteAtStart="home";
       let targetRoute=null;
@@ -1134,9 +1153,8 @@
         }
         underlay.innerHTML = renderRouteContent(route);
         underlay.style.opacity = "1";
-        // Slight parallax so it feels like it's "behind"
         const w = Math.max(320, window.innerWidth);
-        const par = (direction === "left") ? 0.18 : -0.18; // move opposite a bit
+        const par = (direction === "left") ? 0.18 : -0.18;
         underlay.style.transform = `translateX(${par * w}px)`;
       }
 
@@ -1152,9 +1170,10 @@
         app.style.transform = "translate3d(0,0,0)";
         underlay.style.opacity = "0";
         underlay.innerHTML = "";
-        underlay.style.transform = "translateX(-50%)"; // overwritten by setUnderlay anyway
         dx = 0;
       }
+
+      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
       window.addEventListener("touchstart", (e) => {
         if(!e.touches || e.touches.length !== 1) return;
@@ -1163,7 +1182,7 @@
         tracking = true;
         lockedAxis = null;
         const t = e.touches[0];
-        startX = lastX = t.clientX;
+        startX = t.clientX;
         startY = t.clientY;
         currentRouteAtStart = normalizeRoute(location.hash);
         targetRoute = null;
@@ -1187,20 +1206,15 @@
         }
         if(lockedAxis !== "x") return;
 
-        lastX = t.clientX;
         dx = _dx;
 
         const dir = (dx < 0) ? "left" : "right";
         const candidate = nextRoute(dir);
-
-        // Underlay peek (only if there's a real neighbor)
         targetRoute = (candidate && candidate !== currentRouteAtStart) ? candidate : null;
         setUnderlay(targetRoute, dir);
 
-        // Live drag with resistance
         const px = rubberBand(dx);
 
-        // Underlay parallax follows drag slightly
         if(targetRoute){
           const w = Math.max(320, window.innerWidth);
           const amt = clamp(Math.abs(px) / (w * 0.55), 0, 1);
@@ -1217,13 +1231,10 @@
         }
       }, { passive: true });
 
-      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-
       window.addEventListener("touchend", () => {
         if(!tracking) return;
         tracking = false;
 
-        // Not a horizontal gesture
         if(lockedAxis !== "x"){
           clearSwipeState();
           lockedAxis = null;
@@ -1234,7 +1245,6 @@
         const absDx = Math.abs(dx);
         const commit = absDx > Math.min(120, w * 0.22);
 
-        // If no neighbor or not far enough -> spring back
         if(!targetRoute || !commit){
           app.classList.remove("is-dragging");
           app.classList.add("snap");
@@ -1244,12 +1254,10 @@
           return;
         }
 
-        // Commit: slide out then navigate
         const dir = (dx < 0) ? "left" : "right";
         app.classList.remove("is-dragging","snap");
         app.classList.add("slide-out");
 
-        // Slide fully off-screen
         const out = (dir === "left") ? (-1.15 * w) : (1.15 * w);
         setAppTranslate(out);
 
@@ -1269,6 +1277,73 @@
     })();
 
     // ============================================================
+    // Reddit-like hide/reveal bottom tabbar on scroll (PWA only)
+    // - scroll down -> slides out
+    // - scroll up   -> slides back in
+    // ============================================================
+    const tabbar = document.getElementById("pwaTabbar");
+    let lastScrollY = window.scrollY || 0;
+    let tabbarOffset = 0;      // 0 = visible, max = hidden
+    let tabbarMax = 140;       // computed later
+    let scrollRaf = 0;
+    let scrollingTimer = 0;
+
+    function computeTabbarMax(){
+      const safe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-bottom")) || 0;
+      tabbarMax = (tabbar ? tabbar.offsetHeight : 92) + safe + 14;
+    }
+
+    function tabbarApply(offsetPx, scrolling){
+      if(!tabbar || !isPwaInstalled()) return;
+      if(scrolling) tabbar.classList.add("is-scrolling");
+      else tabbar.classList.remove("is-scrolling");
+      tabbar.style.transform = `translate3d(0, ${offsetPx}px, 0)`;
+    }
+
+    function tabbarReveal(){
+      tabbarOffset = 0;
+      tabbarApply(0, false);
+    }
+
+    function tabbarOnScroll(){
+      if(!tabbar || !isPwaInstalled()) return;
+
+      const y = window.scrollY || 0;
+      const dy = y - lastScrollY;
+      lastScrollY = y;
+
+      // Near top: keep visible
+      if(y < 8){
+        tabbarReveal();
+        return;
+      }
+
+      // Update offset progressively (reddit-like)
+      tabbarOffset = Math.max(0, Math.min(tabbarMax, tabbarOffset + dy));
+
+      if(!scrollRaf){
+        scrollRaf = requestAnimationFrame(() => {
+          tabbarApply(tabbarOffset, true);
+          scrollRaf = 0;
+        });
+      }
+
+      clearTimeout(scrollingTimer);
+      scrollingTimer = setTimeout(() => {
+        // Let it "settle" with a tiny snap
+        tabbar.classList.remove("is-scrolling");
+
+        // If mostly hidden, finish hiding. If mostly visible, finish showing.
+        const snapTo = (tabbarOffset > tabbarMax * 0.55) ? tabbarMax : 0;
+        tabbarOffset = snapTo;
+        tabbarApply(tabbarOffset, false);
+      }, 90);
+    }
+
+    window.addEventListener("scroll", tabbarOnScroll, { passive:true });
+    window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
+
+    // ============================================================
     // Prevent double-tap zoom on iOS (best-effort)
     // ============================================================
     (function preventDoubleTapZoom(){
@@ -1276,7 +1351,6 @@
       document.addEventListener("touchend", function(e){
         const now = Date.now();
         if(now - lastTouchEnd <= 300){
-          // prevent quick double tap (doesn't block scroll)
           e.preventDefault();
         }
         lastTouchEnd = now;
@@ -1288,12 +1362,22 @@
     // ============================================================
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
+    computeTabbarMax();
+    tabbarReveal();
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
-    window.addEventListener("pageshow", renderRoute);
+    window.addEventListener("pageshow", () => {
+      computeTabbarMax();
+      tabbarReveal();
+      renderRoute();
+    });
     document.addEventListener("visibilitychange", () => {
-      if(document.visibilityState === "visible") renderRoute();
+      if(document.visibilityState === "visible"){
+        computeTabbarMax();
+        tabbarReveal();
+        renderRoute();
+      }
     });
   </script>
 </body>
