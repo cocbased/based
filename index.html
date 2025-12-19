@@ -411,11 +411,10 @@
         </div>
       </a>
 
-      <a href="war.html" data-route="war">
+      <!-- WAR now uses repo-root images -->
+      <a href="war.html" data-route="war" data-img-key="war">
         <div class="tab-inner">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3l-7.2 7.2 1.8 1.8L22.8 4.8 21 3zM3 21l7.2-7.2-1.8-1.8L1.2 19.2 3 21zm8.5-8.5 2-2L12 9l-2 2 1.5 1.5zm-6 1.5 3 3-1.4 1.4-3-3L5.5 14zM19 8l-3-3 1.4-1.4 3 3L19 8z"/></svg>
-          </span>
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">War</span>
         </div>
       </a>
@@ -473,6 +472,11 @@
     //   <key>-active.png
     //   <key>-inactive.png
     //
+    // Now supports:
+    //   home-active.png / home-inactive.png
+    //   cwl-active.png  / cwl-inactive.png
+    //   war-active.png  / war-inactive.png
+    //
     // Includes cache-busting so updated images show in installed PWAs.
     // ============================================================
     function applyPwaImageIconStates(){
@@ -490,7 +494,6 @@
         const isActive = a.classList.contains("active");
         const file = isActive ? `${key}-active.png` : `${key}-inactive.png`;
 
-        // cache-busted relative URL from repo root
         img.src = `${file}?v=${ver}`;
         img.loading = "eager";
         img.decoding = "async";
@@ -912,9 +915,6 @@
 
     setInterval(fetchWarData, 5*1000);
     setInterval(fetchClanStats, 5*1000);
-
-    // NOTE: icon swapping already handled above; no need to re-run here,
-    // but leaving war/clan refresh behavior unchanged.
   </script>
 </body>
 </html>
