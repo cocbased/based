@@ -17,6 +17,8 @@
     /* =========================
        Base / Layout
     ========================= */
+    :root{ --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
     body{
       margin:0;
       background:#000;
@@ -32,9 +34,12 @@
       box-sizing:border-box;
     }
 
+    body.has-pwa-tabs{
+      padding-bottom: calc(80px + var(--safe-bottom));
+    }
+
     /* =========================
        Header
-       (smaller)
     ========================= */
     .app-icon{
       width:90px;
@@ -62,11 +67,43 @@
       opacity:.85;
       font-size:14px;
       display:inline-block;
-      margin:8px 0 24px;
+      margin:8px 0 10px; /* smaller bottom margin so nav sits right under */
     }
     .clan-tag-link:hover{
       text-decoration:underline;
       opacity:1;
+    }
+
+    /* =========================
+       Top Nav (non-PWA primary nav)
+       (sits under clan tag link)
+    ========================= */
+    .top-nav{
+      width:100%;
+      max-width:760px;
+      margin: 0 0 18px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .top-nav a{
+      color:#fff;
+      text-decoration:none;
+      opacity:.9;
+      font-size:14px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+    }
+    .top-nav a:hover{ opacity:1; background: rgba(255,255,255,0.08); }
+    .top-nav a.active{
+      opacity:1;
+      font-weight:700;
+      border-color: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.12);
     }
 
     /* =========================
@@ -189,21 +226,12 @@
       opacity:.95;
     }
 
-    .war-green{
-      color:#38d172;
-      font-weight:900;
-    }
+    .war-green{ color:#38d172; font-weight:900; }
+    .record-green{ color:#38d172; font-weight:900; }
 
-    .record-green{
-      color:#38d172;
-      font-weight:900;
-    }
-
-    /* =========================================================
-       NAV UI (PWA bottom tabs + non-PWA hamburger/side drawer)
-       ========================================================= */
-    :root{ --safe-bottom: env(safe-area-inset-bottom, 0px); }
-
+    /* =========================
+       PWA Bottom Tabs (PWA only)
+    ========================= */
     .pwa-tabbar{
       position: fixed;
       left: 0;
@@ -227,10 +255,8 @@
 
     .pwa-tabbar a{
       display:flex;
-      flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:3px;
       padding:10px 6px;
       border-radius:12px;
       text-decoration:none;
@@ -238,105 +264,19 @@
       font-size:12px;
       opacity:0.9;
       border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
     }
 
     .pwa-tabbar a:active{ transform: scale(0.98); }
     .pwa-tabbar a.active{
       opacity:1;
       border-color: rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.10);
       font-weight:700;
-    }
-
-    body.has-pwa-tabs{
-      padding-bottom: calc(80px + var(--safe-bottom));
-    }
-
-    .hamburger-btn{
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      z-index: 10000;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(11,24,41,0.70);
-      color: #fff;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-    }
-    .hamburger-btn span{ font-size:22px; line-height:1; }
-
-    .drawer-overlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 9998;
-      display: none;
-    }
-
-    .drawer{
-      position: fixed;
-      top: 0;
-      right: 0;
-      height: 100vh;
-      width: min(320px, 85vw);
-      background: #0b1829;
-      border-left: 1px solid rgba(43, 59, 85, 0.9);
-      z-index: 9999;
-      transform: translateX(100%);
-      transition: transform 200ms ease;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .drawer.open{ transform: translateX(0); }
-
-    .drawer h3{
-      margin: 6px 0 12px;
-      font-size: 14px;
-      opacity: 0.85;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .drawer a{
-      display:block;
-      padding:12px 12px;
-      margin:6px 0;
-      border-radius:12px;
-      text-decoration:none;
-      color:#fff;
-      border:1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.04);
-    }
-    .drawer a:hover{ background: rgba(255,255,255,0.07); }
-
-    .drawer .close-row{
-      display:flex;
-      justify-content:flex-end;
-      margin-bottom:8px;
-    }
-
-    .drawer .close-btn{
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.05);
-      color: #fff;
-      cursor: pointer;
     }
   </style>
 
-  <script>
-    function openLink(url){ window.location.href = url; }
-  </script>
-  <script data-goatcounter="https://based.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+  <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 
 <body>
@@ -349,6 +289,15 @@
     target="_blank"
     rel="noopener noreferrer"
   >#2QQYJC08Y</a>
+
+  <!-- ✅ Top nav directly under clan tag -->
+  <nav class="top-nav" aria-label="Top navigation">
+    <a href="index.html" data-route="dashboard">Dashboard</a>
+    <a href="cwl.html" data-route="cwl">CWL</a>
+    <a href="war.html" data-route="war">WAR</a>
+    <a href="my-stats.html" data-route="mystats">My Stats</a>
+    <a href="more.html" data-route="more">More</a>
+  </nav>
 
   <div class="cards">
     <h2 class="cards-title">Clan Overview</h2>
@@ -462,39 +411,21 @@
     </div>
   </div>
 
-  <!-- NAV UI -->
-  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-    <span>☰</span>
-  </button>
-
-  <div class="drawer-overlay" id="drawerOverlay"></div>
-
-  <nav class="drawer" id="drawer">
-    <div class="close-row">
-      <button class="close-btn" id="drawerCloseBtn" aria-label="Close menu">✕</button>
-    </div>
-
-    <h3>Menu</h3>
-    <a href="index.html">Dashboard</a>
-    <a href="cwl.html">CWL</a>
-    <a href="war.html">WAR</a>
-    <a href="my-stats.html">My Stats</a>
-    <a href="more.html">More</a>
-  </nav>
-
+  <!-- ✅ PWA-only sticky bottom menu -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
-      <a href="index.html" data-tab="dashboard">Dashboard</a>
-      <a href="cwl.html" data-tab="cwl">CWL</a>
-      <a href="war.html" data-tab="war">WAR</a>
-      <a href="my-stats.html" data-tab="mystats">My Stats</a>
-      <a href="more.html" data-tab="more">More</a>
+      <a href="index.html" data-route="dashboard">Dashboard</a>
+      <a href="cwl.html" data-route="cwl">CWL</a>
+      <a href="war.html" data-route="war">WAR</a>
+      <a href="my-stats.html" data-route="mystats">My Stats</a>
+      <a href="more.html" data-route="more">More</a>
     </div>
   </nav>
 
   <script>
     // ============================================================
-    // NAV UI: PWA bottom tabs vs non-PWA drawer
+    // Shared Nav behavior: show PWA tabbar only when installed
+    // + highlight active route for BOTH navs
     // ============================================================
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -502,53 +433,34 @@
       return !!(standaloneDisplay || iosStandalone);
     }
 
-    function setupNavUI(){
-      const pwa = isPwaInstalled();
-
-      const pwaTabbar = document.getElementById("pwaTabbar");
-      const hamburgerBtn = document.getElementById("hamburgerBtn");
-      const drawer = document.getElementById("drawer");
-      const overlay = document.getElementById("drawerOverlay");
-      const closeBtn = document.getElementById("drawerCloseBtn");
-
-      if(pwa){
-        if(pwaTabbar) pwaTabbar.style.display = "block";
-        if(hamburgerBtn) hamburgerBtn.style.display = "none";
-        if(overlay) overlay.style.display = "none";
-        if(drawer) drawer.classList.remove("open");
-        document.body.classList.add("has-pwa-tabs");
-
-        const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-        const links = pwaTabbar ? pwaTabbar.querySelectorAll("a") : [];
-        links.forEach(a => {
-          const href = (a.getAttribute("href") || "").toLowerCase();
-          a.classList.toggle("active", href === path);
-        });
-      } else {
-        if(pwaTabbar) pwaTabbar.style.display = "none";
-        if(hamburgerBtn) hamburgerBtn.style.display = "flex";
-        document.body.classList.remove("has-pwa-tabs");
-
-        const openDrawer = () => {
-          if(overlay) overlay.style.display = "block";
-          if(drawer) drawer.classList.add("open");
-        };
-        const closeDrawer = () => {
-          if(drawer) drawer.classList.remove("open");
-          if(overlay) overlay.style.display = "none";
-        };
-
-        if(hamburgerBtn) hamburgerBtn.onclick = openDrawer;
-        if(overlay) overlay.onclick = closeDrawer;
-        if(closeBtn) closeBtn.onclick = closeDrawer;
-
-        document.addEventListener("keydown", (e) => {
-          if(e.key === "Escape") closeDrawer();
-        });
-      }
+    function currentRoute(){
+      const file = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+      if(file === "index.html" || file === "") return "dashboard";
+      if(file === "cwl.html") return "cwl";
+      if(file === "war.html") return "war";
+      if(file === "my-stats.html") return "mystats";
+      if(file === "more.html") return "more";
+      return null;
     }
 
-    setupNavUI();
+    function setupNav(){
+      const pwa = isPwaInstalled();
+      const tabbar = document.getElementById("pwaTabbar");
+      if(pwa){
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
+
+      const route = currentRoute();
+      document.querySelectorAll('[data-route]').forEach(a => {
+        a.classList.toggle("active", a.dataset.route === route);
+      });
+    }
+
+    setupNav();
 
     // ============================================================
     // Utilities
@@ -625,18 +537,18 @@
     }
 
     function fmtWLTWithPctObj(obj){
-      if(!obj || typeof obj !== "object") return { text: "—", pct: null, losses: null };
+      if(!obj || typeof obj !== "object") return { text: "—", losses: null };
       const w = (typeof obj.wins === "number") ? obj.wins : null;
       const l = (typeof obj.losses === "number") ? obj.losses : null;
       const t = (typeof obj.ties === "number") ? obj.ties : null;
-      if(w === null || l === null || t === null) return { text: "—", pct: null, losses: null };
+      if(w === null || l === null || t === null) return { text: "—", losses: null };
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: l };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses: l };
     }
 
     function fmtWLTWithPctNums(w,l,t){
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: (l|0) };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses: (l|0) };
     }
 
     function hasNoLosses(losses){
@@ -797,13 +709,7 @@
       }
 
       if(isPrevious){
-        if(!src.warEndIso){
-          warElem.textContent = "Previous war";
-          return;
-        }
-        const end = new Date(src.warEndIso);
-        if(isNaN(end.getTime())) warElem.textContent = "Previous war";
-        else warElem.textContent = "Previous war ended";
+        warElem.textContent = "Previous war";
         return;
       }
 
@@ -878,13 +784,9 @@
         setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-        const last10Val = clanStats.war.last10;
-        const last25Val = (clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record;
-        const last50Val = (clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record;
-
-        const l10 = fmtWLTWithPctObj(last10Val);
-        const l25 = fmtWLTWithPctObj(last25Val);
-        const l50 = fmtWLTWithPctObj(last50Val);
+        const l10 = fmtWLTWithPctObj(clanStats.war.last10);
+        const l25 = fmtWLTWithPctObj(clanStats.war.last25);
+        const l50 = fmtWLTWithPctObj(clanStats.war.last50);
 
         setText("war-last10", l10.text);
         setText("war-last25", l25.text);
@@ -893,14 +795,6 @@
         setClass("war-last10","record-green", hasNoLosses(l10.losses));
         setClass("war-last25","record-green", hasNoLosses(l25.losses));
         setClass("war-last50","record-green", hasNoLosses(l50.losses));
-      } else {
-        setRankingsVisibility(false);
-        setText("war-record","—");
-        setText("war-last10","—");
-        setText("war-last25","—");
-        setText("war-last50","—");
-        setText("war-streak","—");
-        setText("war-longest","—");
       }
     }
 
@@ -956,9 +850,7 @@
       setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
-    // ============================================================
     // Boot + intervals
-    // ============================================================
     fetchWarData();
     fetchClanStats();
     updateRecurringTimers();
@@ -973,6 +865,7 @@
 
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible"){
+        setupNav();
         fetchWarData();
         fetchClanStats();
         updateRecurringTimers();
