@@ -275,7 +275,8 @@
 
   <!-- Top nav (only when NOT PWA) -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
-    <a href="index.html" data-route="dashboard">Dashboard</a>
+    <!-- Dashboard renamed to Home -->
+    <a href="index.html" data-route="dashboard">Home</a>
     <a href="cwl.html" data-route="cwl">CWL</a>
     <a href="war.html" data-route="war">WAR</a>
     <a href="my-stats.html" data-route="mystats">My Stats</a>
@@ -400,7 +401,8 @@
       <a href="index.html" data-route="dashboard" data-img-key="home">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
-          <span class="label">Dashboard</span>
+          <!-- Dashboard renamed to Home -->
+          <span class="label">Home</span>
         </div>
       </a>
 
@@ -411,7 +413,6 @@
         </div>
       </a>
 
-      <!-- WAR now uses repo-root images -->
       <a href="war.html" data-route="war" data-img-key="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
@@ -419,20 +420,18 @@
         </div>
       </a>
 
-      <a href="my-stats.html" data-route="mystats">
+      <!-- MY STATS now uses repo-root images -->
+      <a href="my-stats.html" data-route="mystats" data-img-key="my-stats">
         <div class="tab-inner">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12zm0 2c-4.4 0-8 2.2-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.8-3.6-5-8-5z"/></svg>
-          </span>
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">My Stats</span>
         </div>
       </a>
 
-      <a href="more.html" data-route="more">
+      <!-- MORE now uses repo-root images -->
+      <a href="more.html" data-route="more" data-img-key="more">
         <div class="tab-inner">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
-          </span>
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">More</span>
         </div>
       </a>
@@ -472,10 +471,12 @@
     //   <key>-active.png
     //   <key>-inactive.png
     //
-    // Now supports:
+    // Supports:
     //   home-active.png / home-inactive.png
     //   cwl-active.png  / cwl-inactive.png
     //   war-active.png  / war-inactive.png
+    //   my-stats-active.png / my-stats-inactive.png
+    //   more-active.png / more-inactive.png
     //
     // Includes cache-busting so updated images show in installed PWAs.
     // ============================================================
