@@ -17,7 +17,14 @@
     /* =========================
        Base / Layout
     ========================= */
-    :root{ --safe-bottom: env(safe-area-inset-bottom, 0px); }
+    :root{
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* Reddit-ish PWA tabbar */
+      --tabbar-h: 78px;                 /* height like Reddit (adjust here) */
+      --tabbar-bg: rgba(10,10,10,0.94);
+      --tabbar-border: rgba(255,255,255,0.10);
+    }
 
     body{
       margin:0;
@@ -34,13 +41,7 @@
       box-sizing:border-box;
     }
 
-    body.has-pwa-tabs{
-      padding-bottom: calc(80px + var(--safe-bottom));
-    }
-
-    /* =========================
-       Header
-    ========================= */
+    /* Header (smaller) */
     .app-icon{
       width:90px;
       height:90px;
@@ -58,56 +59,53 @@
       object-fit:contain;
     }
 
-    /* =========================
-       Clan Tag Link
-    ========================= */
+    /* Clan Tag Link */
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
       opacity:.85;
       font-size:14px;
       display:inline-block;
-      margin:8px 0 10px; /* smaller bottom margin so nav sits right under */
+      margin:8px 0 10px; /* reduced so top nav can sit under it */
     }
-    .clan-tag-link:hover{
-      text-decoration:underline;
-      opacity:1;
-    }
+    .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
 
     /* =========================
-       Top Nav (non-PWA primary nav)
-       (sits under clan tag link)
+       TOP NAV (NON-PWA ONLY)
+       - centered bar under clan tag
+       - stays present across pages (include on all pages)
     ========================= */
-    .top-nav{
+    .topnav{
       width:100%;
-      max-width:760px;
-      margin: 0 0 18px;
+      max-width:520px;
       display:flex;
       justify-content:center;
       gap:10px;
-      flex-wrap:wrap;
+      padding:10px 8px 16px;
+      box-sizing:border-box;
     }
 
-    .top-nav a{
-      color:#fff;
+    .topnav a{
       text-decoration:none;
-      opacity:.9;
-      font-size:14px;
+      color:#fff;
+      opacity:0.8;
+      font-size:13px;
       padding:8px 10px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.04);
+      white-space:nowrap;
     }
-    .top-nav a:hover{ opacity:1; background: rgba(255,255,255,0.08); }
-    .top-nav a.active{
+
+    .topnav a.active{
       opacity:1;
       font-weight:700;
       border-color: rgba(255,255,255,0.22);
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
     }
 
     /* =========================
-       Card + Rows (generic)
+       Card + Rows
     ========================= */
     .cards{
       width:100%;
@@ -151,23 +149,13 @@
       gap:12px;
     }
 
-    .row-label{
-      font-weight:600;
-      white-space:nowrap;
-    }
-
-    .row-value{
-      font-family:monospace;
-      text-align:right;
-      flex:1;
-    }
+    .row-label{ font-weight:600; white-space:nowrap; }
+    .row-value{ font-family:monospace; text-align:right; flex:1; }
 
     /* hide rankings by default */
     #rankings-block{ display:none; }
 
-    /* =========================
-       Current War board
-    ========================= */
+    /* Current War board */
     .war-board{ text-align:center; margin-top:6px; }
 
     .war-timer{
@@ -203,80 +191,104 @@
       text-overflow:ellipsis;
     }
 
-    .war-stat{
+    .war-stat, .war-substat{
       font-family:monospace;
       font-weight:900;
       font-size:14px;
-      margin-top:6px;
       display:flex;
       justify-content:center;
       align-items:center;
       gap:6px;
     }
 
-    .war-substat{
-      font-family:monospace;
-      font-weight:900;
-      font-size:14px;
-      margin-top:8px;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:6px;
-      opacity:.95;
-    }
+    .war-stat{ margin-top:6px; }
+    .war-substat{ margin-top:8px; opacity:.95; }
 
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       PWA Bottom Tabs (PWA only)
+       PWA Bottom Tabs (Reddit-ish)
+       - ONLY show in PWA
     ========================= */
+    body.has-pwa-tabs{
+      padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 14px);
+    }
+
     .pwa-tabbar{
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
-      padding: 10px 10px calc(10px + var(--safe-bottom));
-      background: rgba(11, 24, 41, 0.96);
-      border-top: 1px solid rgba(43, 59, 85, 0.9);
-      backdrop-filter: blur(8px);
+      height: var(--tabbar-h);
+      padding-bottom: var(--safe-bottom);
+      background: var(--tabbar-bg);
+      border-top: 1px solid var(--tabbar-border);
       z-index: 9999;
-      display: none;
+      display: none; /* toggled by JS */
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .pwa-tabbar .tabs{
+      height: 100%;
+      max-width: 560px;
+      margin: 0 auto;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      max-width: 520px;
-      margin: 0 auto;
+      align-items: center;
     }
 
     .pwa-tabbar a{
+      height: 100%;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
-      padding:10px 6px;
-      border-radius:12px;
+      gap: 4px;
       text-decoration:none;
       color:#fff;
-      font-size:12px;
-      opacity:0.9;
-      border:1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.04);
+      opacity: 0.75;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
-    .pwa-tabbar a:active{ transform: scale(0.98); }
+    .pwa-tabbar a .icon{
+      width: 26px;
+      height: 26px;
+      display:block;
+    }
+
+    .pwa-tabbar a .icon svg{
+      width: 100%;
+      height: 100%;
+      display:block;
+      fill: currentColor;
+    }
+
+    .pwa-tabbar a .label{
+      font-size: 11px;
+      line-height: 1;
+      letter-spacing: 0.01em;
+    }
+
     .pwa-tabbar a.active{
-      opacity:1;
-      border-color: rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.10);
-      font-weight:700;
+      opacity: 1;
+      font-weight: 700;
+    }
+
+    .pwa-tabbar a.active::after{
+      content:"";
+      width: 22px;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.85);
+      margin-top: 6px;
     }
   </style>
 
-  <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script data-goatcounter="https://based.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 </head>
 
 <body>
@@ -290,8 +302,8 @@
     rel="noopener noreferrer"
   >#2QQYJC08Y</a>
 
-  <!-- ✅ Top nav directly under clan tag -->
-  <nav class="top-nav" aria-label="Top navigation">
+  <!-- ✅ TOP NAV (NON-PWA ONLY) -->
+  <nav class="topnav" id="topNav" aria-label="Top navigation">
     <a href="index.html" data-route="dashboard">Dashboard</a>
     <a href="cwl.html" data-route="cwl">CWL</a>
     <a href="war.html" data-route="war">WAR</a>
@@ -411,26 +423,60 @@
     </div>
   </div>
 
-  <!-- ✅ PWA-only sticky bottom menu -->
+  <!-- ✅ PWA Bottom Nav (Reddit-ish) -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
-      <a href="index.html" data-route="dashboard">Dashboard</a>
-      <a href="cwl.html" data-route="cwl">CWL</a>
-      <a href="war.html" data-route="war">WAR</a>
-      <a href="my-stats.html" data-route="mystats">My Stats</a>
-      <a href="more.html" data-route="more">More</a>
+      <a href="index.html" data-route="dashboard">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3.2 2.5 11.1c-.3.2-.5.6-.5 1v8.2c0 .9.7 1.7 1.7 1.7h5.2c.6 0 1-.4 1-1v-5.5c0-.6.5-1.1 1.1-1.1h2c.6 0 1.1.5 1.1 1.1V21c0 .6.4 1 1 1h5.2c.9 0 1.7-.7 1.7-1.7v-8.2c0-.4-.2-.8-.5-1L12 3.2z"/></svg>
+        </span>
+        <span class="label">Home</span>
+      </a>
+
+      <a href="cwl.html" data-route="cwl">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 4h2a1 1 0 0 1 1 1v2a5 5 0 0 1-5 5 6 6 0 0 1-4 3.9V18h3a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h3v-2.1A6 6 0 0 1 8 12a5 5 0 0 1-5-5V5a1 1 0 0 1 1-1h2V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1zm0 2H6v1a3 3 0 0 0 6 0V4h4v3a3 3 0 0 0 2-3V6zm-12 0H4v1a3 3 0 0 0 2 3V6z"/></svg>
+        </span>
+        <span class="label">CWL</span>
+      </a>
+
+      <a href="war.html" data-route="war">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M21 3l-7.2 7.2 1.8 1.8L22.8 4.8 21 3zM3 21l7.2-7.2-1.8-1.8L1.2 19.2 3 21zm8.5-8.5 2-2L12 9l-2 2 1.5 1.5zm-6 1.5 3 3-1.4 1.4-3-3L5.5 14zM19 8l-3-3 1.4-1.4 3 3L19 8z"/></svg>
+        </span>
+        <span class="label">War</span>
+      </a>
+
+      <a href="my-stats.html" data-route="mystats">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12zm0 2c-4.4 0-8 2.2-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.8-3.6-5-8-5z"/></svg>
+        </span>
+        <span class="label">Me</span>
+      </a>
+
+      <a href="more.html" data-route="more">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
+        </span>
+        <span class="label">More</span>
+      </a>
     </div>
   </nav>
 
   <script>
     // ============================================================
-    // Shared Nav behavior: show PWA tabbar only when installed
-    // + highlight active route for BOTH navs
+    // NAV UI: show TOP NAV only in browser, show PWA tabbar only in installed app
     // ============================================================
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
       return !!(standaloneDisplay || iosStandalone);
+    }
+
+    function setActiveNav(route){
+      document.querySelectorAll('[data-route]').forEach(a => {
+        a.classList.toggle("active", (a.getAttribute("data-route") || "") === route);
+      });
     }
 
     function currentRoute(){
@@ -440,27 +486,28 @@
       if(file === "war.html") return "war";
       if(file === "my-stats.html") return "mystats";
       if(file === "more.html") return "more";
-      return null;
+      return "dashboard";
     }
 
-    function setupNav(){
+    function setupNavUI(){
       const pwa = isPwaInstalled();
+      const topNav = document.getElementById("topNav");
       const tabbar = document.getElementById("pwaTabbar");
+
       if(pwa){
-        if(tabbar) tabbar.style.display = "block";
+        if(topNav) topNav.style.display = "none";      // ✅ FIX: hide top nav in PWA
+        if(tabbar) tabbar.style.display = "block";    // show bottom tabs in PWA
         document.body.classList.add("has-pwa-tabs");
       } else {
-        if(tabbar) tabbar.style.display = "none";
+        if(topNav) topNav.style.display = "flex";     // show top nav in browser
+        if(tabbar) tabbar.style.display = "none";     // hide bottom tabs in browser
         document.body.classList.remove("has-pwa-tabs");
       }
 
-      const route = currentRoute();
-      document.querySelectorAll('[data-route]').forEach(a => {
-        a.classList.toggle("active", a.dataset.route === route);
-      });
+      setActiveNav(currentRoute());
     }
 
-    setupNav();
+    setupNavUI();
 
     // ============================================================
     // Utilities
@@ -472,7 +519,7 @@
       const totalSeconds = Math.floor(ms/1000);
       const days = Math.floor(totalSeconds/86400);
       const hours = Math.floor((totalSeconds%86400)/3600);
-      const minutes = Math.floor((totalSeconds%3600)/60);
+      const minutes = Math.floor((totalSeconds%86400%3600)/60);
       const seconds = totalSeconds%60;
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
@@ -537,18 +584,18 @@
     }
 
     function fmtWLTWithPctObj(obj){
-      if(!obj || typeof obj !== "object") return { text: "—", losses: null };
+      if(!obj || typeof obj !== "object") return { text: "—", pct: null, losses: null };
       const w = (typeof obj.wins === "number") ? obj.wins : null;
       const l = (typeof obj.losses === "number") ? obj.losses : null;
       const t = (typeof obj.ties === "number") ? obj.ties : null;
-      if(w === null || l === null || t === null) return { text: "—", losses: null };
+      if(w === null || l === null || t === null) return { text: "—", pct: null, losses: null };
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses: l };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: l };
     }
 
     function fmtWLTWithPctNums(w,l,t){
       const pct = winPctFromWLT(w,l,t);
-      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses: (l|0) };
+      return { text: `${w}-${l}-${t}${fmtPctDecimal(pct)}`, pct, losses: (l|0) };
     }
 
     function hasNoLosses(losses){
@@ -709,7 +756,7 @@
       }
 
       if(isPrevious){
-        warElem.textContent = "Previous war";
+        warElem.textContent = "Previous war ended";
         return;
       }
 
@@ -785,8 +832,8 @@
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
         const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-        const l25 = fmtWLTWithPctObj(clanStats.war.last25);
-        const l50 = fmtWLTWithPctObj(clanStats.war.last50);
+        const l25 = fmtWLTWithPctObj((clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record);
+        const l50 = fmtWLTWithPctObj((clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record);
 
         setText("war-last10", l10.text);
         setText("war-last25", l25.text);
@@ -795,6 +842,8 @@
         setClass("war-last10","record-green", hasNoLosses(l10.losses));
         setClass("war-last25","record-green", hasNoLosses(l25.losses));
         setClass("war-last50","record-green", hasNoLosses(l50.losses));
+      } else {
+        setRankingsVisibility(false);
       }
     }
 
@@ -850,7 +899,9 @@
       setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
+    // ============================================================
     // Boot + intervals
+    // ============================================================
     fetchWarData();
     fetchClanStats();
     updateRecurringTimers();
@@ -865,7 +916,6 @@
 
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible"){
-        setupNav();
         fetchWarData();
         fetchClanStats();
         updateRecurringTimers();
