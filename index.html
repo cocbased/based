@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>B•A•S•E•D — Home</title>
@@ -24,6 +24,25 @@
       --tabbar-border: rgba(255,255,255,0.10);
     }
 
+    /* ============================================================
+       Desktop/Web stability fixes (NO impact to PWA behavior)
+       - Prevent width jump from scrollbar appearing/disappearing
+       - Prevent topnav wrapping changing layout height
+       - Prevent flex containers from odd shrinking
+       ============================================================ */
+    html{
+      overflow-y: scroll;                 /* fallback */
+      scrollbar-gutter: stable both-edges;/* modern browsers */
+    }
+    .topnav{
+      flex-wrap: nowrap;                  /* keep one row */
+      overflow-x: auto;                   /* if too tight, scroll horizontally */
+      -webkit-overflow-scrolling: touch;
+    }
+    .topnav::-webkit-scrollbar{ display:none; } /* optional */
+    .topnav a{ flex: 0 0 auto; }
+    .stage, #app{ min-height: 0; }
+
     body{
       margin:0;
       background:#000;
@@ -38,20 +57,6 @@
       padding:24px 16px;
       box-sizing:border-box;
       overscroll-behavior-x: none;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* ✅ Hide scrollbars ONLY in PWA (still scrollable) */
-    html.is-pwa,
-    body.is-pwa{
-      scrollbar-width: none;      /* Firefox */
-      -ms-overflow-style: none;   /* IE/Edge legacy */
-    }
-    html.is-pwa::-webkit-scrollbar,
-    body.is-pwa::-webkit-scrollbar{
-      width:0 !important;
-      height:0 !important;
-      display:none !important;
     }
 
     /* Header */
@@ -87,7 +92,6 @@
       max-width:560px;
       display:flex;
       justify-content:center;
-      flex-wrap:wrap;
       gap:10px;
       padding:10px 8px 18px;
       box-sizing:border-box;
@@ -110,7 +114,7 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* Stage */
+    /* Stage: underlay (peek next/prev) + app (dragged) */
     .stage{
       width:100%;
       max-width:560px;
@@ -118,10 +122,9 @@
       flex:1;
       display:flex;
       justify-content:center;
-      touch-action: pan-y;
     }
 
-    /* Underlay (unused now, but kept harmless) */
+    /* Underlay page preview behind swipe */
     #underlay{
       width:100%;
       max-width:560px;
@@ -131,7 +134,7 @@
       top:0;
       pointer-events:none;
       opacity:0;
-      will-change: opacity;
+      will-change: transform, opacity;
     }
 
     /* App mount */
@@ -145,7 +148,7 @@
 
       will-change: transform, opacity;
       transform: translate3d(0,0,0);
-      touch-action: pan-y;
+      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
     }
 
     /* Card + rows */
@@ -159,6 +162,10 @@
       border:1px solid #2b3b55;
       box-sizing:border-box;
       text-align:left;
+
+      /* Make all cards behave the same (helps desktop consistency) */
+      display:flex;
+      flex-direction:column;
     }
     .cards-title{ margin:0 0 6px; font-size:16px; text-align:center; }
     .section-title{
@@ -467,6 +474,13 @@
       });
     }
 
+    function lightHaptic(){
+      // Android + some browsers only; safe no-op elsewhere
+      try{
+        if(navigator.vibrate) navigator.vibrate(10);
+      } catch(e){}
+    }
+
     // ===== Icon swapping (cached + preloaded) =====
     const ICON_VER = "v1";
     const ICON_FILES = [
@@ -504,10 +518,6 @@
       const topNav = document.getElementById("topNav");
       const tabbar = document.getElementById("pwaTabbar");
 
-      // ✅ Add/remove PWA-only classes (scrollbar hiding needs html+body on iOS)
-      document.body.classList.toggle("is-pwa", pwa);
-      document.documentElement.classList.toggle("is-pwa", pwa);
-
       if(pwa){
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
@@ -517,6 +527,28 @@
         if(tabbar) tabbar.style.display = "none";
         document.body.classList.remove("has-pwa-tabs");
       }
+    }
+
+    // ===== Route order + helpers =====
+    const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
+
+    function goRoute(name){
+      const map = {
+        home: "#/home",
+        cwl: "#/cwl",
+        war: "#/war",
+        mystats: "#/my-stats",
+        more: "#/more"
+      };
+      location.hash = map[name] || "#/home";
+    }
+
+    function neighborRoute(fromRoute, direction){
+      const idx = ROUTE_ORDER.indexOf(fromRoute);
+      if(idx === -1) return null;
+      if(direction === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
+      if(direction === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
+      return null;
     }
 
     // ===== Templates =====
@@ -538,7 +570,7 @@
 
     function renderMore(){
       return `
-        <div class="cards" style="max-width:340px; width:100%; display:flex; flex-direction:column; flex:1;">
+        <div class="cards">
           <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
             <h1 style="margin: 8px 0 14px;">More</h1>
 
@@ -1035,26 +1067,41 @@
       document.title = map[route] || "B•A•S•E•D";
     }
 
-    function animateEnterSmall(){
-      try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
+    let enterFromSwipeDir = null; // "left" or "right" (direction user swiped)
+
+    // ✅ FIXED: deterministic enter direction + cancels stale animations
+    function animateEnterIfNeeded(){
+      if(!enterFromSwipeDir) return;
+
+      // Cancel any previous animations that might have fill-state
       try{
-        app.animate(
-          [{ transform:"translate3d(0,0,0)", opacity:0.92 }, { transform:"translate3d(0,0,0)", opacity:1 }],
-          { duration:220, easing:"cubic-bezier(.2,.9,.2,1)", fill:"both" }
-        );
+        app.getAnimations().forEach(a => a.cancel());
       } catch(e){}
-    }
 
-    function hardResetVisualState(){
-      try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
-      app.style.transform = "translate3d(0,0,0)";
-      app.style.opacity = "1";
-      app.style.willChange = "auto";
+      // Swipe left -> new page enters from right (+)
+      // Swipe right -> new page enters from left (-)
+      const from = (enterFromSwipeDir === "left") ? 26 : -26;
+      enterFromSwipeDir = null;
 
-      // underlay unused now
-      underlay.style.opacity = "0";
-      underlay.innerHTML = "";
-      underlay.style.transform = "translateX(0px)";
+      // Force start state
+      app.style.transform = `translate3d(${from}px,0,0)`;
+      app.style.opacity = "0.92";
+
+      requestAnimationFrame(() => {
+        try{
+          app.animate([
+            { transform: `translate3d(${from}px,0,0)`, opacity: 0.92 },
+            { transform: `translate3d(0,0,0)`, opacity: 1 }
+          ], {
+            duration: 340,
+            easing: "cubic-bezier(.2,.9,.2,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
+        }
+      });
     }
 
     function renderRoute(){
@@ -1066,15 +1113,227 @@
       setDocTitle(route);
       tabbarReveal();
 
-      hardResetVisualState();
-
       if(route !== "home") clearHomeIntervals();
 
       app.innerHTML = renderRouteContent(route);
       if(route === "home") startHomeDataLoop();
 
-      animateEnterSmall();
+      animateEnterIfNeeded();
     }
+
+    // ============================================================
+    // EVEN MORE native swipe:
+    // - tilt/scale response while dragging
+    // - springy snap-back bounce
+    // - commit haptic + correct direction + smooth settle
+    // ============================================================
+    (function enableSwipeNavNative(){
+      let startX=0, startY=0, startT=0;
+      let tracking=false, lockedAxis=null;
+      let fromRoute="home";
+      let toRoute=null;
+      let dir=null;
+      let dx=0;
+      let raf=0;
+
+      function isInteractive(el){
+        if(!el) return false;
+        return !!el.closest("a, button, input, textarea, select, label");
+      }
+
+      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+      function rubberBand(px){
+        const w = Math.max(320, window.innerWidth);
+        const x = px / w;
+        const damp = 1 - Math.min(0.62, Math.abs(x) * 0.62);
+        return px * damp;
+      }
+
+      function setAppTransform(px){
+        const w = Math.max(320, window.innerWidth);
+        const t = clamp(px / (w * 0.8), -1, 1);
+
+        const rot = t * 1.15;                 // degrees
+        const scale = 1 - Math.abs(t) * 0.02; // down to ~0.98
+
+        app.style.transform = `translate3d(${px}px,0,0) rotateZ(${rot}deg) scale(${scale})`;
+        app.style.opacity = "1";
+      }
+
+      function setUnderlay(route, direction, px){
+        if(!route){
+          underlay.style.opacity = "0";
+          underlay.innerHTML = "";
+          return;
+        }
+        if(!underlay.innerHTML){
+          underlay.innerHTML = renderRouteContent(route);
+        }
+
+        const w = Math.max(320, window.innerWidth);
+        const amt = clamp(Math.abs(px) / (w * 0.75), 0, 1);
+        underlay.style.opacity = String(0.12 + 0.88 * amt);
+
+        const par = (direction === "left")
+          ? (w * 0.12 * (1-amt))
+          : (-w * 0.12 * (1-amt));
+
+        underlay.style.transform = `translateX(${par}px)`;
+      }
+
+      function clearUnderlay(){
+        underlay.style.opacity = "0";
+        underlay.innerHTML = "";
+        underlay.style.transform = "translateX(0px)";
+      }
+
+      function springBack(px){
+        try{
+          app.animate([
+            { transform: app.style.transform || `translate3d(${px}px,0,0)`, opacity: 1 },
+            { transform: `translate3d(${(-px)*0.04}px,0,0) rotateZ(0deg) scale(1)`, opacity: 1 },
+            { transform: `translate3d(0,0,0) rotateZ(0deg) scale(1)`, opacity: 1 }
+          ], {
+            duration: 560,
+            easing: "cubic-bezier(.16,1,.3,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = "translate3d(0,0,0)";
+        }
+        setTimeout(() => {
+          app.style.transform = "translate3d(0,0,0)";
+          clearUnderlay();
+        }, 580);
+      }
+
+      window.addEventListener("touchstart", (e) => {
+        if(!e.touches || e.touches.length !== 1) return;
+        if(isInteractive(e.target)) return;
+
+        tracking = true;
+        lockedAxis = null;
+
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        startT = performance.now();
+
+        fromRoute = normalizeRoute(location.hash);
+
+        clearUnderlay();
+        toRoute = null;
+        dir = null;
+        dx = 0;
+
+        app.style.willChange = "transform";
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (e) => {
+        if(!tracking || !e.touches || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        const _dx = t.clientX - startX;
+        const _dy = t.clientY - startY;
+
+        if(!lockedAxis){
+          if(Math.abs(_dx) > 10 || Math.abs(_dy) > 10){
+            lockedAxis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
+          } else return;
+        }
+        if(lockedAxis !== "x") return;
+
+        dx = _dx;
+        dir = (dx < 0) ? "left" : "right";
+
+        const candidate = neighborRoute(fromRoute, dir);
+        toRoute = (candidate && candidate !== fromRoute) ? candidate : null;
+
+        const px = rubberBand(dx);
+        setUnderlay(toRoute, dir, px);
+
+        if(!raf){
+          raf = requestAnimationFrame(() => {
+            setAppTransform(px);
+            raf = 0;
+          });
+        }
+      }, { passive: true });
+
+      window.addEventListener("touchend", () => {
+        if(!tracking) return;
+        tracking = false;
+
+        if(lockedAxis !== "x"){
+          app.style.willChange = "auto";
+          lockedAxis = null;
+          return;
+        }
+
+        const w = Math.max(320, window.innerWidth);
+        const absDx = Math.abs(dx);
+
+        const dt = Math.max(1, performance.now() - startT);
+        const vx = absDx / dt;
+
+        const commitByDistance = absDx > Math.min(150, w * 0.28);
+        const commitByVelocity = vx > 0.62;
+        const commit = (toRoute && (commitByDistance || commitByVelocity));
+
+        const currentPx = rubberBand(dx);
+
+        if(!commit){
+          springBack(currentPx);
+          app.style.willChange = "auto";
+          lockedAxis = null;
+          return;
+        }
+
+        lightHaptic();
+
+        const out = (dir === "left") ? (-1.10 * w) : (1.10 * w);
+
+        try{
+          // cancel any lingering animations so we don't "inherit" transforms
+          app.getAnimations().forEach(a => a.cancel());
+        } catch(e){}
+
+        try{
+          app.animate([
+            { transform: app.style.transform || `translate3d(${currentPx}px,0,0)`, opacity: 1 },
+            { transform: `translate3d(${out}px,0,0) rotateZ(${(dir==="left"?-0.8:0.8)}deg) scale(0.985)`, opacity: 0.98 }
+          ], {
+            duration: 430,
+            easing: "cubic-bezier(.22,.95,.25,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = `translate3d(${out}px,0,0)`;
+        }
+
+        // ✅ next page enters from correct side
+        enterFromSwipeDir = dir;
+
+        setTimeout(() => {
+          app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
+          clearUnderlay();
+          goRoute(toRoute);
+          app.style.willChange = "auto";
+        }, 440);
+
+        lockedAxis = null;
+      }, { passive: true });
+
+      window.addEventListener("touchcancel", () => {
+        tracking = false;
+        lockedAxis = null;
+        clearUnderlay();
+        app.style.transform = "translate3d(0,0,0)";
+        app.style.opacity = "1";
+        app.style.willChange = "auto";
+      }, { passive: true });
+    })();
 
     // ===== Boot =====
     if(!location.hash) location.hash = "#/home";
