@@ -24,8 +24,6 @@
       --tabbar-border: rgba(255,255,255,0.10);
     }
 
-    html, body{ height:100%; }
-
     body{
       margin:0;
       background:#000;
@@ -39,11 +37,10 @@
       text-align:center;
       padding:24px 16px;
       box-sizing:border-box;
-      overscroll-behavior-x:none;
-      -webkit-user-select:none;
-      user-select:none;
+      overscroll-behavior-x: none;
     }
 
+    /* Header */
     .app-icon{
       width:90px;
       height:90px;
@@ -59,6 +56,7 @@
       object-fit:contain;
     }
 
+    /* Clan tag */
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
@@ -69,6 +67,7 @@
     }
     .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
 
+    /* Top nav (non-PWA only) */
     .topnav{
       width:100%;
       max-width:560px;
@@ -97,55 +96,44 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* Pager shell */
+    /* Stage: underlay (peek next/prev) + app (dragged) */
     .stage{
       width:100%;
       max-width:560px;
-      flex:1;
       position:relative;
+      flex:1;
       display:flex;
       justify-content:center;
-      min-height:0;
     }
 
-    #viewport{
+    /* Underlay page preview behind swipe */
+    #underlay{
       width:100%;
       max-width:560px;
-      overflow:hidden;
-      position:relative;
-      flex:1;
-      min-height:0;
-      touch-action: pan-y;
-      -webkit-overflow-scrolling: touch;
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%);
+      top:0;
+      pointer-events:none;
+      opacity:0;
+      will-change: transform, opacity;
     }
 
-    #track{
-      display:flex;
-      height:100%;
-      will-change: transform;
-      transform: translate3d(0,0,0);
-    }
-
-    .panel{
-      flex:0 0 auto;
-      height:100%;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      min-height:0;
-    }
-
-    .panel-inner{
+    /* App mount */
+    #app{
       width:100%;
       max-width:560px;
       display:flex;
       flex-direction:column;
       align-items:center;
       flex:1;
-      box-sizing:border-box;
-      min-height:0;
+
+      will-change: transform, opacity;
+      transform: translate3d(0,0,0);
+      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
     }
 
+    /* Card + rows */
     .cards{
       width:100%;
       max-width:340px;
@@ -178,6 +166,9 @@
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
 
+    #rankings-block{ display:none; }
+
+    /* Current War */
     .war-board{ text-align:center; margin-top:6px; }
     .war-timer{
       font-family:monospace;
@@ -216,6 +207,7 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
+    /* Generic pages (inside cards) */
     .page{
       width:100%;
       text-align:center;
@@ -233,6 +225,7 @@
       font-size:14px;
     }
 
+    /* More links */
     .links{
       width:100%;
       max-width:280px;
@@ -264,6 +257,8 @@
       font-weight:700;
       border-radius:12px;
     }
+
+    /* Footer pinned at bottom of the card column */
     .page-footer{
       margin-top:auto;
       width:100%;
@@ -273,7 +268,9 @@
       text-align:center;
     }
 
-    /* PWA tabs */
+    /* =========================
+       PWA Bottom Tabs + hide-on-scroll behavior
+       ========================= */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
@@ -296,6 +293,7 @@
       transform: translate3d(0,0,0);
       transition: transform 180ms cubic-bezier(.2,.8,.2,1);
     }
+
     .pwa-tabbar.is-scrolling{ transition: none; }
 
     .pwa-tabbar .tabs{
@@ -376,6 +374,7 @@
      href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
      target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
 
+  <!-- Top nav (only when NOT PWA) -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
     <a href="#/home" data-route="home">Home</a>
     <a href="#/cwl" data-route="cwl">CWL</a>
@@ -384,16 +383,12 @@
     <a href="#/more" data-route="more">More</a>
   </nav>
 
-  <div class="stage">
-    <div id="viewport">
-      <div id="track">
-        <section class="panel" aria-hidden="true"><div class="panel-inner" id="panelPrev"></div></section>
-        <section class="panel"><div class="panel-inner" id="panelCurrent" role="main" aria-live="polite"></div></section>
-        <section class="panel" aria-hidden="true"><div class="panel-inner" id="panelNext"></div></section>
-      </div>
-    </div>
+  <div class="stage" id="stage">
+    <div id="underlay" aria-hidden="true"></div>
+    <div id="app" role="main" aria-live="polite"></div>
   </div>
 
+  <!-- PWA Bottom Nav -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="#/home" data-route="home" data-img-key="home">
@@ -402,24 +397,28 @@
           <span class="label">Home</span>
         </div>
       </a>
+
       <a href="#/cwl" data-route="cwl" data-img-key="cwl">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">CWL</span>
         </div>
       </a>
+
       <a href="#/war" data-route="war" data-img-key="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">War</span>
         </div>
       </a>
+
       <a href="#/my-stats" data-route="mystats" data-img-key="my-stats">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">My Stats</span>
         </div>
       </a>
+
       <a href="#/more" data-route="more" data-img-key="more">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
@@ -430,9 +429,6 @@
   </nav>
 
   <script>
-    // ============================================================
-    // Basics
-    // ============================================================
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
@@ -456,29 +452,14 @@
       });
     }
 
-    function setupNavUI(){
-      const pwa = isPwaInstalled();
-      const topNav = document.getElementById("topNav");
-      const tabbar = document.getElementById("pwaTabbar");
-
-      if(pwa){
-        if(topNav) topNav.style.display = "none";
-        if(tabbar) tabbar.style.display = "block";
-        document.body.classList.add("has-pwa-tabs");
-      } else {
-        if(topNav) topNav.style.display = "flex";
-        if(tabbar) tabbar.style.display = "none";
-        document.body.classList.remove("has-pwa-tabs");
-      }
-    }
-
     function lightHaptic(){
-      try{ if(navigator.vibrate) navigator.vibrate(10); } catch(e){}
+      // Android + some browsers only; safe no-op elsewhere
+      try{
+        if(navigator.vibrate) navigator.vibrate(10);
+      } catch(e){}
     }
 
-    // ============================================================
-    // Icons (cached + preloaded)
-    // ============================================================
+    // ===== Icon swapping (cached + preloaded) =====
     const ICON_VER = "v1";
     const ICON_FILES = [
       "home-active.png","home-inactive.png",
@@ -503,60 +484,54 @@
 
         const isActive = (a.getAttribute("data-route") === route);
         const file = isActive ? `${key}-active.png` : `${key}-inactive.png`;
+
         img.src = `${file}?v=${ICON_VER}`;
         img.loading = "eager";
         img.decoding = "async";
       });
     }
 
-    // ============================================================
-    // Routes + navigation
-    // ============================================================
+    function setupNavUI(){
+      const pwa = isPwaInstalled();
+      const topNav = document.getElementById("topNav");
+      const tabbar = document.getElementById("pwaTabbar");
+
+      if(pwa){
+        if(topNav) topNav.style.display = "none";
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(topNav) topNav.style.display = "flex";
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
+    }
+
+    // ===== Route order + helpers =====
     const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
 
-    function neighborRoute(route, dir){
-      const idx = ROUTE_ORDER.indexOf(route);
+    function goRoute(name){
+      const map = {
+        home: "#/home",
+        cwl: "#/cwl",
+        war: "#/war",
+        mystats: "#/my-stats",
+        more: "#/more"
+      };
+      location.hash = map[name] || "#/home";
+    }
+
+    function neighborRoute(fromRoute, direction){
+      const idx = ROUTE_ORDER.indexOf(fromRoute);
       if(idx === -1) return null;
-      if(dir === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
-      if(dir === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
+      if(direction === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
+      if(direction === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
       return null;
     }
 
-    function hashFor(route){
-      const map = { home:"#/home", cwl:"#/cwl", war:"#/war", mystats:"#/my-stats", more:"#/more" };
-      return map[route] || "#/home";
-    }
-
-    function setDocTitle(route){
-      const map = {
-        home: "B•A•S•E•D — Home",
-        cwl: "B•A•S•E•D — CWL",
-        war: "B•A•S•E•D — War",
-        mystats: "B•A•S•E•D — My Stats",
-        more: "B•A•S•E•D — More",
-      };
-      document.title = map[route] || "B•A•S•E•D";
-    }
-
-    // Intercept nav clicks (iOS hash sometimes “lags” during heavy rendering)
-    document.addEventListener("click", (e) => {
-      const a = e.target && e.target.closest ? e.target.closest("a[data-route]") : null;
-      if(!a) return;
-      const r = a.getAttribute("data-route");
-      if(!r) return;
-      // Only intercept in-app hash routes
-      if(a.getAttribute("href") && a.getAttribute("href").startsWith("#/")){
-        e.preventDefault();
-        navigateTo(r, true);
-      }
-    });
-
-    // ============================================================
-    // Templates
-    // ============================================================
-    const panelPrev = document.getElementById("panelPrev");
-    const panelCurrent = document.getElementById("panelCurrent");
-    const panelNext = document.getElementById("panelNext");
+    // ===== Templates =====
+    const app = document.getElementById("app");
+    const underlay = document.getElementById("underlay");
 
     function wrapInCards(innerHtml){
       return `<div class="cards">${innerHtml}</div>`;
@@ -594,21 +569,20 @@
       `;
     }
 
-    // NOTE: Uses data-k so Home updates ONLY the current panel.
     function renderHome(){
       return `
         <div class="cards">
           <h2 class="cards-title">Clan Overview</h2>
 
-          <div data-k="rankings-block" style="display:none;">
+          <div id="rankings-block">
             <div class="section-title">Rankings</div>
             <div class="row">
               <span class="row-label">Global Trophies</span>
-              <span data-k="rank-global-trophies" class="row-value">Loading…</span>
+              <span id="rank-global-trophies" class="row-value">Loading…</span>
             </div>
             <div class="row">
               <span class="row-label">USA Trophies</span>
-              <span data-k="rank-usa-trophies" class="row-value">Loading…</span>
+              <span id="rank-usa-trophies" class="row-value">Loading…</span>
             </div>
             <div class="divider"></div>
           </div>
@@ -616,11 +590,11 @@
           <div class="section-title">CWL</div>
           <div class="row">
             <span class="row-label">CWL League</span>
-            <span data-k="cwl-league" class="row-value">Loading…</span>
+            <span id="cwl-league" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last CWL Finish</span>
-            <span data-k="cwl-finish" class="row-value">Loading…</span>
+            <span id="cwl-finish" class="row-value">Loading…</span>
           </div>
 
           <div class="divider"></div>
@@ -628,61 +602,61 @@
           <div class="section-title">War</div>
           <div class="row">
             <span class="row-label">War Record</span>
-            <span data-k="war-record" class="row-value">Loading…</span>
+            <span id="war-record" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 10 Wars</span>
-            <span data-k="war-last10" class="row-value">Loading…</span>
+            <span id="war-last10" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 25 Wars</span>
-            <span data-k="war-last25" class="row-value">Loading…</span>
+            <span id="war-last25" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 50 Wars</span>
-            <span data-k="war-last50" class="row-value">Loading…</span>
+            <span id="war-last50" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Current Streak</span>
-            <span data-k="war-streak" class="row-value">Loading…</span>
+            <span id="war-streak" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Longest Streak</span>
-            <span data-k="war-longest" class="row-value">Loading…</span>
+            <span id="war-longest" class="row-value">Loading…</span>
           </div>
 
           <div class="divider"></div>
 
           <div class="section-title">Current War</div>
           <div class="war-board">
-            <div data-k="war-timer" class="war-timer">Loading…</div>
+            <div id="war-timer" class="war-timer">Loading…</div>
 
             <div class="war-grid-3">
               <div>
-                <div data-k="war-name-us" class="war-name">—</div>
+                <div id="war-name-us" class="war-name">—</div>
                 <div class="war-stat">
-                  <span data-k="war-stars-us">—</span> <span>⭐</span>
+                  <span id="war-stars-us">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span data-k="war-destr-us">—</span> <span>🎯</span>
+                  <span id="war-destr-us">—</span> <span>🎯</span>
                 </div>
                 <div class="war-substat">
-                  <span data-k="war-attacks-us">—</span> <span>⚔️</span>
+                  <span id="war-attacks-us">—</span> <span>⚔️</span>
                 </div>
               </div>
 
-              <div data-k="war-vs" class="war-vs" style="display:none;">VS</div>
+              <div id="war-vs" class="war-vs">VS</div>
 
               <div>
-                <div data-k="war-name-opp" class="war-name">—</div>
+                <div id="war-name-opp" class="war-name">—</div>
                 <div class="war-stat">
-                  <span data-k="war-stars-opp">—</span> <span>⭐</span>
+                  <span id="war-stars-opp">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span data-k="war-destr-opp">—</span> <span>🎯</span>
+                  <span id="war-destr-opp">—</span> <span>🎯</span>
                 </div>
                 <div class="war-substat">
-                  <span data-k="war-attacks-opp">—</span> <span>⚔️</span>
+                  <span id="war-attacks-opp">—</span> <span>⚔️</span>
                 </div>
               </div>
             </div>
@@ -693,19 +667,19 @@
           <div class="section-title">In-Game Events</div>
           <div class="row">
             <span class="row-label">Raid Weekend</span>
-            <span data-k="raid-timer" class="row-value">Loading…</span>
+            <span id="raid-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Clan Games</span>
-            <span data-k="clan-games-timer" class="row-value">Loading…</span>
+            <span id="clan-games-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Season End</span>
-            <span data-k="season-end-timer" class="row-value">Loading…</span>
+            <span id="season-end-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">League Reset</span>
-            <span data-k="league-reset-timer" class="row-value">Loading…</span>
+            <span id="league-reset-timer" class="row-value">Loading…</span>
           </div>
         </div>
       `;
@@ -720,49 +694,17 @@
       return renderHome();
     }
 
-    // ============================================================
-    // Home data modules (CURRENT panel only)
-    // ============================================================
+    // ===== Home data (unchanged) =====
     const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
     const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
-
-    const LS_WAR = "based_cache_war_json";
-    const LS_CLAN = "based_cache_clan_stats_json";
-    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
-
     let homeIntervals = [];
     let warData = null;
     let warFetched = false;
+    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
     let clanStats = null;
 
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
-
-    function qk(key){
-      return panelCurrent ? panelCurrent.querySelector(`[data-k="${key}"]`) : null;
-    }
-    function setTextK(key, text){ const el = qk(key); if(el) el.textContent = text; }
-    function setClassK(key, className, on){ const el = qk(key); if(!el) return; el.classList.toggle(className, !!on); }
-    function setRankingsVisibility(show){ const el = qk("rankings-block"); if(el) el.style.display = show ? "block" : "none"; }
-    function setWarVsVisibility(show){ const el = qk("war-vs"); if(el) el.style.display = show ? "block" : "none"; }
-
-    function safeJsonParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
-    function loadCache(key){ try{ return safeJsonParse(localStorage.getItem(key)||""); } catch(e){ return null; } }
-    function saveCache(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
-
-    function loadLastWarSnapshot(){
-      try{
-        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
-        const obj = raw ? JSON.parse(raw) : null;
-        if(obj && obj.state && obj.state !== "notInWar") return obj;
-      } catch(e){}
-      return null;
-    }
-    function saveLastWarSnapshot(w){
-      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
-    }
-    lastWarSnapshot = loadLastWarSnapshot();
-
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
       if(ms<=0) return "Active now";
@@ -774,21 +716,19 @@
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
-
+    function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    function setClass(id, className, on){ const el = document.getElementById(id); if(!el) return; el.classList.toggle(className, !!on); }
+    function setRankingsVisibility(show){ const block = document.getElementById("rankings-block"); if(block) block.style.display = show ? "block" : "none"; }
+    function setWarVsVisibility(show){ const vs = document.getElementById("war-vs"); if(vs) vs.style.display = show ? "block" : "none"; }
     function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
     function fmtPct(v){
       if(typeof v !== "number" || !isFinite(v)) return "—";
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
-    function isFullStars(stars, teamSize){ return (typeof stars==="number" && typeof teamSize==="number" && stars === teamSize*3); }
-    function isFullDestruction(pct){ return (typeof pct==="number" && isFinite(pct) && pct === 100); }
-    function winPctFromWLT(w, l, t){
-      const W=(w|0), L=(l|0), T=(t|0);
-      const total=W+L+T;
-      if(total<=0) return null;
-      return (W + 0.5*T)/total;
-    }
+    function isFullStars(stars, teamSize){ if(typeof stars !== "number" || typeof teamSize !== "number") return false; return stars === teamSize * 3; }
+    function isFullDestruction(pct){ if(typeof pct !== "number" || !isFinite(pct)) return false; return pct === 100; }
+    function winPctFromWLT(w, l, t){ const W=(w|0), L=(l|0), T=(t|0); const total=W+L+T; if(total<=0) return null; return (W + 0.5*T)/total; }
     function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text:"—", losses:null };
@@ -799,57 +739,42 @@
       const pct=winPctFromWLT(w,l,t);
       return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
     }
-    function fmtWLTWithPctNums(w,l,t){
-      const pct=winPctFromWLT(w,l,t);
-      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
-    }
-    function hasNoLosses(losses){ return (typeof losses==="number" && isFinite(losses) && losses===0); }
-
-    function resetWarHighlights(){
-      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false));
-    }
-
-    async function fetchJsonWithCache(urlBase, lsKey){
-      // 1) show cached immediately if present
-      const cached = loadCache(lsKey);
-      // 2) fetch fresh
+    function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
+    function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
+    function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false)); }
+    function loadLastWarSnapshot(){
       try{
-        const url = urlBase + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok) throw new Error("HTTP " + res.status);
-        const json = await res.json();
-        saveCache(lsKey, json);
-        return { json, fromCache:false };
-      } catch(e){
-        return { json: cached, fromCache:true };
-      }
+        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(obj && typeof obj === "object" && obj.state && obj.state !== "notInWar") return obj;
+      } catch(e){}
+      return null;
     }
+    function saveLastWarSnapshot(w){ try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){} }
+    lastWarSnapshot = loadLastWarSnapshot();
 
     async function fetchWarData(){
-      const out = await fetchJsonWithCache(RAW_WAR_URL_BASE, LS_WAR);
-      warData = out.json;
-
-      if(warData && warData.state && warData.state !== "notInWar"){
-        lastWarSnapshot = warData;
-        saveLastWarSnapshot(warData);
-      }
-
+      try{
+        const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        warData = res.ok ? await res.json() : null;
+        if(warData && warData.state && warData.state !== "notInWar"){
+          lastWarSnapshot = warData;
+          saveLastWarSnapshot(warData);
+        }
+      } catch(e){ warData = null; }
       warFetched = true;
       renderWarSection();
     }
 
     function updateWarTimerOnly(isPrevious, displayOverride){
-      const warElem = qk("war-timer");
+      const warElem = document.getElementById("war-timer");
       if(!warElem) return;
-
       const src = displayOverride || warData;
-      if(!src || !src.state){
-        warElem.textContent = "Offline";
-        return;
-      }
+      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
       if(isPrevious){ warElem.textContent="Previous war ended"; return; }
       if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
-
       const end = new Date(src.warEndIso);
       const now = new Date();
       if(isNaN(end.getTime())) warElem.textContent="No war started";
@@ -858,38 +783,32 @@
     }
 
     function renderWarSection(){
-      if(!qk("war-timer")) return;
+      if(!document.getElementById("war-timer")) return;
 
       resetWarHighlights();
       setWarVsVisibility(false);
 
-      if(!warFetched){
-        setTextK("war-timer","Loading…");
-        return;
-      }
+      if(!warFetched){ setText("war-timer","Loading…"); return; }
 
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
-      if(!display || !display.state){
-        setTextK("war-timer","Offline");
-        return;
-      }
+      if(!display || !display.state){ setText("war-timer","Waiting…"); return; }
 
       if(display.state === "notInWar"){
-        setTextK("war-timer","No war started");
-        setTextK("war-name-us","—"); setTextK("war-name-opp","—");
-        setTextK("war-stars-us","—"); setTextK("war-stars-opp","—");
-        setTextK("war-destr-us","—"); setTextK("war-destr-opp","—");
-        setTextK("war-attacks-us","—"); setTextK("war-attacks-opp","—");
+        setText("war-timer","No war started");
+        setText("war-name-us","—"); setText("war-name-opp","—");
+        setText("war-stars-us","—"); setText("war-stars-opp","—");
+        setText("war-destr-us","—"); setText("war-destr-opp","—");
+        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
         return;
       }
 
       const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
       setWarVsVisibility(true);
 
-      setTextK("war-name-us",(display.ourName || "US"));
-      setTextK("war-name-opp",(display.oppName || "OPPONENT"));
+      setText("war-name-us",(display.ourName || "US"));
+      setText("war-name-opp",(display.oppName || "OPPONENT"));
 
       const teamSize = (typeof display.teamSize === "number") ? display.teamSize : null;
       const maxStars = teamSize ? teamSize * 3 : null;
@@ -897,8 +816,8 @@
       const ourStars = (typeof display.ourStars === "number") ? display.ourStars : 0;
       const oppStars = (typeof display.oppStars === "number") ? display.oppStars : 0;
 
-      setTextK("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
-      setTextK("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
+      setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
+      setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
       const ourDestr =
         (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
@@ -908,60 +827,58 @@
         (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
         (typeof display.oppDestruction === "number") ? display.oppDestruction : null;
 
-      setTextK("war-destr-us", fmtPct(ourDestr));
-      setTextK("war-destr-opp", fmtPct(oppDestr));
+      setText("war-destr-us", fmtPct(ourDestr));
+      setText("war-destr-opp", fmtPct(oppDestr));
 
       if(teamSize && typeof display.ourAttacksUsed === "number" && typeof display.oppAttacksUsed === "number"){
         const total = teamSize * 2;
         const ourUsed = Math.max(0, Math.min(total, display.ourAttacksUsed));
         const oppUsed = Math.max(0, Math.min(total, display.oppAttacksUsed));
-        setTextK("war-attacks-us", `${ourUsed}/${total}`);
-        setTextK("war-attacks-opp", `${oppUsed}/${total}`);
+        setText("war-attacks-us", `${ourUsed}/${total}`);
+        setText("war-attacks-opp", `${oppUsed}/${total}`);
       } else {
-        setTextK("war-attacks-us","Updating…");
-        setTextK("war-attacks-opp","Updating…");
+        setText("war-attacks-us","Updating…");
+        setText("war-attacks-opp","Updating…");
       }
 
-      setClassK("war-stars-us","war-green", isFullStars(ourStars, teamSize));
-      setClassK("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
-      setClassK("war-destr-us","war-green", isFullDestruction(ourDestr));
-      setClassK("war-destr-opp","war-green", isFullDestruction(oppDestr));
+      setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
+      setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
+      setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
+      setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
 
       updateWarTimerOnly(showingPrevious, display);
     }
 
     async function fetchClanStats(){
-      const out = await fetchJsonWithCache(RAW_CLAN_URL_BASE, LS_CLAN);
-      clanStats = out.json;
+      try{
+        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        clanStats = res.ok ? await res.json() : null;
+      } catch(e){ clanStats = null; }
       renderClanStats();
     }
 
     function renderClanStats(){
-      if(!qk("war-record")) return;
+      if(!document.getElementById("war-record")) return;
 
-      setClassK("war-record","record-green", false);
-      setClassK("war-last10","record-green", false);
-      setClassK("war-last25","record-green", false);
-      setClassK("war-last50","record-green", false);
+      setClass("war-record","record-green", false);
+      setClass("war-last10","record-green", false);
+      setClass("war-last25","record-green", false);
+      setClass("war-last50","record-green", false);
 
-      if(!clanStats){
-        setRankingsVisibility(false);
-        // also replace Loading… with Offline so it’s obvious
-        ["cwl-league","cwl-finish","war-record","war-last10","war-last25","war-last50","war-streak","war-longest"].forEach(k => setTextK(k,"Offline"));
-        return;
-      }
+      if(!clanStats){ setRankingsVisibility(false); return; }
 
       const r = clanStats.rankings || {};
       const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
       setRankingsVisibility(hasAnyRank);
 
       if(hasAnyRank){
-        setTextK("rank-global-trophies", fmtTop200(r.globalTrophies));
-        setTextK("rank-usa-trophies", fmtTop200(r.usaTrophies));
+        setText("rank-global-trophies", fmtTop200(r.globalTrophies));
+        setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
       }
 
-      setTextK("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
-      setTextK("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
+      setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
+      setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
 
       if(clanStats.war){
         const w = clanStats.war.wins ?? 0;
@@ -969,23 +886,23 @@
         const t = clanStats.war.ties ?? 0;
 
         const rec = fmtWLTWithPctNums(w,l,t);
-        setTextK("war-record", rec.text);
-        setClassK("war-record", "record-green", hasNoLosses(rec.losses));
+        setText("war-record", rec.text);
+        setClass("war-record", "record-green", hasNoLosses(rec.losses));
 
-        setTextK("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-        setTextK("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+        setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+        setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
         const l10 = fmtWLTWithPctObj(clanStats.war.last10);
         const l25 = fmtWLTWithPctObj((clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record);
         const l50 = fmtWLTWithPctObj((clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record);
 
-        setTextK("war-last10", l10.text);
-        setTextK("war-last25", l25.text);
-        setTextK("war-last50", l50.text);
+        setText("war-last10", l10.text);
+        setText("war-last25", l25.text);
+        setText("war-last50", l50.text);
 
-        setClassK("war-last10","record-green", hasNoLosses(l10.losses));
-        setClassK("war-last25","record-green", hasNoLosses(l25.losses));
-        setClassK("war-last50","record-green", hasNoLosses(l50.losses));
+        setClass("war-last10","record-green", hasNoLosses(l10.losses));
+        setClass("war-last25","record-green", hasNoLosses(l25.losses));
+        setClass("war-last50","record-green", hasNoLosses(l50.losses));
       }
     }
 
@@ -1025,12 +942,12 @@
       return reset;
     }
     function updateRecurringTimers(){
-      if(!qk("raid-timer")) return;
+      if(!document.getElementById("raid-timer")) return;
       const now = new Date();
-      setTextK("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
-      setTextK("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
-      setTextK("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
-      setTextK("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
+      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
     function startHomeDataLoop(){
@@ -1047,29 +964,10 @@
       }, 1000));
 
       homeIntervals.push(setInterval(fetchWarData, 5*1000));
-      homeIntervals.push(setInterval(fetchClanStats, 10*1000));
+      homeIntervals.push(setInterval(fetchClanStats, 5*1000));
     }
 
-    // ============================================================
-    // Render panels
-    // ============================================================
-    let route = "home";
-
-    function renderPanels(route){
-      const prev = neighborRoute(route, "right");
-      const next = neighborRoute(route, "left");
-
-      panelCurrent.innerHTML = renderRouteContent(route);
-      panelPrev.innerHTML = prev ? renderRouteContent(prev) : "";
-      panelNext.innerHTML = next ? renderRouteContent(next) : "";
-
-      clearHomeIntervals();
-      if(route === "home") startHomeDataLoop();
-    }
-
-    // ============================================================
-    // Tabbar hide/reveal
-    // ============================================================
+    // ===== Tabbar hide/reveal =====
     const tabbar = document.getElementById("pwaTabbar");
     let lastScrollY = window.scrollY || 0;
     let tabbarOffset = 0;
@@ -1123,219 +1021,316 @@
     window.addEventListener("scroll", tabbarOnScroll, { passive:true });
     window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
 
-    // ============================================================
-    // Pager geometry (pixel panels)
-    // ============================================================
-    const viewport = document.getElementById("viewport");
-    const track = document.getElementById("track");
-    const panels = Array.from(track.querySelectorAll(".panel"));
+    // ===== Prevent double-tap zoom (best-effort) =====
+    (function preventDoubleTapZoom(){
+      let lastTouchEnd = 0;
+      document.addEventListener("touchend", function(e){
+        const now = Date.now();
+        if(now - lastTouchEnd <= 300){
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+    })();
 
-    let vw = 1;
-    let baseX = 0;
-    let isSettling = false;
-    let suppressHash = false;
-
-    function computePagerGeometry(){
-      vw = viewport.clientWidth || window.innerWidth || 1;
-      panels.forEach(p => { p.style.width = vw + "px"; });
-      track.style.width = (vw * 3) + "px";
-      baseX = -vw;
+    // ===== Router =====
+    function setDocTitle(route){
+      const map = {
+        home: "B•A•S•E•D — Home",
+        cwl: "B•A•S•E•D — CWL",
+        war: "B•A•S•E•D — War",
+        mystats: "B•A•S•E•D — My Stats",
+        more: "B•A•S•E•D — More",
+      };
+      document.title = map[route] || "B•A•S•E•D";
     }
 
-    function setTrackPx(px){
-      track.style.transform = `translate3d(${baseX + px}px,0,0)`;
+    let enterFromSwipeDir = null; // "left" or "right" (direction user swiped)
+
+    // ✅ FIXED: deterministic enter direction + cancels stale animations
+    function animateEnterIfNeeded(){
+      if(!enterFromSwipeDir) return;
+
+      // Cancel any previous animations that might have fill-state
+      try{
+        app.getAnimations().forEach(a => a.cancel());
+      } catch(e){}
+
+      // Swipe left -> new page enters from right (+)
+      // Swipe right -> new page enters from left (-)
+      const from = (enterFromSwipeDir === "left") ? 26 : -26;
+      enterFromSwipeDir = null;
+
+      // Force start state
+      app.style.transform = `translate3d(${from}px,0,0)`;
+      app.style.opacity = "0.92";
+
+      requestAnimationFrame(() => {
+        try{
+          app.animate([
+            { transform: `translate3d(${from}px,0,0)`, opacity: 0.92 },
+            { transform: `translate3d(0,0,0)`, opacity: 1 }
+          ], {
+            duration: 340,
+            easing: "cubic-bezier(.2,.9,.2,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
+        }
+      });
     }
 
-    function snapToCenter(animate){
-      track.style.transition = animate ? "transform 340ms cubic-bezier(.2,.9,.2,1)" : "none";
-      setTrackPx(0);
-      if(!animate) requestAnimationFrame(() => { track.style.transition = "none"; });
-    }
+    function renderRoute(){
+      const route = normalizeRoute(location.hash);
 
-    function syncUI(){
       setupNavUI();
       setActiveNav(route);
       applyPwaImageIconStates(route);
       setDocTitle(route);
       tabbarReveal();
+
+      if(route !== "home") clearHomeIntervals();
+
+      app.innerHTML = renderRouteContent(route);
+      if(route === "home") startHomeDataLoop();
+
+      animateEnterIfNeeded();
     }
 
-    function navigateTo(nextRoute, pushHash){
-      if(!nextRoute) return;
-      if(nextRoute === route && !pushHash) return;
+    // ============================================================
+    // EVEN MORE native swipe:
+    // - tilt/scale response while dragging
+    // - springy snap-back bounce
+    // - commit haptic + correct direction + smooth settle
+    // ============================================================
+    (function enableSwipeNavNative(){
+      let startX=0, startY=0, startT=0;
+      let tracking=false, lockedAxis=null;
+      let fromRoute="home";
+      let toRoute=null;
+      let dir=null;
+      let dx=0;
+      let raf=0;
 
-      route = nextRoute;
-
-      if(pushHash){
-        suppressHash = true;
-        location.hash = hashFor(route);
-        setTimeout(() => { suppressHash = false; }, 0);
+      function isInteractive(el){
+        if(!el) return false;
+        return !!el.closest("a, button, input, textarea, select, label");
       }
 
-      syncUI();
-      renderPanels(route);
-      computePagerGeometry();
-      snapToCenter(false);
-    }
-
-    window.addEventListener("hashchange", () => {
-      if(suppressHash) return;
-      navigateTo(normalizeRoute(location.hash), false);
-    });
-
-    (function enablePager(){
-      let startX=0, startY=0;
-      let dx=0;
-      let axis=null;
-
-      function canGoLeft(){ return !!neighborRoute(route, "left"); }
-      function canGoRight(){ return !!neighborRoute(route, "right"); }
+      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
       function rubberBand(px){
-        const x = px / Math.max(320, vw);
-        const damp = 1 - Math.min(0.65, Math.abs(x) * 0.65);
+        const w = Math.max(320, window.innerWidth);
+        const x = px / w;
+        const damp = 1 - Math.min(0.62, Math.abs(x) * 0.62);
         return px * damp;
       }
 
-      viewport.addEventListener("touchstart", (e) => {
-        if(isSettling) return;
+      function setAppTransform(px){
+        const w = Math.max(320, window.innerWidth);
+        const t = clamp(px / (w * 0.8), -1, 1);
+
+        const rot = t * 1.15;                 // degrees
+        const scale = 1 - Math.abs(t) * 0.02; // down to ~0.98
+
+        app.style.transform = `translate3d(${px}px,0,0) rotateZ(${rot}deg) scale(${scale})`;
+        app.style.opacity = "1";
+      }
+
+      function setUnderlay(route, direction, px){
+        if(!route){
+          underlay.style.opacity = "0";
+          underlay.innerHTML = "";
+          return;
+        }
+        if(!underlay.innerHTML){
+          underlay.innerHTML = renderRouteContent(route);
+        }
+
+        const w = Math.max(320, window.innerWidth);
+        const amt = clamp(Math.abs(px) / (w * 0.75), 0, 1);
+        underlay.style.opacity = String(0.12 + 0.88 * amt);
+
+        const par = (direction === "left")
+          ? (w * 0.12 * (1-amt))
+          : (-w * 0.12 * (1-amt));
+
+        underlay.style.transform = `translateX(${par}px)`;
+      }
+
+      function clearUnderlay(){
+        underlay.style.opacity = "0";
+        underlay.innerHTML = "";
+        underlay.style.transform = "translateX(0px)";
+      }
+
+      function springBack(px){
+        try{
+          app.animate([
+            { transform: app.style.transform || `translate3d(${px}px,0,0)`, opacity: 1 },
+            { transform: `translate3d(${(-px)*0.04}px,0,0) rotateZ(0deg) scale(1)`, opacity: 1 },
+            { transform: `translate3d(0,0,0) rotateZ(0deg) scale(1)`, opacity: 1 }
+          ], {
+            duration: 560,
+            easing: "cubic-bezier(.16,1,.3,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = "translate3d(0,0,0)";
+        }
+        setTimeout(() => {
+          app.style.transform = "translate3d(0,0,0)";
+          clearUnderlay();
+        }, 580);
+      }
+
+      window.addEventListener("touchstart", (e) => {
         if(!e.touches || e.touches.length !== 1) return;
+        if(isInteractive(e.target)) return;
 
-        const target = e.target;
-        if(target && target.closest && target.closest("a, button, input, textarea, select, label")) return;
-
-        computePagerGeometry();
-        axis = null;
-        dx = 0;
+        tracking = true;
+        lockedAxis = null;
 
         const t = e.touches[0];
         startX = t.clientX;
         startY = t.clientY;
+        startT = performance.now();
 
-        track.style.transition = "none";
-      }, { passive:true });
+        fromRoute = normalizeRoute(location.hash);
 
-      viewport.addEventListener("touchmove", (e) => {
-        if(isSettling) return;
-        if(!e.touches || e.touches.length !== 1) return;
+        clearUnderlay();
+        toRoute = null;
+        dir = null;
+        dx = 0;
 
+        app.style.willChange = "transform";
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (e) => {
+        if(!tracking || !e.touches || e.touches.length !== 1) return;
         const t = e.touches[0];
         const _dx = t.clientX - startX;
         const _dy = t.clientY - startY;
 
-        if(!axis){
+        if(!lockedAxis){
           if(Math.abs(_dx) > 10 || Math.abs(_dy) > 10){
-            axis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
+            lockedAxis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
           } else return;
         }
-        if(axis !== "x") return;
-
-        e.preventDefault();
+        if(lockedAxis !== "x") return;
 
         dx = _dx;
-        const dir = (dx < 0) ? "left" : "right";
+        dir = (dx < 0) ? "left" : "right";
 
-        let px = dx;
-        if((dir === "left" && !canGoLeft()) || (dir === "right" && !canGoRight())){
-          px = rubberBand(dx) * 0.55;
+        const candidate = neighborRoute(fromRoute, dir);
+        toRoute = (candidate && candidate !== fromRoute) ? candidate : null;
+
+        const px = rubberBand(dx);
+        setUnderlay(toRoute, dir, px);
+
+        if(!raf){
+          raf = requestAnimationFrame(() => {
+            setAppTransform(px);
+            raf = 0;
+          });
         }
+      }, { passive: true });
 
-        setTrackPx(px);
-      }, { passive:false });
+      window.addEventListener("touchend", () => {
+        if(!tracking) return;
+        tracking = false;
 
-      viewport.addEventListener("touchend", () => {
-        if(isSettling) return;
-        if(axis !== "x"){
-          axis = null;
+        if(lockedAxis !== "x"){
+          app.style.willChange = "auto";
+          lockedAxis = null;
           return;
         }
 
+        const w = Math.max(320, window.innerWidth);
         const absDx = Math.abs(dx);
-        const threshold = Math.min(140, vw * 0.26);
 
-        const wantLeft = dx < 0;
-        const wantRight = dx > 0;
+        const dt = Math.max(1, performance.now() - startT);
+        const vx = absDx / dt;
 
-        const next = wantLeft ? neighborRoute(route, "left") : null;
-        const prev = wantRight ? neighborRoute(route, "right") : null;
+        const commitByDistance = absDx > Math.min(150, w * 0.28);
+        const commitByVelocity = vx > 0.62;
+        const commit = (toRoute && (commitByDistance || commitByVelocity));
 
-        const willCommit = (absDx > threshold) && (next || prev);
+        const currentPx = rubberBand(dx);
 
-        isSettling = true;
-        track.style.transition = "transform 340ms cubic-bezier(.2,.9,.2,1)";
-
-        if(!willCommit){
-          setTrackPx(0);
-          setTimeout(() => {
-            track.style.transition = "none";
-            isSettling = false;
-            axis = null;
-            dx = 0;
-          }, 360);
+        if(!commit){
+          springBack(currentPx);
+          app.style.willChange = "auto";
+          lockedAxis = null;
           return;
         }
 
         lightHaptic();
 
-        if(next){
-          setTrackPx(-vw);
-          setTimeout(() => {
-            navigateTo(next, true);
-            isSettling = false;
-            axis = null;
-            dx = 0;
-          }, 350);
-          return;
+        const out = (dir === "left") ? (-1.10 * w) : (1.10 * w);
+
+        try{
+          // cancel any lingering animations so we don't "inherit" transforms
+          app.getAnimations().forEach(a => a.cancel());
+        } catch(e){}
+
+        try{
+          app.animate([
+            { transform: app.style.transform || `translate3d(${currentPx}px,0,0)`, opacity: 1 },
+            { transform: `translate3d(${out}px,0,0) rotateZ(${(dir==="left"?-0.8:0.8)}deg) scale(0.985)`, opacity: 0.98 }
+          ], {
+            duration: 430,
+            easing: "cubic-bezier(.22,.95,.25,1)",
+            fill: "forwards"
+          });
+        } catch(e){
+          app.style.transform = `translate3d(${out}px,0,0)`;
         }
 
-        if(prev){
-          setTrackPx(vw);
-          setTimeout(() => {
-            navigateTo(prev, true);
-            isSettling = false;
-            axis = null;
-            dx = 0;
-          }, 350);
-          return;
-        }
-      }, { passive:true });
+        // ✅ next page enters from correct side
+        enterFromSwipeDir = dir;
 
-      viewport.addEventListener("touchcancel", () => {
-        if(isSettling) return;
-        axis = null;
-        dx = 0;
-        snapToCenter(true);
-        setTimeout(() => { track.style.transition = "none"; }, 360);
-      }, { passive:true });
+        setTimeout(() => {
+          app.style.transform = "translate3d(0,0,0)";
+          app.style.opacity = "1";
+          clearUnderlay();
+          goRoute(toRoute);
+          app.style.willChange = "auto";
+        }, 440);
+
+        lockedAxis = null;
+      }, { passive: true });
+
+      window.addEventListener("touchcancel", () => {
+        tracking = false;
+        lockedAxis = null;
+        clearUnderlay();
+        app.style.transform = "translate3d(0,0,0)";
+        app.style.opacity = "1";
+        app.style.willChange = "auto";
+      }, { passive: true });
     })();
 
-    // ============================================================
-    // Boot
-    // ============================================================
+    // ===== Boot =====
     if(!location.hash) location.hash = "#/home";
-
+    setupNavUI();
     computeTabbarMax();
-    computePagerGeometry();
+    tabbarReveal();
+    renderRoute();
 
-    navigateTo(normalizeRoute(location.hash), false);
-    snapToCenter(false);
-
-    window.addEventListener("resize", () => {
-      computePagerGeometry();
-      snapToCenter(false);
-    }, { passive:true });
-
+    window.addEventListener("hashchange", renderRoute);
     window.addEventListener("pageshow", () => {
       computeTabbarMax();
-      computePagerGeometry();
-      navigateTo(normalizeRoute(location.hash), false);
+      tabbarReveal();
+      renderRoute();
     });
-
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible"){
         computeTabbarMax();
-        computePagerGeometry();
-        navigateTo(normalizeRoute(location.hash), false);
+        tabbarReveal();
+        renderRoute();
       }
     });
   </script>
