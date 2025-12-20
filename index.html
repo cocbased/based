@@ -118,15 +118,15 @@
       overflow:hidden;
       position:relative;
       flex:1;
-      touch-action: pan-y; /* vertical scroll allowed; horizontal handled manually */
+      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
     }
 
     #track{
-      width:300%;
-      height:100%;
       display:flex;
-      transform: translate3d(-100%, 0, 0); /* center panel */
+      height:100%;
+      width:300%;
       will-change: transform;
+      transform: translate3d(0,0,0);
     }
 
     .panel{
@@ -144,7 +144,6 @@
       flex-direction:column;
       align-items:center;
       flex:1;
-      padding:0;
       box-sizing:border-box;
     }
 
@@ -220,7 +219,7 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* Generic pages (inside cards) */
+    /* Generic pages */
     .page{
       width:100%;
       text-align:center;
@@ -388,7 +387,6 @@
      href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
      target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
 
-  <!-- Top nav (only when NOT PWA) -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
     <a href="#/home" data-route="home">Home</a>
     <a href="#/cwl" data-route="cwl">CWL</a>
@@ -407,7 +405,6 @@
     </div>
   </div>
 
-  <!-- PWA Bottom Nav -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="#/home" data-route="home" data-img-key="home">
@@ -416,28 +413,24 @@
           <span class="label">Home</span>
         </div>
       </a>
-
       <a href="#/cwl" data-route="cwl" data-img-key="cwl">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">CWL</span>
         </div>
       </a>
-
       <a href="#/war" data-route="war" data-img-key="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">War</span>
         </div>
       </a>
-
       <a href="#/my-stats" data-route="mystats" data-img-key="my-stats">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">My Stats</span>
         </div>
       </a>
-
       <a href="#/more" data-route="more" data-img-key="more">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
@@ -598,7 +591,6 @@
     }
 
     function renderHome(){
-      // NOTE: converted ids -> data-k so we can render Home in hidden panels safely
       return `
         <div class="cards">
           <h2 class="cards-title">Clan Overview</h2>
@@ -739,30 +731,15 @@
 
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
 
-    function currentRoot(){
-      return panelCurrent; // always operate on current panel only
-    }
+    function currentRoot(){ return panelCurrent; }
     function qk(key){
       const root = currentRoot();
       return root ? root.querySelector(`[data-k="${key}"]`) : null;
     }
-    function setTextK(key, text){
-      const el = qk(key);
-      if(el) el.textContent = text;
-    }
-    function setClassK(key, className, on){
-      const el = qk(key);
-      if(!el) return;
-      el.classList.toggle(className, !!on);
-    }
-    function setRankingsVisibility(show){
-      const el = qk("rankings-block");
-      if(el) el.style.display = show ? "block" : "none";
-    }
-    function setWarVsVisibility(show){
-      const el = qk("war-vs");
-      if(el) el.style.display = show ? "block" : "none";
-    }
+    function setTextK(key, text){ const el = qk(key); if(el) el.textContent = text; }
+    function setClassK(key, className, on){ const el = qk(key); if(!el) return; el.classList.toggle(className, !!on); }
+    function setRankingsVisibility(show){ const el = qk("rankings-block"); if(el) el.style.display = show ? "block" : "none"; }
+    function setWarVsVisibility(show){ const el = qk("war-vs"); if(el) el.style.display = show ? "block" : "none"; }
 
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
@@ -776,33 +753,16 @@
     }
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
-    function fmtTop200(v){
-      if(typeof v === "number") return "#" + v;
-      return "Not in top 200";
-    }
+    function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
     function fmtPct(v){
       if(typeof v !== "number" || !isFinite(v)) return "—";
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
-    function isFullStars(stars, teamSize){
-      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
-      return stars === teamSize * 3;
-    }
-    function isFullDestruction(pct){
-      if(typeof pct !== "number" || !isFinite(pct)) return false;
-      return pct === 100;
-    }
-    function winPctFromWLT(w, l, t){
-      const W=(w|0), L=(l|0), T=(t|0);
-      const total=W+L+T;
-      if(total<=0) return null;
-      return (W + 0.5*T)/total;
-    }
-    function fmtPctDecimal(p){
-      if(typeof p !== "number" || !isFinite(p)) return "";
-      return ` (${p.toFixed(3)})`;
-    }
+    function isFullStars(stars, teamSize){ if(typeof stars !== "number" || typeof teamSize !== "number") return false; return stars === teamSize * 3; }
+    function isFullDestruction(pct){ if(typeof pct !== "number" || !isFinite(pct)) return false; return pct === 100; }
+    function winPctFromWLT(w, l, t){ const W=(w|0), L=(l|0), T=(t|0); const total=W+L+T; if(total<=0) return null; return (W + 0.5*T)/total; }
+    function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text:"—", losses:null };
       const w=(typeof obj.wins==="number")?obj.wins:null;
@@ -812,17 +772,10 @@
       const pct=winPctFromWLT(w,l,t);
       return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
     }
-    function fmtWLTWithPctNums(w,l,t){
-      const pct=winPctFromWLT(w,l,t);
-      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
-    }
-    function hasNoLosses(losses){
-      return typeof losses==="number" && isFinite(losses) && losses===0;
-    }
+    function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
+    function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
 
-    function resetWarHighlights(){
-      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false));
-    }
+    function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false)); }
 
     function loadLastWarSnapshot(){
       try{
@@ -833,9 +786,7 @@
       } catch(e){}
       return null;
     }
-    function saveLastWarSnapshot(w){
-      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
-    }
+    function saveLastWarSnapshot(w){ try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){} }
     lastWarSnapshot = loadLastWarSnapshot();
 
     async function fetchWarData(){
@@ -843,14 +794,11 @@
         const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         warData = res.ok ? await res.json() : null;
-
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
         }
-      } catch(e){
-        warData = null;
-      }
+      } catch(e){ warData = null; }
       warFetched = true;
       renderWarSection();
     }
@@ -858,60 +806,36 @@
     function updateWarTimerOnly(isPrevious, displayOverride){
       const warElem = qk("war-timer");
       if(!warElem) return;
-
       const src = displayOverride || warData;
-
-      if(!src || !src.state){
-        warElem.textContent = "Waiting…";
-        return;
-      }
-      if(isPrevious){
-        warElem.textContent = "Previous war ended";
-        return;
-      }
-      if(src.state === "notInWar" || !src.warEndIso){
-        warElem.textContent = "No war started";
-        return;
-      }
-
+      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
+      if(isPrevious){ warElem.textContent="Previous war ended"; return; }
+      if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
       const end = new Date(src.warEndIso);
       const now = new Date();
-      if(isNaN(end.getTime())) warElem.textContent = "No war started";
-      else if(now >= end) warElem.textContent = "War ended";
+      if(isNaN(end.getTime())) warElem.textContent="No war started";
+      else if(now >= end) warElem.textContent="War ended";
       else warElem.textContent = formatCountdown(end - now);
     }
 
     function renderWarSection(){
-      if(!qk("war-timer")) return; // only if Home is current
+      if(!qk("war-timer")) return;
 
       resetWarHighlights();
       setWarVsVisibility(false);
 
-      if(!warFetched){
-        setTextK("war-timer","Loading…");
-        return;
-      }
+      if(!warFetched){ setTextK("war-timer","Loading…"); return; }
 
       let display = warData;
-      if(display && display.state === "notInWar" && lastWarSnapshot){
-        display = lastWarSnapshot;
-      }
+      if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
-      if(!display || !display.state){
-        setTextK("war-timer","Waiting…");
-        return;
-      }
+      if(!display || !display.state){ setTextK("war-timer","Waiting…"); return; }
 
       if(display.state === "notInWar"){
         setTextK("war-timer","No war started");
-        setTextK("war-name-us","—");
-        setTextK("war-name-opp","—");
-        setTextK("war-stars-us","—");
-        setTextK("war-stars-opp","—");
-        setTextK("war-destr-us","—");
-        setTextK("war-destr-opp","—");
-        setTextK("war-attacks-us","—");
-        setTextK("war-attacks-opp","—");
+        setTextK("war-name-us","—"); setTextK("war-name-opp","—");
+        setTextK("war-stars-us","—"); setTextK("war-stars-opp","—");
+        setTextK("war-destr-us","—"); setTextK("war-destr-opp","—");
+        setTextK("war-attacks-us","—"); setTextK("war-attacks-opp","—");
         return;
       }
 
@@ -932,13 +856,11 @@
 
       const ourDestr =
         (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
-        (typeof display.ourDestruction === "number") ? display.ourDestruction :
-        null;
+        (typeof display.ourDestruction === "number") ? display.ourDestruction : null;
 
       const oppDestr =
         (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
-        (typeof display.oppDestruction === "number") ? display.oppDestruction :
-        null;
+        (typeof display.oppDestruction === "number") ? display.oppDestruction : null;
 
       setTextK("war-destr-us", fmtPct(ourDestr));
       setTextK("war-destr-opp", fmtPct(oppDestr));
@@ -967,24 +889,19 @@
         const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         clanStats = res.ok ? await res.json() : null;
-      } catch(e){
-        clanStats = null;
-      }
+      } catch(e){ clanStats = null; }
       renderClanStats();
     }
 
     function renderClanStats(){
-      if(!qk("war-record")) return; // only if Home is current
+      if(!qk("war-record")) return;
 
       setClassK("war-record","record-green", false);
       setClassK("war-last10","record-green", false);
       setClassK("war-last25","record-green", false);
       setClassK("war-last50","record-green", false);
 
-      if(!clanStats){
-        setRankingsVisibility(false);
-        return;
-      }
+      if(!clanStats){ setRankingsVisibility(false); return; }
 
       const r = clanStats.rankings || {};
       const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
@@ -1096,13 +1013,12 @@
       panelPrev.innerHTML = prev ? renderRouteContent(prev) : "";
       panelNext.innerHTML = next ? renderRouteContent(next) : "";
 
-      // Home loop only when HOME is CURRENT
       clearHomeIntervals();
       if(route === "home") startHomeDataLoop();
     }
 
     // ============================================================
-    // Tabbar hide/reveal (scroll)
+    // Tabbar hide/reveal
     // ============================================================
     const tabbar = document.getElementById("pwaTabbar");
     let lastScrollY = window.scrollY || 0;
@@ -1172,7 +1088,7 @@
     })();
 
     // ============================================================
-    // Router + Swipe Pager
+    // Router + Pager (FIXED centering)
     // ============================================================
     const viewport = document.getElementById("viewport");
     const track = document.getElementById("track");
@@ -1180,6 +1096,25 @@
     let route = "home";
     let isSettling = false;
     let ignoreNextHashChange = false;
+
+    let vw = 1;        // viewport width in px
+    let baseX = 0;     // center panel offset in px (=-vw)
+
+    function computePagerGeometry(){
+      vw = viewport.clientWidth || window.innerWidth || 1;
+      baseX = -vw; // center is exactly one panel to the left
+    }
+
+    function setTrackPx(px){
+      // always use px, never %
+      track.style.transform = `translate3d(${baseX + px}px, 0, 0)`;
+    }
+
+    function snapToCenter(animate){
+      track.style.transition = animate ? "transform 340ms cubic-bezier(.2,.9,.2,1)" : "none";
+      setTrackPx(0);
+      if(!animate) requestAnimationFrame(() => { track.style.transition = "none"; });
+    }
 
     function syncUI(){
       setupNavUI();
@@ -1193,12 +1128,8 @@
       route = normalizeRoute(location.hash);
       syncUI();
       renderPanels(route);
-      // Reset track to center panel instantly
-      track.style.transition = "none";
-      track.style.transform = "translate3d(-100%,0,0)";
-      requestAnimationFrame(() => {
-        track.style.transition = "none";
-      });
+      computePagerGeometry();
+      snapToCenter(false);
     }
 
     // Touch-driven pager (finger tracking)
@@ -1206,29 +1137,14 @@
       let startX=0, startY=0;
       let dx=0;
       let axis=null;
-      let dir=null;
-      let width=1;
 
-      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+      function canGoLeft(){ return !!neighborRoute(route, "left"); }
+      function canGoRight(){ return !!neighborRoute(route, "right"); }
+
       function rubberBand(px){
-        // Gentle rubber band at edges
-        const w = Math.max(320, width);
-        const x = px / w;
+        const x = px / Math.max(320, vw);
         const damp = 1 - Math.min(0.65, Math.abs(x) * 0.65);
         return px * damp;
-      }
-
-      function setTrackPx(px){
-        // base is -100% (center)
-        // convert px to translate3d(calc(-100% + px), 0, 0)
-        track.style.transform = `translate3d(calc(-100% + ${px}px), 0, 0)`;
-      }
-
-      function canGoLeft(){
-        return !!neighborRoute(route, "left");
-      }
-      function canGoRight(){
-        return !!neighborRoute(route, "right");
       }
 
       viewport.addEventListener("touchstart", (e) => {
@@ -1236,12 +1152,11 @@
         if(!e.touches || e.touches.length !== 1) return;
 
         const target = e.target;
-        // Don't swipe on interactive stuff (links/buttons)
         if(target && target.closest && target.closest("a, button, input, textarea, select, label")) return;
 
-        width = viewport.clientWidth || window.innerWidth || 1;
+        computePagerGeometry();
+
         axis = null;
-        dir = null;
         dx = 0;
 
         const t = e.touches[0];
@@ -1262,19 +1177,15 @@
         if(!axis){
           if(Math.abs(_dx) > 10 || Math.abs(_dy) > 10){
             axis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
-          } else {
-            return;
-          }
+          } else return;
         }
         if(axis !== "x") return;
 
-        // We are swiping horizontally; prevent vertical scroll jitter
         e.preventDefault();
 
         dx = _dx;
-        dir = (dx < 0) ? "left" : "right";
+        const dir = (dx < 0) ? "left" : "right";
 
-        // If no neighbor in that direction, rubber-band harder
         let px = dx;
         if((dir === "left" && !canGoLeft()) || (dir === "right" && !canGoRight())){
           px = rubberBand(dx) * 0.55;
@@ -1291,7 +1202,7 @@
         }
 
         const absDx = Math.abs(dx);
-        const threshold = Math.min(140, width * 0.26);
+        const threshold = Math.min(140, vw * 0.26);
 
         const wantLeft = dx < 0;
         const wantRight = dx > 0;
@@ -1305,8 +1216,7 @@
         track.style.transition = "transform 340ms cubic-bezier(.2,.9,.2,1)";
 
         if(!willCommit){
-          // Snap back to center
-          track.style.transform = "translate3d(-100%,0,0)";
+          setTrackPx(0);
           setTimeout(() => {
             track.style.transition = "none";
             isSettling = false;
@@ -1316,12 +1226,11 @@
           return;
         }
 
-        // Commit to next/prev panel
         lightHaptic();
 
         if(next){
-          // swipe left -> go NEXT (track slides left to show right panel)
-          track.style.transform = "translate3d(-200%,0,0)";
+          // swipe left -> show NEXT panel (move track left by 1vw)
+          setTrackPx(-vw);
           setTimeout(() => {
             route = next;
             ignoreNextHashChange = true;
@@ -1330,22 +1239,19 @@
             syncUI();
             renderPanels(route);
 
-            // reset to center instantly
-            track.style.transition = "none";
-            track.style.transform = "translate3d(-100%,0,0)";
+            computePagerGeometry();
+            snapToCenter(false);
 
-            requestAnimationFrame(() => {
-              isSettling = false;
-              axis = null;
-              dx = 0;
-            });
+            isSettling = false;
+            axis = null;
+            dx = 0;
           }, 350);
           return;
         }
 
         if(prev){
-          // swipe right -> go PREV (track slides right to show left panel)
-          track.style.transform = "translate3d(0%,0,0)";
+          // swipe right -> show PREV panel (move track right by 1vw)
+          setTrackPx(vw);
           setTimeout(() => {
             route = prev;
             ignoreNextHashChange = true;
@@ -1354,14 +1260,12 @@
             syncUI();
             renderPanels(route);
 
-            track.style.transition = "none";
-            track.style.transform = "translate3d(-100%,0,0)";
+            computePagerGeometry();
+            snapToCenter(false);
 
-            requestAnimationFrame(() => {
-              isSettling = false;
-              axis = null;
-              dx = 0;
-            });
+            isSettling = false;
+            axis = null;
+            dx = 0;
           }, 350);
           return;
         }
@@ -1371,17 +1275,11 @@
         if(isSettling) return;
         axis = null;
         dx = 0;
-        track.style.transition = "transform 220ms cubic-bezier(.2,.9,.2,1)";
-        track.style.transform = "translate3d(-100%,0,0)";
-        setTimeout(() => {
-          track.style.transition = "none";
-        }, 240);
+        snapToCenter(true);
+        setTimeout(() => { track.style.transition = "none"; }, 360);
       }, { passive:true });
     })();
 
-    // ============================================================
-    // Hashchange handler
-    // ============================================================
     window.addEventListener("hashchange", () => {
       if(ignoreNextHashChange){
         ignoreNextHashChange = false;
@@ -1397,12 +1295,17 @@
     computeTabbarMax();
     setupNavUI();
 
-    // Initial route + render
     route = normalizeRoute(location.hash);
     syncUI();
     renderPanels(route);
-    track.style.transition = "none";
-    track.style.transform = "translate3d(-100%,0,0)";
+
+    computePagerGeometry();
+    snapToCenter(false);
+
+    window.addEventListener("resize", () => {
+      computePagerGeometry();
+      snapToCenter(false);
+    }, { passive:true });
 
     window.addEventListener("pageshow", () => {
       computeTabbarMax();
