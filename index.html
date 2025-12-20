@@ -41,6 +41,16 @@
       -webkit-overflow-scrolling: touch;
     }
 
+    /* ✅ Hide scrollbars ONLY in PWA (still scrollable) */
+    body.is-pwa{
+      scrollbar-width: none;           /* Firefox */
+      -ms-overflow-style: none;        /* IE/Edge legacy */
+    }
+    body.is-pwa::-webkit-scrollbar{   /* WebKit */
+      width:0;
+      height:0;
+    }
+
     /* Header */
     .app-icon{
       width:90px;
@@ -105,7 +115,6 @@
       flex:1;
       display:flex;
       justify-content:center;
-      /* Helps iOS: we handle horizontal swipe */
       touch-action: pan-y;
     }
 
@@ -119,7 +128,7 @@
       top:0;
       pointer-events:none;
       opacity:0;
-      will-change: transform, opacity;
+      will-change: opacity;
     }
 
     /* App mount */
@@ -495,6 +504,9 @@
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
       const tabbar = document.getElementById("pwaTabbar");
+
+      // ✅ Add/remove PWA-only body class (used for scrollbar hiding + swipe enabling)
+      document.body.classList.toggle("is-pwa", pwa);
 
       if(pwa){
         if(topNav) topNav.style.display = "none";
@@ -1060,7 +1072,6 @@
     let skipEnterAnimOnce = false;
 
     function animateEnterSmall(){
-      // tiny “native” settle when changing tabs, not for swipe
       try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
       try{
         app.animate(
@@ -1068,6 +1079,18 @@
           { duration:220, easing:"cubic-bezier(.2,.9,.2,1)", fill:"both" }
         );
       } catch(e){}
+    }
+
+    function hardResetVisualState(){
+      // ✅ Prevent “blank page” caused by lingering WAAPI fill transforms
+      try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
+      app.style.transform = "translate3d(0,0,0)";
+      app.style.opacity = "1";
+      app.style.willChange = "auto";
+
+      underlay.style.opacity = "0";
+      underlay.innerHTML = "";
+      underlay.style.transform = "translateX(0px)";
     }
 
     function renderRoute(){
@@ -1079,27 +1102,30 @@
       setDocTitle(route);
       tabbarReveal();
 
+      // ✅ Always reset before swapping content
+      hardResetVisualState();
+
       if(route !== "home") clearHomeIntervals();
 
       app.innerHTML = renderRouteContent(route);
       if(route === "home") startHomeDataLoop();
 
-      // Do not do any extra enter animation right after a swipe-transition.
       if(skipEnterAnimOnce){
         skipEnterAnimOnce = false;
-        app.style.transform = "translate3d(0,0,0)";
-        app.style.opacity = "1";
       } else {
         animateEnterSmall();
       }
     }
 
     // ============================================================
-    // ✅ iOS TRUE finger-tracking swipe (no rubberband damping)
-    // ✅ Direction is inherently correct (you reveal the underlay)
-    // ✅ No “enter from wrong side” animation after swipe
+    // ✅ Swipe ONLY in PWA + TRUE finger tracking on iOS
+    // - No wrong-side enter animation (we reveal underlay)
+    // - No duplicate IDs in underlay (data stays correct)
+    // - No “blank page” (we cancel animations + hard reset on route render)
     // ============================================================
-    (function enableSwipeNavIOS(){
+    (function enableSwipeNavPwaOnlyIOS(){
+      if(!isPwaInstalled()) return; // ✅ only PWA (no swipe on normal webpage)
+
       let startX=0, startY=0, startT=0;
       let tracking=false, lockedAxis=null;
       let fromRoute="home";
@@ -1114,6 +1140,10 @@
       }
 
       function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+      function stageWidth(){
+        return Math.max(320, stage.clientWidth || window.innerWidth);
+      }
 
       function setUnderlay(route){
         if(!route){
@@ -1135,15 +1165,15 @@
         underlay.style.transform = "translateX(0px)";
       }
 
+      function cancelAppAnimations(){
+        try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
+      }
+
       function resetAppVisual(){
+        cancelAppAnimations();
         app.style.transform = "translate3d(0,0,0)";
         app.style.opacity = "1";
         app.style.willChange = "auto";
-      }
-
-      // Use stage bounds for distance
-      function stageWidth(){
-        return Math.max(320, stage.clientWidth || window.innerWidth);
       }
 
       stage.addEventListener("touchstart", (e) => {
@@ -1165,10 +1195,10 @@
         dx = 0;
 
         clearUnderlay();
+        cancelAppAnimations();
         app.style.willChange = "transform";
       }, { passive:true });
 
-      // IMPORTANT for iOS: passive:false so preventDefault works.
       stage.addEventListener("touchmove", (e) => {
         if(!tracking || transitioning) return;
         if(!e.touches || e.touches.length !== 1) return;
@@ -1180,13 +1210,11 @@
         if(!lockedAxis){
           if(Math.abs(_dx) > 8 || Math.abs(_dy) > 8){
             lockedAxis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
-          } else {
-            return;
-          }
+          } else return;
         }
         if(lockedAxis !== "x") return;
 
-        // Prevent vertical scroll while horizontal swipe is active
+        // ✅ iOS: prevent vertical scroll while horizontal swipe is active
         e.preventDefault();
 
         dx = _dx;
@@ -1195,14 +1223,10 @@
         const candidate = neighborRoute(fromRoute, dir);
         toRoute = (candidate && candidate !== fromRoute) ? candidate : null;
 
-        // If no route (edge), still allow slight drag but don’t show underlay
-        if(!toRoute){
-          clearUnderlay();
-        } else {
-          setUnderlay(toRoute);
-        }
+        if(!toRoute) clearUnderlay();
+        else setUnderlay(toRoute);
 
-        // TRUE finger tracking: 1:1 translate (clamped so it can't go insane)
+        // ✅ TRUE finger tracking (1:1 translate)
         const w = stageWidth();
         const px = clamp(dx, -w*0.92, w*0.92);
         app.style.transform = `translate3d(${px}px,0,0)`;
@@ -1211,11 +1235,11 @@
 
       function springBack(){
         const current = app.style.transform || "translate3d(0,0,0)";
-        try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
+        cancelAppAnimations();
         try{
           app.animate(
             [{ transform: current }, { transform: "translate3d(0,0,0)" }],
-            { duration: 240, easing: "cubic-bezier(.22,.95,.25,1)", fill:"forwards" }
+            { duration: 220, easing: "cubic-bezier(.22,.95,.25,1)", fill:"forwards" }
           );
         } catch(e){
           app.style.transform = "translate3d(0,0,0)";
@@ -1223,7 +1247,7 @@
         setTimeout(() => {
           resetAppVisual();
           clearUnderlay();
-        }, 260);
+        }, 240);
       }
 
       stage.addEventListener("touchend", () => {
@@ -1254,16 +1278,15 @@
         transitioning = true;
         lightHaptic();
 
-        // Finish the same direction your finger was moving
+        // Finish in same direction your finger was moving
         const out = (dir === "left") ? (-1.10 * w) : (1.10 * w);
 
-        try{ app.getAnimations().forEach(a => a.cancel()); } catch(e){}
-
+        cancelAppAnimations();
         try{
           app.animate(
             [{ transform: app.style.transform || "translate3d(0,0,0)" },
              { transform: `translate3d(${out}px,0,0)` }],
-            { duration: 220, easing: "cubic-bezier(.22,.95,.25,1)", fill:"forwards" }
+            { duration: 200, easing: "cubic-bezier(.22,.95,.25,1)", fill:"forwards" }
           );
         } catch(e){
           app.style.transform = `translate3d(${out}px,0,0)`;
@@ -1274,12 +1297,12 @@
         skipEnterAnimOnce = true;
 
         setTimeout(() => {
-          // Clean up + navigate
+          // Navigate, then router will hard-reset state (prevents blank)
           resetAppVisual();
           clearUnderlay();
           goRoute(toRoute);
           transitioning = false;
-        }, 230);
+        }, 210);
 
         lockedAxis = null;
       }, { passive:true });
