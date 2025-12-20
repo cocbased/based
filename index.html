@@ -38,6 +38,8 @@
       padding:24px 16px;
       box-sizing:border-box;
       overscroll-behavior-x: none;
+      -webkit-user-select:none;
+      user-select:none;
     }
 
     /* Header */
@@ -88,6 +90,8 @@
       border:1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.04);
       white-space:nowrap;
+      -webkit-user-select:none;
+      user-select:none;
     }
     .topnav a.active{
       opacity:1;
@@ -96,41 +100,52 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* Stage: underlay (peek next/prev) + app (dragged) */
+    /* =========================
+       Native pager (3 panels)
+       ========================= */
     .stage{
       width:100%;
       max-width:560px;
-      position:relative;
       flex:1;
+      position:relative;
       display:flex;
       justify-content:center;
     }
 
-    /* Underlay page preview behind swipe */
-    #underlay{
+    #viewport{
       width:100%;
       max-width:560px;
-      position:absolute;
-      left:50%;
-      transform: translateX(-50%);
-      top:0;
-      pointer-events:none;
-      opacity:0;
-      will-change: transform, opacity;
+      overflow:hidden;
+      position:relative;
+      flex:1;
+      touch-action: pan-y; /* vertical scroll allowed; horizontal handled manually */
     }
 
-    /* App mount */
-    #app{
+    #track{
+      width:300%;
+      height:100%;
+      display:flex;
+      transform: translate3d(-100%, 0, 0); /* center panel */
+      will-change: transform;
+    }
+
+    .panel{
+      width:100%;
+      flex: 0 0 100%;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+
+    .panel-inner{
       width:100%;
       max-width:560px;
       display:flex;
       flex-direction:column;
       align-items:center;
       flex:1;
-
-      will-change: transform, opacity;
-      transform: translate3d(0,0,0);
-      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
+      padding:0;
+      box-sizing:border-box;
     }
 
     /* Card + rows */
@@ -165,8 +180,6 @@
     }
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
-
-    #rankings-block{ display:none; }
 
     /* Current War */
     .war-board{ text-align:center; margin-top:6px; }
@@ -248,6 +261,8 @@
       color:#000;
       text-decoration:none;
       box-sizing:border-box;
+      -webkit-user-select:none;
+      user-select:none;
     }
     .install-btn{
       background-color:#ffcc00;
@@ -258,7 +273,6 @@
       border-radius:12px;
     }
 
-    /* Footer pinned at bottom of the card column */
     .page-footer{
       margin-top:auto;
       width:100%;
@@ -383,9 +397,14 @@
     <a href="#/more" data-route="more">More</a>
   </nav>
 
-  <div class="stage" id="stage">
-    <div id="underlay" aria-hidden="true"></div>
-    <div id="app" role="main" aria-live="polite"></div>
+  <div class="stage">
+    <div id="viewport">
+      <div id="track">
+        <section class="panel" aria-hidden="true"><div class="panel-inner" id="panelPrev"></div></section>
+        <section class="panel"><div class="panel-inner" id="panelCurrent" role="main" aria-live="polite"></div></section>
+        <section class="panel" aria-hidden="true"><div class="panel-inner" id="panelNext"></div></section>
+      </div>
+    </div>
   </div>
 
   <!-- PWA Bottom Nav -->
@@ -429,6 +448,9 @@
   </nav>
 
   <script>
+    // ============================================================
+    // Basics
+    // ============================================================
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
@@ -452,14 +474,29 @@
       });
     }
 
-    function lightHaptic(){
-      // Android + some browsers only; safe no-op elsewhere
-      try{
-        if(navigator.vibrate) navigator.vibrate(10);
-      } catch(e){}
+    function setupNavUI(){
+      const pwa = isPwaInstalled();
+      const topNav = document.getElementById("topNav");
+      const tabbar = document.getElementById("pwaTabbar");
+
+      if(pwa){
+        if(topNav) topNav.style.display = "none";
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(topNav) topNav.style.display = "flex";
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
     }
 
-    // ===== Icon swapping (cached + preloaded) =====
+    function lightHaptic(){
+      try{ if(navigator.vibrate) navigator.vibrate(10); } catch(e){}
+    }
+
+    // ============================================================
+    // Icons (cached + preloaded)
+    // ============================================================
     const ICON_VER = "v1";
     const ICON_FILES = [
       "home-active.png","home-inactive.png",
@@ -484,54 +521,45 @@
 
         const isActive = (a.getAttribute("data-route") === route);
         const file = isActive ? `${key}-active.png` : `${key}-inactive.png`;
-
         img.src = `${file}?v=${ICON_VER}`;
         img.loading = "eager";
         img.decoding = "async";
       });
     }
 
-    function setupNavUI(){
-      const pwa = isPwaInstalled();
-      const topNav = document.getElementById("topNav");
-      const tabbar = document.getElementById("pwaTabbar");
-
-      if(pwa){
-        if(topNav) topNav.style.display = "none";
-        if(tabbar) tabbar.style.display = "block";
-        document.body.classList.add("has-pwa-tabs");
-      } else {
-        if(topNav) topNav.style.display = "flex";
-        if(tabbar) tabbar.style.display = "none";
-        document.body.classList.remove("has-pwa-tabs");
-      }
-    }
-
-    // ===== Route order + helpers =====
+    // ============================================================
+    // Routes
+    // ============================================================
     const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
-
-    function goRoute(name){
-      const map = {
-        home: "#/home",
-        cwl: "#/cwl",
-        war: "#/war",
-        mystats: "#/my-stats",
-        more: "#/more"
-      };
-      location.hash = map[name] || "#/home";
-    }
-
-    function neighborRoute(fromRoute, direction){
-      const idx = ROUTE_ORDER.indexOf(fromRoute);
+    function neighborRoute(route, dir){
+      const idx = ROUTE_ORDER.indexOf(route);
       if(idx === -1) return null;
-      if(direction === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
-      if(direction === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
+      if(dir === "left")  return ROUTE_ORDER[Math.min(idx + 1, ROUTE_ORDER.length - 1)];
+      if(dir === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
       return null;
     }
+    function hashFor(route){
+      const map = { home:"#/home", cwl:"#/cwl", war:"#/war", mystats:"#/my-stats", more:"#/more" };
+      return map[route] || "#/home";
+    }
 
-    // ===== Templates =====
-    const app = document.getElementById("app");
-    const underlay = document.getElementById("underlay");
+    function setDocTitle(route){
+      const map = {
+        home: "B•A•S•E•D — Home",
+        cwl: "B•A•S•E•D — CWL",
+        war: "B•A•S•E•D — War",
+        mystats: "B•A•S•E•D — My Stats",
+        more: "B•A•S•E•D — More",
+      };
+      document.title = map[route] || "B•A•S•E•D";
+    }
+
+    // ============================================================
+    // Templates
+    // ============================================================
+    const panelPrev = document.getElementById("panelPrev");
+    const panelCurrent = document.getElementById("panelCurrent");
+    const panelNext = document.getElementById("panelNext");
 
     function wrapInCards(innerHtml){
       return `<div class="cards">${innerHtml}</div>`;
@@ -570,19 +598,20 @@
     }
 
     function renderHome(){
+      // NOTE: converted ids -> data-k so we can render Home in hidden panels safely
       return `
         <div class="cards">
           <h2 class="cards-title">Clan Overview</h2>
 
-          <div id="rankings-block">
+          <div data-k="rankings-block" style="display:none;">
             <div class="section-title">Rankings</div>
             <div class="row">
               <span class="row-label">Global Trophies</span>
-              <span id="rank-global-trophies" class="row-value">Loading…</span>
+              <span data-k="rank-global-trophies" class="row-value">Loading…</span>
             </div>
             <div class="row">
               <span class="row-label">USA Trophies</span>
-              <span id="rank-usa-trophies" class="row-value">Loading…</span>
+              <span data-k="rank-usa-trophies" class="row-value">Loading…</span>
             </div>
             <div class="divider"></div>
           </div>
@@ -590,11 +619,11 @@
           <div class="section-title">CWL</div>
           <div class="row">
             <span class="row-label">CWL League</span>
-            <span id="cwl-league" class="row-value">Loading…</span>
+            <span data-k="cwl-league" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last CWL Finish</span>
-            <span id="cwl-finish" class="row-value">Loading…</span>
+            <span data-k="cwl-finish" class="row-value">Loading…</span>
           </div>
 
           <div class="divider"></div>
@@ -602,61 +631,61 @@
           <div class="section-title">War</div>
           <div class="row">
             <span class="row-label">War Record</span>
-            <span id="war-record" class="row-value">Loading…</span>
+            <span data-k="war-record" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 10 Wars</span>
-            <span id="war-last10" class="row-value">Loading…</span>
+            <span data-k="war-last10" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 25 Wars</span>
-            <span id="war-last25" class="row-value">Loading…</span>
+            <span data-k="war-last25" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Last 50 Wars</span>
-            <span id="war-last50" class="row-value">Loading…</span>
+            <span data-k="war-last50" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Current Streak</span>
-            <span id="war-streak" class="row-value">Loading…</span>
+            <span data-k="war-streak" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Longest Streak</span>
-            <span id="war-longest" class="row-value">Loading…</span>
+            <span data-k="war-longest" class="row-value">Loading…</span>
           </div>
 
           <div class="divider"></div>
 
           <div class="section-title">Current War</div>
           <div class="war-board">
-            <div id="war-timer" class="war-timer">Loading…</div>
+            <div data-k="war-timer" class="war-timer">Loading…</div>
 
             <div class="war-grid-3">
               <div>
-                <div id="war-name-us" class="war-name">—</div>
+                <div data-k="war-name-us" class="war-name">—</div>
                 <div class="war-stat">
-                  <span id="war-stars-us">—</span> <span>⭐</span>
+                  <span data-k="war-stars-us">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-destr-us">—</span> <span>🎯</span>
+                  <span data-k="war-destr-us">—</span> <span>🎯</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-attacks-us">—</span> <span>⚔️</span>
+                  <span data-k="war-attacks-us">—</span> <span>⚔️</span>
                 </div>
               </div>
 
-              <div id="war-vs" class="war-vs">VS</div>
+              <div data-k="war-vs" class="war-vs" style="display:none;">VS</div>
 
               <div>
-                <div id="war-name-opp" class="war-name">—</div>
+                <div data-k="war-name-opp" class="war-name">—</div>
                 <div class="war-stat">
-                  <span id="war-stars-opp">—</span> <span>⭐</span>
+                  <span data-k="war-stars-opp">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-destr-opp">—</span> <span>🎯</span>
+                  <span data-k="war-destr-opp">—</span> <span>🎯</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-attacks-opp">—</span> <span>⚔️</span>
+                  <span data-k="war-attacks-opp">—</span> <span>⚔️</span>
                 </div>
               </div>
             </div>
@@ -667,19 +696,19 @@
           <div class="section-title">In-Game Events</div>
           <div class="row">
             <span class="row-label">Raid Weekend</span>
-            <span id="raid-timer" class="row-value">Loading…</span>
+            <span data-k="raid-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Clan Games</span>
-            <span id="clan-games-timer" class="row-value">Loading…</span>
+            <span data-k="clan-games-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">Season End</span>
-            <span id="season-end-timer" class="row-value">Loading…</span>
+            <span data-k="season-end-timer" class="row-value">Loading…</span>
           </div>
           <div class="row">
             <span class="row-label">League Reset</span>
-            <span id="league-reset-timer" class="row-value">Loading…</span>
+            <span data-k="league-reset-timer" class="row-value">Loading…</span>
           </div>
         </div>
       `;
@@ -694,17 +723,47 @@
       return renderHome();
     }
 
-    // ===== Home data (unchanged) =====
+    // ============================================================
+    // Home data modules (scoped to CURRENT panel only)
+    // ============================================================
     const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
     const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
+
     let homeIntervals = [];
     let warData = null;
     let warFetched = false;
+
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
     let clanStats = null;
 
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
+
+    function currentRoot(){
+      return panelCurrent; // always operate on current panel only
+    }
+    function qk(key){
+      const root = currentRoot();
+      return root ? root.querySelector(`[data-k="${key}"]`) : null;
+    }
+    function setTextK(key, text){
+      const el = qk(key);
+      if(el) el.textContent = text;
+    }
+    function setClassK(key, className, on){
+      const el = qk(key);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+    function setRankingsVisibility(show){
+      const el = qk("rankings-block");
+      if(el) el.style.display = show ? "block" : "none";
+    }
+    function setWarVsVisibility(show){
+      const el = qk("war-vs");
+      if(el) el.style.display = show ? "block" : "none";
+    }
+
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
       if(ms<=0) return "Active now";
@@ -716,20 +775,34 @@
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
-    function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
-    function setClass(id, className, on){ const el = document.getElementById(id); if(!el) return; el.classList.toggle(className, !!on); }
-    function setRankingsVisibility(show){ const block = document.getElementById("rankings-block"); if(block) block.style.display = show ? "block" : "none"; }
-    function setWarVsVisibility(show){ const vs = document.getElementById("war-vs"); if(vs) vs.style.display = show ? "block" : "none"; }
-    function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
+
+    function fmtTop200(v){
+      if(typeof v === "number") return "#" + v;
+      return "Not in top 200";
+    }
     function fmtPct(v){
       if(typeof v !== "number" || !isFinite(v)) return "—";
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
-    function isFullStars(stars, teamSize){ if(typeof stars !== "number" || typeof teamSize !== "number") return false; return stars === teamSize * 3; }
-    function isFullDestruction(pct){ if(typeof pct !== "number" || !isFinite(pct)) return false; return pct === 100; }
-    function winPctFromWLT(w, l, t){ const W=(w|0), L=(l|0), T=(t|0); const total=W+L+T; if(total<=0) return null; return (W + 0.5*T)/total; }
-    function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
+    function isFullStars(stars, teamSize){
+      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
+      return stars === teamSize * 3;
+    }
+    function isFullDestruction(pct){
+      if(typeof pct !== "number" || !isFinite(pct)) return false;
+      return pct === 100;
+    }
+    function winPctFromWLT(w, l, t){
+      const W=(w|0), L=(l|0), T=(t|0);
+      const total=W+L+T;
+      if(total<=0) return null;
+      return (W + 0.5*T)/total;
+    }
+    function fmtPctDecimal(p){
+      if(typeof p !== "number" || !isFinite(p)) return "";
+      return ` (${p.toFixed(3)})`;
+    }
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text:"—", losses:null };
       const w=(typeof obj.wins==="number")?obj.wins:null;
@@ -739,9 +812,18 @@
       const pct=winPctFromWLT(w,l,t);
       return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
     }
-    function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
-    function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
-    function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false)); }
+    function fmtWLTWithPctNums(w,l,t){
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
+    }
+    function hasNoLosses(losses){
+      return typeof losses==="number" && isFinite(losses) && losses===0;
+    }
+
+    function resetWarHighlights(){
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false));
+    }
+
     function loadLastWarSnapshot(){
       try{
         const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
@@ -751,7 +833,9 @@
       } catch(e){}
       return null;
     }
-    function saveLastWarSnapshot(w){ try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){} }
+    function saveLastWarSnapshot(w){
+      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
+    }
     lastWarSnapshot = loadLastWarSnapshot();
 
     async function fetchWarData(){
@@ -759,56 +843,83 @@
         const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         warData = res.ok ? await res.json() : null;
+
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
         }
-      } catch(e){ warData = null; }
+      } catch(e){
+        warData = null;
+      }
       warFetched = true;
       renderWarSection();
     }
 
     function updateWarTimerOnly(isPrevious, displayOverride){
-      const warElem = document.getElementById("war-timer");
+      const warElem = qk("war-timer");
       if(!warElem) return;
+
       const src = displayOverride || warData;
-      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
-      if(isPrevious){ warElem.textContent="Previous war ended"; return; }
-      if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
+
+      if(!src || !src.state){
+        warElem.textContent = "Waiting…";
+        return;
+      }
+      if(isPrevious){
+        warElem.textContent = "Previous war ended";
+        return;
+      }
+      if(src.state === "notInWar" || !src.warEndIso){
+        warElem.textContent = "No war started";
+        return;
+      }
+
       const end = new Date(src.warEndIso);
       const now = new Date();
-      if(isNaN(end.getTime())) warElem.textContent="No war started";
-      else if(now >= end) warElem.textContent="War ended";
+      if(isNaN(end.getTime())) warElem.textContent = "No war started";
+      else if(now >= end) warElem.textContent = "War ended";
       else warElem.textContent = formatCountdown(end - now);
     }
 
     function renderWarSection(){
-      if(!document.getElementById("war-timer")) return;
+      if(!qk("war-timer")) return; // only if Home is current
 
       resetWarHighlights();
       setWarVsVisibility(false);
 
-      if(!warFetched){ setText("war-timer","Loading…"); return; }
+      if(!warFetched){
+        setTextK("war-timer","Loading…");
+        return;
+      }
 
       let display = warData;
-      if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
+      if(display && display.state === "notInWar" && lastWarSnapshot){
+        display = lastWarSnapshot;
+      }
 
-      if(!display || !display.state){ setText("war-timer","Waiting…"); return; }
+      if(!display || !display.state){
+        setTextK("war-timer","Waiting…");
+        return;
+      }
 
       if(display.state === "notInWar"){
-        setText("war-timer","No war started");
-        setText("war-name-us","—"); setText("war-name-opp","—");
-        setText("war-stars-us","—"); setText("war-stars-opp","—");
-        setText("war-destr-us","—"); setText("war-destr-opp","—");
-        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
+        setTextK("war-timer","No war started");
+        setTextK("war-name-us","—");
+        setTextK("war-name-opp","—");
+        setTextK("war-stars-us","—");
+        setTextK("war-stars-opp","—");
+        setTextK("war-destr-us","—");
+        setTextK("war-destr-opp","—");
+        setTextK("war-attacks-us","—");
+        setTextK("war-attacks-opp","—");
         return;
       }
 
       const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
       setWarVsVisibility(true);
 
-      setText("war-name-us",(display.ourName || "US"));
-      setText("war-name-opp",(display.oppName || "OPPONENT"));
+      setTextK("war-name-us",(display.ourName || "US"));
+      setTextK("war-name-opp",(display.oppName || "OPPONENT"));
 
       const teamSize = (typeof display.teamSize === "number") ? display.teamSize : null;
       const maxStars = teamSize ? teamSize * 3 : null;
@@ -816,35 +927,37 @@
       const ourStars = (typeof display.ourStars === "number") ? display.ourStars : 0;
       const oppStars = (typeof display.oppStars === "number") ? display.oppStars : 0;
 
-      setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
-      setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
+      setTextK("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
+      setTextK("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
 
       const ourDestr =
         (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
-        (typeof display.ourDestruction === "number") ? display.ourDestruction : null;
+        (typeof display.ourDestruction === "number") ? display.ourDestruction :
+        null;
 
       const oppDestr =
         (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
-        (typeof display.oppDestruction === "number") ? display.oppDestruction : null;
+        (typeof display.oppDestruction === "number") ? display.oppDestruction :
+        null;
 
-      setText("war-destr-us", fmtPct(ourDestr));
-      setText("war-destr-opp", fmtPct(oppDestr));
+      setTextK("war-destr-us", fmtPct(ourDestr));
+      setTextK("war-destr-opp", fmtPct(oppDestr));
 
       if(teamSize && typeof display.ourAttacksUsed === "number" && typeof display.oppAttacksUsed === "number"){
         const total = teamSize * 2;
         const ourUsed = Math.max(0, Math.min(total, display.ourAttacksUsed));
         const oppUsed = Math.max(0, Math.min(total, display.oppAttacksUsed));
-        setText("war-attacks-us", `${ourUsed}/${total}`);
-        setText("war-attacks-opp", `${oppUsed}/${total}`);
+        setTextK("war-attacks-us", `${ourUsed}/${total}`);
+        setTextK("war-attacks-opp", `${oppUsed}/${total}`);
       } else {
-        setText("war-attacks-us","Updating…");
-        setText("war-attacks-opp","Updating…");
+        setTextK("war-attacks-us","Updating…");
+        setTextK("war-attacks-opp","Updating…");
       }
 
-      setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
-      setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
-      setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
-      setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
+      setClassK("war-stars-us","war-green", isFullStars(ourStars, teamSize));
+      setClassK("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
+      setClassK("war-destr-us","war-green", isFullDestruction(ourDestr));
+      setClassK("war-destr-opp","war-green", isFullDestruction(oppDestr));
 
       updateWarTimerOnly(showingPrevious, display);
     }
@@ -854,31 +967,36 @@
         const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         clanStats = res.ok ? await res.json() : null;
-      } catch(e){ clanStats = null; }
+      } catch(e){
+        clanStats = null;
+      }
       renderClanStats();
     }
 
     function renderClanStats(){
-      if(!document.getElementById("war-record")) return;
+      if(!qk("war-record")) return; // only if Home is current
 
-      setClass("war-record","record-green", false);
-      setClass("war-last10","record-green", false);
-      setClass("war-last25","record-green", false);
-      setClass("war-last50","record-green", false);
+      setClassK("war-record","record-green", false);
+      setClassK("war-last10","record-green", false);
+      setClassK("war-last25","record-green", false);
+      setClassK("war-last50","record-green", false);
 
-      if(!clanStats){ setRankingsVisibility(false); return; }
+      if(!clanStats){
+        setRankingsVisibility(false);
+        return;
+      }
 
       const r = clanStats.rankings || {};
       const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
       setRankingsVisibility(hasAnyRank);
 
       if(hasAnyRank){
-        setText("rank-global-trophies", fmtTop200(r.globalTrophies));
-        setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
+        setTextK("rank-global-trophies", fmtTop200(r.globalTrophies));
+        setTextK("rank-usa-trophies", fmtTop200(r.usaTrophies));
       }
 
-      setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
-      setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
+      setTextK("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
+      setTextK("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
 
       if(clanStats.war){
         const w = clanStats.war.wins ?? 0;
@@ -886,23 +1004,23 @@
         const t = clanStats.war.ties ?? 0;
 
         const rec = fmtWLTWithPctNums(w,l,t);
-        setText("war-record", rec.text);
-        setClass("war-record", "record-green", hasNoLosses(rec.losses));
+        setTextK("war-record", rec.text);
+        setClassK("war-record", "record-green", hasNoLosses(rec.losses));
 
-        setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-        setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+        setTextK("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+        setTextK("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
         const l10 = fmtWLTWithPctObj(clanStats.war.last10);
         const l25 = fmtWLTWithPctObj((clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record);
         const l50 = fmtWLTWithPctObj((clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record);
 
-        setText("war-last10", l10.text);
-        setText("war-last25", l25.text);
-        setText("war-last50", l50.text);
+        setTextK("war-last10", l10.text);
+        setTextK("war-last25", l25.text);
+        setTextK("war-last50", l50.text);
 
-        setClass("war-last10","record-green", hasNoLosses(l10.losses));
-        setClass("war-last25","record-green", hasNoLosses(l25.losses));
-        setClass("war-last50","record-green", hasNoLosses(l50.losses));
+        setClassK("war-last10","record-green", hasNoLosses(l10.losses));
+        setClassK("war-last25","record-green", hasNoLosses(l25.losses));
+        setClassK("war-last50","record-green", hasNoLosses(l50.losses));
       }
     }
 
@@ -942,12 +1060,12 @@
       return reset;
     }
     function updateRecurringTimers(){
-      if(!document.getElementById("raid-timer")) return;
+      if(!qk("raid-timer")) return;
       const now = new Date();
-      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
-      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
-      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
-      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
+      setTextK("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setTextK("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setTextK("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setTextK("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
     function startHomeDataLoop(){
@@ -967,7 +1085,25 @@
       homeIntervals.push(setInterval(fetchClanStats, 5*1000));
     }
 
-    // ===== Tabbar hide/reveal =====
+    // ============================================================
+    // Render panels (Prev / Current / Next)
+    // ============================================================
+    function renderPanels(route){
+      const prev = neighborRoute(route, "right");
+      const next = neighborRoute(route, "left");
+
+      panelCurrent.innerHTML = renderRouteContent(route);
+      panelPrev.innerHTML = prev ? renderRouteContent(prev) : "";
+      panelNext.innerHTML = next ? renderRouteContent(next) : "";
+
+      // Home loop only when HOME is CURRENT
+      clearHomeIntervals();
+      if(route === "home") startHomeDataLoop();
+    }
+
+    // ============================================================
+    // Tabbar hide/reveal (scroll)
+    // ============================================================
     const tabbar = document.getElementById("pwaTabbar");
     let lastScrollY = window.scrollY || 0;
     let tabbarOffset = 0;
@@ -1021,7 +1157,9 @@
     window.addEventListener("scroll", tabbarOnScroll, { passive:true });
     window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
 
-    // ===== Prevent double-tap zoom (best-effort) =====
+    // ============================================================
+    // Prevent double-tap zoom (best-effort)
+    // ============================================================
     (function preventDoubleTapZoom(){
       let lastTouchEnd = 0;
       document.addEventListener("touchend", function(e){
@@ -1033,304 +1171,250 @@
       }, { passive: false });
     })();
 
-    // ===== Router =====
-    function setDocTitle(route){
-      const map = {
-        home: "B•A•S•E•D — Home",
-        cwl: "B•A•S•E•D — CWL",
-        war: "B•A•S•E•D — War",
-        mystats: "B•A•S•E•D — My Stats",
-        more: "B•A•S•E•D — More",
-      };
-      document.title = map[route] || "B•A•S•E•D";
-    }
+    // ============================================================
+    // Router + Swipe Pager
+    // ============================================================
+    const viewport = document.getElementById("viewport");
+    const track = document.getElementById("track");
 
-    let enterFromSwipeDir = null; // "left" or "right" (direction user swiped)
+    let route = "home";
+    let isSettling = false;
+    let ignoreNextHashChange = false;
 
-    // ✅ FIXED: deterministic enter direction + cancels stale animations
-    function animateEnterIfNeeded(){
-      if(!enterFromSwipeDir) return;
-
-      // Cancel any previous animations that might have fill-state
-      try{
-        app.getAnimations().forEach(a => a.cancel());
-      } catch(e){}
-
-      // Swipe left -> new page enters from right (+)
-      // Swipe right -> new page enters from left (-)
-      const from = (enterFromSwipeDir === "left") ? 26 : -26;
-      enterFromSwipeDir = null;
-
-      // Force start state
-      app.style.transform = `translate3d(${from}px,0,0)`;
-      app.style.opacity = "0.92";
-
-      requestAnimationFrame(() => {
-        try{
-          app.animate([
-            { transform: `translate3d(${from}px,0,0)`, opacity: 0.92 },
-            { transform: `translate3d(0,0,0)`, opacity: 1 }
-          ], {
-            duration: 340,
-            easing: "cubic-bezier(.2,.9,.2,1)",
-            fill: "forwards"
-          });
-        } catch(e){
-          app.style.transform = "translate3d(0,0,0)";
-          app.style.opacity = "1";
-        }
-      });
-    }
-
-    function renderRoute(){
-      const route = normalizeRoute(location.hash);
-
+    function syncUI(){
       setupNavUI();
       setActiveNav(route);
       applyPwaImageIconStates(route);
       setDocTitle(route);
       tabbarReveal();
-
-      if(route !== "home") clearHomeIntervals();
-
-      app.innerHTML = renderRouteContent(route);
-      if(route === "home") startHomeDataLoop();
-
-      animateEnterIfNeeded();
     }
 
-    // ============================================================
-    // EVEN MORE native swipe:
-    // - tilt/scale response while dragging
-    // - springy snap-back bounce
-    // - commit haptic + correct direction + smooth settle
-    // ============================================================
-    (function enableSwipeNavNative(){
-      let startX=0, startY=0, startT=0;
-      let tracking=false, lockedAxis=null;
-      let fromRoute="home";
-      let toRoute=null;
-      let dir=null;
-      let dx=0;
-      let raf=0;
+    function setRouteFromHash(){
+      route = normalizeRoute(location.hash);
+      syncUI();
+      renderPanels(route);
+      // Reset track to center panel instantly
+      track.style.transition = "none";
+      track.style.transform = "translate3d(-100%,0,0)";
+      requestAnimationFrame(() => {
+        track.style.transition = "none";
+      });
+    }
 
-      function isInteractive(el){
-        if(!el) return false;
-        return !!el.closest("a, button, input, textarea, select, label");
-      }
+    // Touch-driven pager (finger tracking)
+    (function enablePager(){
+      let startX=0, startY=0;
+      let dx=0;
+      let axis=null;
+      let dir=null;
+      let width=1;
 
       function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-
       function rubberBand(px){
-        const w = Math.max(320, window.innerWidth);
+        // Gentle rubber band at edges
+        const w = Math.max(320, width);
         const x = px / w;
-        const damp = 1 - Math.min(0.62, Math.abs(x) * 0.62);
+        const damp = 1 - Math.min(0.65, Math.abs(x) * 0.65);
         return px * damp;
       }
 
-      function setAppTransform(px){
-        const w = Math.max(320, window.innerWidth);
-        const t = clamp(px / (w * 0.8), -1, 1);
-
-        const rot = t * 1.15;                 // degrees
-        const scale = 1 - Math.abs(t) * 0.02; // down to ~0.98
-
-        app.style.transform = `translate3d(${px}px,0,0) rotateZ(${rot}deg) scale(${scale})`;
-        app.style.opacity = "1";
+      function setTrackPx(px){
+        // base is -100% (center)
+        // convert px to translate3d(calc(-100% + px), 0, 0)
+        track.style.transform = `translate3d(calc(-100% + ${px}px), 0, 0)`;
       }
 
-      function setUnderlay(route, direction, px){
-        if(!route){
-          underlay.style.opacity = "0";
-          underlay.innerHTML = "";
-          return;
-        }
-        if(!underlay.innerHTML){
-          underlay.innerHTML = renderRouteContent(route);
-        }
-
-        const w = Math.max(320, window.innerWidth);
-        const amt = clamp(Math.abs(px) / (w * 0.75), 0, 1);
-        underlay.style.opacity = String(0.12 + 0.88 * amt);
-
-        const par = (direction === "left")
-          ? (w * 0.12 * (1-amt))
-          : (-w * 0.12 * (1-amt));
-
-        underlay.style.transform = `translateX(${par}px)`;
+      function canGoLeft(){
+        return !!neighborRoute(route, "left");
+      }
+      function canGoRight(){
+        return !!neighborRoute(route, "right");
       }
 
-      function clearUnderlay(){
-        underlay.style.opacity = "0";
-        underlay.innerHTML = "";
-        underlay.style.transform = "translateX(0px)";
-      }
-
-      function springBack(px){
-        try{
-          app.animate([
-            { transform: app.style.transform || `translate3d(${px}px,0,0)`, opacity: 1 },
-            { transform: `translate3d(${(-px)*0.04}px,0,0) rotateZ(0deg) scale(1)`, opacity: 1 },
-            { transform: `translate3d(0,0,0) rotateZ(0deg) scale(1)`, opacity: 1 }
-          ], {
-            duration: 560,
-            easing: "cubic-bezier(.16,1,.3,1)",
-            fill: "forwards"
-          });
-        } catch(e){
-          app.style.transform = "translate3d(0,0,0)";
-        }
-        setTimeout(() => {
-          app.style.transform = "translate3d(0,0,0)";
-          clearUnderlay();
-        }, 580);
-      }
-
-      window.addEventListener("touchstart", (e) => {
+      viewport.addEventListener("touchstart", (e) => {
+        if(isSettling) return;
         if(!e.touches || e.touches.length !== 1) return;
-        if(isInteractive(e.target)) return;
 
-        tracking = true;
-        lockedAxis = null;
+        const target = e.target;
+        // Don't swipe on interactive stuff (links/buttons)
+        if(target && target.closest && target.closest("a, button, input, textarea, select, label")) return;
+
+        width = viewport.clientWidth || window.innerWidth || 1;
+        axis = null;
+        dir = null;
+        dx = 0;
 
         const t = e.touches[0];
         startX = t.clientX;
         startY = t.clientY;
-        startT = performance.now();
 
-        fromRoute = normalizeRoute(location.hash);
+        track.style.transition = "none";
+      }, { passive:true });
 
-        clearUnderlay();
-        toRoute = null;
-        dir = null;
-        dx = 0;
+      viewport.addEventListener("touchmove", (e) => {
+        if(isSettling) return;
+        if(!e.touches || e.touches.length !== 1) return;
 
-        app.style.willChange = "transform";
-      }, { passive: true });
-
-      window.addEventListener("touchmove", (e) => {
-        if(!tracking || !e.touches || e.touches.length !== 1) return;
         const t = e.touches[0];
         const _dx = t.clientX - startX;
         const _dy = t.clientY - startY;
 
-        if(!lockedAxis){
+        if(!axis){
           if(Math.abs(_dx) > 10 || Math.abs(_dy) > 10){
-            lockedAxis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
-          } else return;
+            axis = (Math.abs(_dx) > Math.abs(_dy)) ? "x" : "y";
+          } else {
+            return;
+          }
         }
-        if(lockedAxis !== "x") return;
+        if(axis !== "x") return;
+
+        // We are swiping horizontally; prevent vertical scroll jitter
+        e.preventDefault();
 
         dx = _dx;
         dir = (dx < 0) ? "left" : "right";
 
-        const candidate = neighborRoute(fromRoute, dir);
-        toRoute = (candidate && candidate !== fromRoute) ? candidate : null;
-
-        const px = rubberBand(dx);
-        setUnderlay(toRoute, dir, px);
-
-        if(!raf){
-          raf = requestAnimationFrame(() => {
-            setAppTransform(px);
-            raf = 0;
-          });
+        // If no neighbor in that direction, rubber-band harder
+        let px = dx;
+        if((dir === "left" && !canGoLeft()) || (dir === "right" && !canGoRight())){
+          px = rubberBand(dx) * 0.55;
         }
-      }, { passive: true });
 
-      window.addEventListener("touchend", () => {
-        if(!tracking) return;
-        tracking = false;
+        setTrackPx(px);
+      }, { passive:false });
 
-        if(lockedAxis !== "x"){
-          app.style.willChange = "auto";
-          lockedAxis = null;
+      viewport.addEventListener("touchend", () => {
+        if(isSettling) return;
+        if(axis !== "x"){
+          axis = null;
           return;
         }
 
-        const w = Math.max(320, window.innerWidth);
         const absDx = Math.abs(dx);
+        const threshold = Math.min(140, width * 0.26);
 
-        const dt = Math.max(1, performance.now() - startT);
-        const vx = absDx / dt;
+        const wantLeft = dx < 0;
+        const wantRight = dx > 0;
 
-        const commitByDistance = absDx > Math.min(150, w * 0.28);
-        const commitByVelocity = vx > 0.62;
-        const commit = (toRoute && (commitByDistance || commitByVelocity));
+        const next = wantLeft ? neighborRoute(route, "left") : null;
+        const prev = wantRight ? neighborRoute(route, "right") : null;
 
-        const currentPx = rubberBand(dx);
+        const willCommit = (absDx > threshold) && (next || prev);
 
-        if(!commit){
-          springBack(currentPx);
-          app.style.willChange = "auto";
-          lockedAxis = null;
+        isSettling = true;
+        track.style.transition = "transform 340ms cubic-bezier(.2,.9,.2,1)";
+
+        if(!willCommit){
+          // Snap back to center
+          track.style.transform = "translate3d(-100%,0,0)";
+          setTimeout(() => {
+            track.style.transition = "none";
+            isSettling = false;
+            axis = null;
+            dx = 0;
+          }, 360);
           return;
         }
 
+        // Commit to next/prev panel
         lightHaptic();
 
-        const out = (dir === "left") ? (-1.10 * w) : (1.10 * w);
+        if(next){
+          // swipe left -> go NEXT (track slides left to show right panel)
+          track.style.transform = "translate3d(-200%,0,0)";
+          setTimeout(() => {
+            route = next;
+            ignoreNextHashChange = true;
+            location.hash = hashFor(route);
 
-        try{
-          // cancel any lingering animations so we don't "inherit" transforms
-          app.getAnimations().forEach(a => a.cancel());
-        } catch(e){}
+            syncUI();
+            renderPanels(route);
 
-        try{
-          app.animate([
-            { transform: app.style.transform || `translate3d(${currentPx}px,0,0)`, opacity: 1 },
-            { transform: `translate3d(${out}px,0,0) rotateZ(${(dir==="left"?-0.8:0.8)}deg) scale(0.985)`, opacity: 0.98 }
-          ], {
-            duration: 430,
-            easing: "cubic-bezier(.22,.95,.25,1)",
-            fill: "forwards"
-          });
-        } catch(e){
-          app.style.transform = `translate3d(${out}px,0,0)`;
+            // reset to center instantly
+            track.style.transition = "none";
+            track.style.transform = "translate3d(-100%,0,0)";
+
+            requestAnimationFrame(() => {
+              isSettling = false;
+              axis = null;
+              dx = 0;
+            });
+          }, 350);
+          return;
         }
 
-        // ✅ next page enters from correct side
-        enterFromSwipeDir = dir;
+        if(prev){
+          // swipe right -> go PREV (track slides right to show left panel)
+          track.style.transform = "translate3d(0%,0,0)";
+          setTimeout(() => {
+            route = prev;
+            ignoreNextHashChange = true;
+            location.hash = hashFor(route);
 
+            syncUI();
+            renderPanels(route);
+
+            track.style.transition = "none";
+            track.style.transform = "translate3d(-100%,0,0)";
+
+            requestAnimationFrame(() => {
+              isSettling = false;
+              axis = null;
+              dx = 0;
+            });
+          }, 350);
+          return;
+        }
+      }, { passive:true });
+
+      viewport.addEventListener("touchcancel", () => {
+        if(isSettling) return;
+        axis = null;
+        dx = 0;
+        track.style.transition = "transform 220ms cubic-bezier(.2,.9,.2,1)";
+        track.style.transform = "translate3d(-100%,0,0)";
         setTimeout(() => {
-          app.style.transform = "translate3d(0,0,0)";
-          app.style.opacity = "1";
-          clearUnderlay();
-          goRoute(toRoute);
-          app.style.willChange = "auto";
-        }, 440);
-
-        lockedAxis = null;
-      }, { passive: true });
-
-      window.addEventListener("touchcancel", () => {
-        tracking = false;
-        lockedAxis = null;
-        clearUnderlay();
-        app.style.transform = "translate3d(0,0,0)";
-        app.style.opacity = "1";
-        app.style.willChange = "auto";
-      }, { passive: true });
+          track.style.transition = "none";
+        }, 240);
+      }, { passive:true });
     })();
 
-    // ===== Boot =====
-    if(!location.hash) location.hash = "#/home";
-    setupNavUI();
-    computeTabbarMax();
-    tabbarReveal();
-    renderRoute();
+    // ============================================================
+    // Hashchange handler
+    // ============================================================
+    window.addEventListener("hashchange", () => {
+      if(ignoreNextHashChange){
+        ignoreNextHashChange = false;
+        return;
+      }
+      setRouteFromHash();
+    });
 
-    window.addEventListener("hashchange", renderRoute);
+    // ============================================================
+    // Boot
+    // ============================================================
+    if(!location.hash) location.hash = "#/home";
+    computeTabbarMax();
+    setupNavUI();
+
+    // Initial route + render
+    route = normalizeRoute(location.hash);
+    syncUI();
+    renderPanels(route);
+    track.style.transition = "none";
+    track.style.transform = "translate3d(-100%,0,0)";
+
     window.addEventListener("pageshow", () => {
       computeTabbarMax();
       tabbarReveal();
-      renderRoute();
+      setRouteFromHash();
     });
+
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible"){
         computeTabbarMax();
         tabbarReveal();
-        renderRoute();
+        setRouteFromHash();
       }
     });
   </script>
