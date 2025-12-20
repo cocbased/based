@@ -24,6 +24,8 @@
       --tabbar-border: rgba(255,255,255,0.10);
     }
 
+    html, body{ height:100%; }
+
     body{
       margin:0;
       background:#000;
@@ -37,12 +39,11 @@
       text-align:center;
       padding:24px 16px;
       box-sizing:border-box;
-      overscroll-behavior-x: none;
+      overscroll-behavior-x:none;
       -webkit-user-select:none;
       user-select:none;
     }
 
-    /* Header */
     .app-icon{
       width:90px;
       height:90px;
@@ -58,7 +59,6 @@
       object-fit:contain;
     }
 
-    /* Clan tag */
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
@@ -69,7 +69,6 @@
     }
     .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
 
-    /* Top nav (non-PWA only) */
     .topnav{
       width:100%;
       max-width:560px;
@@ -90,8 +89,6 @@
       border:1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.04);
       white-space:nowrap;
-      -webkit-user-select:none;
-      user-select:none;
     }
     .topnav a.active{
       opacity:1;
@@ -100,9 +97,7 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* =========================
-       Native pager (3 panels)
-       ========================= */
+    /* Pager shell */
     .stage{
       width:100%;
       max-width:560px;
@@ -110,6 +105,7 @@
       position:relative;
       display:flex;
       justify-content:center;
+      min-height:0;
     }
 
     #viewport{
@@ -118,23 +114,25 @@
       overflow:hidden;
       position:relative;
       flex:1;
-      touch-action: pan-y; /* allow vertical scroll; we handle horizontal */
+      min-height:0;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
 
     #track{
       display:flex;
       height:100%;
-      width:300%;
       will-change: transform;
       transform: translate3d(0,0,0);
     }
 
     .panel{
-      width:100%;
-      flex: 0 0 100%;
+      flex:0 0 auto;
+      height:100%;
       display:flex;
       justify-content:center;
       align-items:flex-start;
+      min-height:0;
     }
 
     .panel-inner{
@@ -145,9 +143,9 @@
       align-items:center;
       flex:1;
       box-sizing:border-box;
+      min-height:0;
     }
 
-    /* Card + rows */
     .cards{
       width:100%;
       max-width:340px;
@@ -180,7 +178,6 @@
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
 
-    /* Current War */
     .war-board{ text-align:center; margin-top:6px; }
     .war-timer{
       font-family:monospace;
@@ -219,7 +216,6 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* Generic pages */
     .page{
       width:100%;
       text-align:center;
@@ -237,7 +233,6 @@
       font-size:14px;
     }
 
-    /* More links */
     .links{
       width:100%;
       max-width:280px;
@@ -260,8 +255,6 @@
       color:#000;
       text-decoration:none;
       box-sizing:border-box;
-      -webkit-user-select:none;
-      user-select:none;
     }
     .install-btn{
       background-color:#ffcc00;
@@ -271,7 +264,6 @@
       font-weight:700;
       border-radius:12px;
     }
-
     .page-footer{
       margin-top:auto;
       width:100%;
@@ -281,9 +273,7 @@
       text-align:center;
     }
 
-    /* =========================
-       PWA Bottom Tabs + hide-on-scroll behavior
-       ========================= */
+    /* PWA tabs */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
@@ -306,7 +296,6 @@
       transform: translate3d(0,0,0);
       transition: transform 180ms cubic-bezier(.2,.8,.2,1);
     }
-
     .pwa-tabbar.is-scrolling{ transition: none; }
 
     .pwa-tabbar .tabs{
@@ -521,9 +510,10 @@
     }
 
     // ============================================================
-    // Routes
+    // Routes + navigation
     // ============================================================
     const ROUTE_ORDER = ["home","cwl","war","mystats","more"];
+
     function neighborRoute(route, dir){
       const idx = ROUTE_ORDER.indexOf(route);
       if(idx === -1) return null;
@@ -531,6 +521,7 @@
       if(dir === "right") return ROUTE_ORDER[Math.max(idx - 1, 0)];
       return null;
     }
+
     function hashFor(route){
       const map = { home:"#/home", cwl:"#/cwl", war:"#/war", mystats:"#/my-stats", more:"#/more" };
       return map[route] || "#/home";
@@ -546,6 +537,19 @@
       };
       document.title = map[route] || "B•A•S•E•D";
     }
+
+    // Intercept nav clicks (iOS hash sometimes “lags” during heavy rendering)
+    document.addEventListener("click", (e) => {
+      const a = e.target && e.target.closest ? e.target.closest("a[data-route]") : null;
+      if(!a) return;
+      const r = a.getAttribute("data-route");
+      if(!r) return;
+      // Only intercept in-app hash routes
+      if(a.getAttribute("href") && a.getAttribute("href").startsWith("#/")){
+        e.preventDefault();
+        navigateTo(r, true);
+      }
+    });
 
     // ============================================================
     // Templates
@@ -590,6 +594,7 @@
       `;
     }
 
+    // NOTE: Uses data-k so Home updates ONLY the current panel.
     function renderHome(){
       return `
         <div class="cards">
@@ -716,30 +721,47 @@
     }
 
     // ============================================================
-    // Home data modules (scoped to CURRENT panel only)
+    // Home data modules (CURRENT panel only)
     // ============================================================
     const RAW_WAR_URL_BASE  = "https://raw.githubusercontent.com/cocbased/based/main/war.json";
     const RAW_CLAN_URL_BASE = "https://raw.githubusercontent.com/cocbased/based/main/clan_stats.json";
 
+    const LS_WAR = "based_cache_war_json";
+    const LS_CLAN = "based_cache_clan_stats_json";
+    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
+
     let homeIntervals = [];
     let warData = null;
     let warFetched = false;
-
-    const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
     let clanStats = null;
 
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
 
-    function currentRoot(){ return panelCurrent; }
     function qk(key){
-      const root = currentRoot();
-      return root ? root.querySelector(`[data-k="${key}"]`) : null;
+      return panelCurrent ? panelCurrent.querySelector(`[data-k="${key}"]`) : null;
     }
     function setTextK(key, text){ const el = qk(key); if(el) el.textContent = text; }
     function setClassK(key, className, on){ const el = qk(key); if(!el) return; el.classList.toggle(className, !!on); }
     function setRankingsVisibility(show){ const el = qk("rankings-block"); if(el) el.style.display = show ? "block" : "none"; }
     function setWarVsVisibility(show){ const el = qk("war-vs"); if(el) el.style.display = show ? "block" : "none"; }
+
+    function safeJsonParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
+    function loadCache(key){ try{ return safeJsonParse(localStorage.getItem(key)||""); } catch(e){ return null; } }
+    function saveCache(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
+
+    function loadLastWarSnapshot(){
+      try{
+        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
+        const obj = raw ? JSON.parse(raw) : null;
+        if(obj && obj.state && obj.state !== "notInWar") return obj;
+      } catch(e){}
+      return null;
+    }
+    function saveLastWarSnapshot(w){
+      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
+    }
+    lastWarSnapshot = loadLastWarSnapshot();
 
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
@@ -759,9 +781,14 @@
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
-    function isFullStars(stars, teamSize){ if(typeof stars !== "number" || typeof teamSize !== "number") return false; return stars === teamSize * 3; }
-    function isFullDestruction(pct){ if(typeof pct !== "number" || !isFinite(pct)) return false; return pct === 100; }
-    function winPctFromWLT(w, l, t){ const W=(w|0), L=(l|0), T=(t|0); const total=W+L+T; if(total<=0) return null; return (W + 0.5*T)/total; }
+    function isFullStars(stars, teamSize){ return (typeof stars==="number" && typeof teamSize==="number" && stars === teamSize*3); }
+    function isFullDestruction(pct){ return (typeof pct==="number" && isFinite(pct) && pct === 100); }
+    function winPctFromWLT(w, l, t){
+      const W=(w|0), L=(l|0), T=(t|0);
+      const total=W+L+T;
+      if(total<=0) return null;
+      return (W + 0.5*T)/total;
+    }
     function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text:"—", losses:null };
@@ -772,33 +799,41 @@
       const pct=winPctFromWLT(w,l,t);
       return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
     }
-    function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
-    function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
-
-    function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false)); }
-
-    function loadLastWarSnapshot(){
-      try{
-        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
-        if(!raw) return null;
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object" && obj.state && obj.state !== "notInWar") return obj;
-      } catch(e){}
-      return null;
+    function fmtWLTWithPctNums(w,l,t){
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
     }
-    function saveLastWarSnapshot(w){ try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){} }
-    lastWarSnapshot = loadLastWarSnapshot();
+    function hasNoLosses(losses){ return (typeof losses==="number" && isFinite(losses) && losses===0); }
+
+    function resetWarHighlights(){
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(k => setClassK(k,"war-green",false));
+    }
+
+    async function fetchJsonWithCache(urlBase, lsKey){
+      // 1) show cached immediately if present
+      const cached = loadCache(lsKey);
+      // 2) fetch fresh
+      try{
+        const url = urlBase + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        saveCache(lsKey, json);
+        return { json, fromCache:false };
+      } catch(e){
+        return { json: cached, fromCache:true };
+      }
+    }
 
     async function fetchWarData(){
-      try{
-        const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        warData = res.ok ? await res.json() : null;
-        if(warData && warData.state && warData.state !== "notInWar"){
-          lastWarSnapshot = warData;
-          saveLastWarSnapshot(warData);
-        }
-      } catch(e){ warData = null; }
+      const out = await fetchJsonWithCache(RAW_WAR_URL_BASE, LS_WAR);
+      warData = out.json;
+
+      if(warData && warData.state && warData.state !== "notInWar"){
+        lastWarSnapshot = warData;
+        saveLastWarSnapshot(warData);
+      }
+
       warFetched = true;
       renderWarSection();
     }
@@ -806,10 +841,15 @@
     function updateWarTimerOnly(isPrevious, displayOverride){
       const warElem = qk("war-timer");
       if(!warElem) return;
+
       const src = displayOverride || warData;
-      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
+      if(!src || !src.state){
+        warElem.textContent = "Offline";
+        return;
+      }
       if(isPrevious){ warElem.textContent="Previous war ended"; return; }
       if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
+
       const end = new Date(src.warEndIso);
       const now = new Date();
       if(isNaN(end.getTime())) warElem.textContent="No war started";
@@ -823,12 +863,18 @@
       resetWarHighlights();
       setWarVsVisibility(false);
 
-      if(!warFetched){ setTextK("war-timer","Loading…"); return; }
+      if(!warFetched){
+        setTextK("war-timer","Loading…");
+        return;
+      }
 
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
-      if(!display || !display.state){ setTextK("war-timer","Waiting…"); return; }
+      if(!display || !display.state){
+        setTextK("war-timer","Offline");
+        return;
+      }
 
       if(display.state === "notInWar"){
         setTextK("war-timer","No war started");
@@ -885,11 +931,8 @@
     }
 
     async function fetchClanStats(){
-      try{
-        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        clanStats = res.ok ? await res.json() : null;
-      } catch(e){ clanStats = null; }
+      const out = await fetchJsonWithCache(RAW_CLAN_URL_BASE, LS_CLAN);
+      clanStats = out.json;
       renderClanStats();
     }
 
@@ -901,7 +944,12 @@
       setClassK("war-last25","record-green", false);
       setClassK("war-last50","record-green", false);
 
-      if(!clanStats){ setRankingsVisibility(false); return; }
+      if(!clanStats){
+        setRankingsVisibility(false);
+        // also replace Loading… with Offline so it’s obvious
+        ["cwl-league","cwl-finish","war-record","war-last10","war-last25","war-last50","war-streak","war-longest"].forEach(k => setTextK(k,"Offline"));
+        return;
+      }
 
       const r = clanStats.rankings || {};
       const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
@@ -999,12 +1047,14 @@
       }, 1000));
 
       homeIntervals.push(setInterval(fetchWarData, 5*1000));
-      homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+      homeIntervals.push(setInterval(fetchClanStats, 10*1000));
     }
 
     // ============================================================
-    // Render panels (Prev / Current / Next)
+    // Render panels
     // ============================================================
+    let route = "home";
+
     function renderPanels(route){
       const prev = neighborRoute(route, "right");
       const next = neighborRoute(route, "left");
@@ -1074,40 +1124,26 @@
     window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
 
     // ============================================================
-    // Prevent double-tap zoom (best-effort)
-    // ============================================================
-    (function preventDoubleTapZoom(){
-      let lastTouchEnd = 0;
-      document.addEventListener("touchend", function(e){
-        const now = Date.now();
-        if(now - lastTouchEnd <= 300){
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      }, { passive: false });
-    })();
-
-    // ============================================================
-    // Router + Pager (FIXED centering)
+    // Pager geometry (pixel panels)
     // ============================================================
     const viewport = document.getElementById("viewport");
     const track = document.getElementById("track");
+    const panels = Array.from(track.querySelectorAll(".panel"));
 
-    let route = "home";
+    let vw = 1;
+    let baseX = 0;
     let isSettling = false;
-    let ignoreNextHashChange = false;
-
-    let vw = 1;        // viewport width in px
-    let baseX = 0;     // center panel offset in px (=-vw)
+    let suppressHash = false;
 
     function computePagerGeometry(){
       vw = viewport.clientWidth || window.innerWidth || 1;
-      baseX = -vw; // center is exactly one panel to the left
+      panels.forEach(p => { p.style.width = vw + "px"; });
+      track.style.width = (vw * 3) + "px";
+      baseX = -vw;
     }
 
     function setTrackPx(px){
-      // always use px, never %
-      track.style.transform = `translate3d(${baseX + px}px, 0, 0)`;
+      track.style.transform = `translate3d(${baseX + px}px,0,0)`;
     }
 
     function snapToCenter(animate){
@@ -1124,15 +1160,29 @@
       tabbarReveal();
     }
 
-    function setRouteFromHash(){
-      route = normalizeRoute(location.hash);
+    function navigateTo(nextRoute, pushHash){
+      if(!nextRoute) return;
+      if(nextRoute === route && !pushHash) return;
+
+      route = nextRoute;
+
+      if(pushHash){
+        suppressHash = true;
+        location.hash = hashFor(route);
+        setTimeout(() => { suppressHash = false; }, 0);
+      }
+
       syncUI();
       renderPanels(route);
       computePagerGeometry();
       snapToCenter(false);
     }
 
-    // Touch-driven pager (finger tracking)
+    window.addEventListener("hashchange", () => {
+      if(suppressHash) return;
+      navigateTo(normalizeRoute(location.hash), false);
+    });
+
     (function enablePager(){
       let startX=0, startY=0;
       let dx=0;
@@ -1155,7 +1205,6 @@
         if(target && target.closest && target.closest("a, button, input, textarea, select, label")) return;
 
         computePagerGeometry();
-
         axis = null;
         dx = 0;
 
@@ -1229,19 +1278,9 @@
         lightHaptic();
 
         if(next){
-          // swipe left -> show NEXT panel (move track left by 1vw)
           setTrackPx(-vw);
           setTimeout(() => {
-            route = next;
-            ignoreNextHashChange = true;
-            location.hash = hashFor(route);
-
-            syncUI();
-            renderPanels(route);
-
-            computePagerGeometry();
-            snapToCenter(false);
-
+            navigateTo(next, true);
             isSettling = false;
             axis = null;
             dx = 0;
@@ -1250,19 +1289,9 @@
         }
 
         if(prev){
-          // swipe right -> show PREV panel (move track right by 1vw)
           setTrackPx(vw);
           setTimeout(() => {
-            route = prev;
-            ignoreNextHashChange = true;
-            location.hash = hashFor(route);
-
-            syncUI();
-            renderPanels(route);
-
-            computePagerGeometry();
-            snapToCenter(false);
-
+            navigateTo(prev, true);
             isSettling = false;
             axis = null;
             dx = 0;
@@ -1280,26 +1309,15 @@
       }, { passive:true });
     })();
 
-    window.addEventListener("hashchange", () => {
-      if(ignoreNextHashChange){
-        ignoreNextHashChange = false;
-        return;
-      }
-      setRouteFromHash();
-    });
-
     // ============================================================
     // Boot
     // ============================================================
     if(!location.hash) location.hash = "#/home";
+
     computeTabbarMax();
-    setupNavUI();
-
-    route = normalizeRoute(location.hash);
-    syncUI();
-    renderPanels(route);
-
     computePagerGeometry();
+
+    navigateTo(normalizeRoute(location.hash), false);
     snapToCenter(false);
 
     window.addEventListener("resize", () => {
@@ -1309,15 +1327,15 @@
 
     window.addEventListener("pageshow", () => {
       computeTabbarMax();
-      tabbarReveal();
-      setRouteFromHash();
+      computePagerGeometry();
+      navigateTo(normalizeRoute(location.hash), false);
     });
 
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible"){
         computeTabbarMax();
-        tabbarReveal();
-        setRouteFromHash();
+        computePagerGeometry();
+        navigateTo(normalizeRoute(location.hash), false);
       }
     });
   </script>
