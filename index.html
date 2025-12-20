@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
   <meta charset="UTF-8" />
   <title>B•A•S•E•D — Home</title>
@@ -42,13 +42,16 @@
     }
 
     /* ✅ Hide scrollbars ONLY in PWA (still scrollable) */
+    html.is-pwa,
     body.is-pwa{
-      scrollbar-width: none;           /* Firefox */
-      -ms-overflow-style: none;        /* IE/Edge legacy */
+      scrollbar-width: none;      /* Firefox */
+      -ms-overflow-style: none;   /* IE/Edge legacy */
     }
-    body.is-pwa::-webkit-scrollbar{   /* WebKit */
-      width:0;
-      height:0;
+    html.is-pwa::-webkit-scrollbar,
+    body.is-pwa::-webkit-scrollbar{
+      width:0 !important;
+      height:0 !important;
+      display:none !important;
     }
 
     /* Header */
@@ -501,8 +504,9 @@
       const topNav = document.getElementById("topNav");
       const tabbar = document.getElementById("pwaTabbar");
 
-      // ✅ Add/remove PWA-only body class (used for scrollbar hiding)
+      // ✅ Add/remove PWA-only classes (scrollbar hiding needs html+body on iOS)
       document.body.classList.toggle("is-pwa", pwa);
+      document.documentElement.classList.toggle("is-pwa", pwa);
 
       if(pwa){
         if(topNav) topNav.style.display = "none";
