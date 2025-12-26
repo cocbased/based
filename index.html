@@ -222,15 +222,20 @@
       border: 1px solid rgba(255,255,255,0.10);
     }
 
+    /* subtle scroll hint */
     .members-scrollhint{
       text-align:center;
       font-size:12px;
-      font-weight:800;
-      letter-spacing:.04em;
+      font-weight:400;          /* not bold */
+      letter-spacing:.03em;
       color:#fff;
-      margin: 0 0 10px;
-      opacity: .95;
+      opacity:.70;              /* subtle */
+      margin: 2px 0 10px;
       user-select:none;
+    }
+    .members-scrollhint p{
+      margin:0;
+      padding:0;
     }
 
     .members-wrap{
@@ -248,11 +253,11 @@
 
     .members-table{
       width:100%;
-      min-width: 560px;  /* enough for the extra emoji column */
+      min-width: 560px;
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
-      table-layout: fixed; /* lets colgroup widths actually apply */
+      table-layout: fixed;
     }
 
     .members-table thead th{
@@ -270,7 +275,7 @@
     }
 
     /* Sticky left columns:
-       1) Emoji col (narrow)
+       1) Emoji col
        2) Username col
     */
     .members-table th:nth-child(1),
@@ -279,7 +284,8 @@
       left: 0;
       z-index: 7;
       background: #0b1829;
-      border-right: 1px solid rgba(255,255,255,0.10);
+      /* ✅ no border so it visually merges into username column */
+      border-right: none;
     }
     .members-table thead th:nth-child(1){ z-index: 9; }
 
@@ -289,7 +295,7 @@
       left: 30px; /* must match emoji column width */
       z-index: 6;
       background: #0b1829;
-      border-right: 1px solid rgba(255,255,255,0.10);
+      border-right: 1px solid rgba(255,255,255,0.10); /* keep right border of the combined left block */
     }
     .members-table thead th:nth-child(2){ z-index: 8; }
 
@@ -302,13 +308,15 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
+    /* Emoji cell: narrow, right aligned, no weird “dot” spacing */
     .m-emoji{
       text-align:right;
       font-size:14px;
-      padding-right:8px;
+      padding: 10px 6px 10px 10px; /* a touch of left padding, tighter right */
+      white-space:nowrap;
       overflow: visible;
       text-overflow: clip;
-      white-space: nowrap;
+      letter-spacing: 0;
     }
 
     .m-user-name{
@@ -759,18 +767,17 @@
             🛡️ <strong>Elder</strong>
           </div>
 
-          <div class="members-scrollhint">← SCROLL / SWIPE FOR MORE →</div>
+          <div class="members-scrollhint"><p>← SCROLL / SWIPE FOR MORE →</p></div>
 
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
-              <!-- ✅ Optimized widths (emoji + name sticky; TH tiny; 4-digit cols compact) -->
               <colgroup>
-                <col style="width: 30px;">   <!-- Emoji (narrow) -->
+                <col style="width: 30px;">   <!-- Emoji -->
                 <col style="width: 170px;">  <!-- Username -->
-                <col style="width: 44px;">   <!-- TH (2 digits) -->
-                <col style="width: 84px;">   <!-- Trophies (<=4 digits) -->
-                <col style="width: 98px;">   <!-- Total Stars (<=4 digits) -->
-                <col style="width: 58px;">   <!-- XP (<=4 digits) -->
+                <col style="width: 44px;">   <!-- TH -->
+                <col style="width: 84px;">   <!-- Trophies -->
+                <col style="width: 98px;">   <!-- Total Stars -->
+                <col style="width: 58px;">   <!-- XP -->
               </colgroup>
 
               <thead>
@@ -1062,7 +1069,6 @@
         return;
       }
 
-      // Sort: trophies desc -> total stars desc -> XP desc -> name
       const sorted = list.slice().sort((a,b) => {
         const ta = (a.trophies|0), tb = (b.trophies|0);
         if(tb !== ta) return tb - ta;
@@ -1086,7 +1092,7 @@
 
         return `
           <tr>
-            <td class="m-emoji">${badge || ""}</td>
+            <td class="m-emoji">${badge ? badge : ""}</td>
             <td><span class="m-user-name">${name}</span></td>
             <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies}</td>
