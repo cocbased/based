@@ -210,10 +210,14 @@
     /* Members */
     .members-legend{
       font-size:12px;
-      opacity:.85;
+      opacity:.92;
       text-align:center;
-      margin:2px 0 8px;
+      margin:4px 0 10px;
       line-height:1.35;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
     }
 
     .members-head{
@@ -235,10 +239,10 @@
       flex-direction:column;
       gap:6px;
 
-      max-height: 420px;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      padding-right: 6px;
+      /* ✅ NO internal scroll box */
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
     }
 
     .member-row{
@@ -699,8 +703,13 @@
           <div class="divider"></div>
 
           <div class="section-title">Members</div>
+
+          <!-- ✅ More obvious key -->
           <div class="members-legend">
-            👑 Leader / Co-Leader &nbsp;&nbsp;|&nbsp;&nbsp; ⚔️ Elder
+            <strong>Key:</strong>
+            👑 <strong>Leader / Co-Leader</strong>
+            &nbsp;&nbsp;•&nbsp;&nbsp;
+            ⚔️ <strong>Elder</strong>
           </div>
 
           <div class="members-head" aria-hidden="true">
@@ -953,9 +962,35 @@
 
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return " 👑";      // Leader / Co-Leader
+      if(r === "leader" || r === "co-leader" || r.includes("leader")) return " 👑";
       if(r === "elder") return " ⚔️";
       return "";
+    }
+
+    function leagueShort(name){
+      const s = String(name || "").trim();
+      if(!s) return "—";
+      if(/^legend league$/i.test(s)) return "Legend";
+      return s.replace(/\s+League\s+/i, " ").trim(); // "Titan League II" -> "Titan II"
+    }
+
+    function leagueRankValue(shortName){
+      const s = String(shortName || "").toLowerCase();
+      if(s === "legend") return 1000;
+      const order = [
+        ["titan i", 900], ["titan ii", 890], ["titan iii", 880],
+        ["champion i", 870], ["champion ii", 860], ["champion iii", 850],
+        ["master i", 840], ["master ii", 830], ["master iii", 820],
+        ["crystal i", 810], ["crystal ii", 800], ["crystal iii", 790],
+        ["gold i", 780], ["gold ii", 770], ["gold iii", 760],
+        ["silver i", 750], ["silver ii", 740], ["silver iii", 730],
+        ["bronze i", 720], ["bronze ii", 710], ["bronze iii", 700],
+        ["unranked", 0],
+      ];
+      for(const [key, val] of order){
+        if(s === key) return val;
+      }
+      return 1;
     }
 
     function renderMembers(){
@@ -972,18 +1007,38 @@
         return;
       }
 
-      // Ensure sort: trophies desc, then name
-      const sorted = list.slice().sort((a,b) => {
-        const ta = (a.trophies|0), tb = (b.trophies|0);
-        if(tb !== ta) return tb - ta;
+      const prepared = list.map(m => {
+        const leagueRaw =
+          (m.leagueName) ||
+          ((m.league && m.league.name) ? m.league.name : "") ||
+          "";
+        const leagueText = leagueShort(leagueRaw);
+
+        const trophiesNum = (m.trophies ?? 0) | 0;
+        const xpNum = (m.expLevel ?? m.xp ?? 0) | 0; // "Overall XP" tiebreaker (expLevel)
+
+        return {
+          ...m,
+          leagueText,
+          leagueRank: leagueRankValue(leagueText),
+          trophiesNum,
+          xpNum,
+        };
+      });
+
+      // ✅ Sort: League -> Trophies -> Overall XP -> Name
+      prepared.sort((a,b) => {
+        if(b.leagueRank !== a.leagueRank) return b.leagueRank - a.leagueRank;
+        if(b.trophiesNum !== a.trophiesNum) return b.trophiesNum - a.trophiesNum;
+        if(b.xpNum !== a.xpNum) return b.xpNum - a.xpNum;
         return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
       });
 
-      host.innerHTML = sorted.map(m => {
+      host.innerHTML = prepared.map(m => {
         const name = escapeHtml(m.name);
         const role = String(m.role || "");
-        const leagueName = escapeHtml((m.league && m.league.name) ? m.league.name : "—");
-        const trophies = (m.trophies ?? 0) | 0;
+        const leagueName = escapeHtml(m.leagueText || "—");
+        const trophies = m.trophiesNum;
 
         return `
           <div class="member-row">
