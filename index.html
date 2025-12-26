@@ -208,7 +208,7 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       MEMBERS (sticky header + sticky username col)
+       MEMBERS (sticky header + sticky left columns)
        ========================= */
     .members-legend{
       font-size:12px;
@@ -220,6 +220,17 @@
       border-radius:10px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .members-scrollhint{
+      text-align:center;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.04em;
+      color:#fff;
+      margin: 0 0 10px;
+      opacity: .95;
+      user-select:none;
     }
 
     .members-wrap{
@@ -237,7 +248,7 @@
 
     .members-table{
       width:100%;
-      min-width: 520px;  /* tighter, cleaner */
+      min-width: 560px;  /* enough for the extra emoji column */
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
@@ -258,16 +269,29 @@
       white-space: nowrap;
     }
 
-    /* Sticky first column (header + body) */
-    .members-table th:first-child,
-    .members-table td:first-child{
+    /* Sticky left columns:
+       1) Emoji col (narrow)
+       2) Username col
+    */
+    .members-table th:nth-child(1),
+    .members-table td:nth-child(1){
       position: sticky;
       left: 0;
+      z-index: 7;
+      background: #0b1829;
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    .members-table thead th:nth-child(1){ z-index: 9; }
+
+    .members-table th:nth-child(2),
+    .members-table td:nth-child(2){
+      position: sticky;
+      left: 30px; /* must match emoji column width */
       z-index: 6;
       background: #0b1829;
       border-right: 1px solid rgba(255,255,255,0.10);
     }
-    .members-table thead th:first-child{ z-index: 7; }
+    .members-table thead th:nth-child(2){ z-index: 8; }
 
     .members-table tbody td{
       padding: 10px 10px;
@@ -278,23 +302,19 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
-    /* ✅ username + emoji always visible */
-    .m-user-cell{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      min-width: 0; /* allow truncation */
+    .m-emoji{
+      text-align:right;
+      font-size:14px;
+      padding-right:8px;
+      overflow: visible;
+      text-overflow: clip;
+      white-space: nowrap;
     }
+
     .m-user-name{
-      flex: 1 1 auto;
-      min-width: 0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-    }
-    .m-user-badge{
-      flex: 0 0 auto;
-      white-space: nowrap;
     }
 
     .m-num{
@@ -736,13 +756,16 @@
             <strong>Key:</strong>
             👑 <strong>Leader / Co-Leader</strong>
             &nbsp;&nbsp;•&nbsp;&nbsp;
-            ⭐ <strong>Elder</strong>
+            🛡️ <strong>Elder</strong>
           </div>
+
+          <div class="members-scrollhint">← SCROLL / SWIPE FOR MORE →</div>
 
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
-              <!-- ✅ Optimized widths (TH is tiny; 4-digit cols compact; name gets space) -->
+              <!-- ✅ Optimized widths (emoji + name sticky; TH tiny; 4-digit cols compact) -->
               <colgroup>
+                <col style="width: 30px;">   <!-- Emoji (narrow) -->
                 <col style="width: 170px;">  <!-- Username -->
                 <col style="width: 44px;">   <!-- TH (2 digits) -->
                 <col style="width: 84px;">   <!-- Trophies (<=4 digits) -->
@@ -752,7 +775,8 @@
 
               <thead>
                 <tr>
-                  <th style="text-align:left;">Username</th>
+                  <th style="text-align:right;"></th>
+                  <th style="text-align:left;"></th>
                   <th class="m-num">TH</th>
                   <th class="m-num">Trophies</th>
                   <th class="m-num">Total Stars</th>
@@ -760,7 +784,7 @@
                 </tr>
               </thead>
               <tbody id="members-body">
-                <tr><td colspan="5" style="opacity:.75;">Loading…</td></tr>
+                <tr><td colspan="6" style="opacity:.75;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1006,16 +1030,10 @@
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
       if(r.includes("leader")) return "👑";
-      if(r === "elder") return "⭐";
+      if(r === "elder") return "🛡️";
       return "";
     }
 
-    // ✅ Town Hall must come from members.json
-    // Accept any of these keys so you can change your generator without touching HTML again:
-    // - townHallLevel (recommended)
-    // - th
-    // - townHall
-    // - thLevel
     function getThLevel(m){
       const v =
         (m.townHallLevel ?? m.th ?? m.townHall ?? m.thLevel ?? m.townHall ?? null);
@@ -1036,11 +1054,11 @@
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
 
       if(!list){
-        tbody.innerHTML = `<tr><td colspan="5" style="opacity:.75;">Loading…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="opacity:.75;">Loading…</td></tr>`;
         return;
       }
       if(list.length === 0){
-        tbody.innerHTML = `<tr><td colspan="5" style="opacity:.75;">No members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="opacity:.75;">No members found.</td></tr>`;
         return;
       }
 
@@ -1059,8 +1077,8 @@
       });
 
       tbody.innerHTML = sorted.map(m => {
-        const name = escapeHtml(m.name);
         const badge = roleEmoji(m.role);
+        const name = escapeHtml(m.name);
         const th = getThLevel(m);
         const trophies = (m.trophies ?? 0) | 0;
         const totalStars = getWarStars(m);
@@ -1068,12 +1086,8 @@
 
         return `
           <tr>
-            <td>
-              <div class="m-user-cell">
-                <span class="m-user-name">${name}</span>
-                <span class="m-user-badge">${badge}</span>
-              </div>
-            </td>
+            <td class="m-emoji">${badge || ""}</td>
+            <td><span class="m-user-name">${name}</span></td>
             <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies}</td>
             <td class="m-num">${totalStars}</td>
