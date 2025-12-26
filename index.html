@@ -25,36 +25,23 @@
     }
 
     /* ============================================================
-       Desktop/Web stability fixes
-       - Prevent width jump from scrollbar appearing/disappearing (desktop)
-       - Keep topnav one-row (desktop)
+       Desktop/Web stability fixes (NO impact to PWA behavior)
+       - Prevent width jump from scrollbar appearing/disappearing
+       - Prevent topnav wrapping changing layout height
+       - Prevent flex containers from odd shrinking
        ============================================================ */
     html{
       overflow-y: scroll;                 /* fallback */
       scrollbar-gutter: stable both-edges;/* modern browsers */
     }
     .topnav{
-      flex-wrap: nowrap;
-      overflow-x: auto;
+      flex-wrap: nowrap;                  /* keep one row */
+      overflow-x: auto;                   /* if too tight, scroll horizontally */
       -webkit-overflow-scrolling: touch;
     }
-    .topnav::-webkit-scrollbar{ display:none; }
+    .topnav::-webkit-scrollbar{ display:none; } /* optional */
     .topnav a{ flex: 0 0 auto; }
     .stage, #app{ min-height: 0; }
-
-    /* ============================================================
-       ✅ Hide vertical scrollbar INSIDE PWA
-       (keeps desktop stable scrollbar behavior above)
-       ============================================================ */
-    body.has-pwa-tabs{
-      -ms-overflow-style: none;      /* IE/Edge legacy */
-      scrollbar-width: none;         /* Firefox */
-    }
-    body.has-pwa-tabs::-webkit-scrollbar{
-      width: 0 !important;           /* Chrome/Safari */
-      height: 0 !important;
-      display: none;
-    }
 
     body{
       margin:0;
@@ -144,7 +131,7 @@
       flex-direction:column;
       align-items:center;
       flex:1;
-      touch-action: auto;
+      touch-action: auto; /* no custom swipe handling */
     }
 
     /* Card + rows */
@@ -158,6 +145,8 @@
       border:1px solid #2b3b55;
       box-sizing:border-box;
       text-align:left;
+
+      /* Make all cards behave the same (helps desktop consistency) */
       display:flex;
       flex-direction:column;
     }
@@ -909,7 +898,161 @@
       let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
       if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
       if(now > mondayEnd){
-- too long, but the rest is identical to your provided JS below this point -
+        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
+        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      }
+      return mondayEnd;
+    }
+    function getNextClanGamesEnd(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      const start = makeUTC(y,m,22,8);
+      const end   = makeUTC(y,m,28,8);
+      if(now < start) return end;
+      if(now <= end) return end;
+      const nextMonth = new Date(Date.UTC(y, m+1, 1));
+      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
+    }
+    function getNextSeasonEnd(now){ return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8); }
+    function getNextLeagueReset(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      let first = makeUTC(y,m,1,5);
+      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
+      let reset = makeUTC(y,m,1+diffToMonday,5);
+      if(now > reset){
+        const nm = new Date(Date.UTC(y, m+1, 1));
+        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
+        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
+        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
+      }
+      return reset;
+    }
+    function updateRecurringTimers(){
+      if(!document.getElementById("raid-timer")) return;
+      const now = new Date();
+      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
+    }
+
+    function startHomeDataLoop(){
+      clearHomeIntervals();
+      warFetched = false;
+
+      fetchWarData();
+      fetchClanStats();
+      updateRecurringTimers();
+
+      homeIntervals.push(setInterval(() => {
+        updateRecurringTimers();
+        updateWarTimerOnly(false, null);
+      }, 1000));
+
+      homeIntervals.push(setInterval(fetchWarData, 5*1000));
+      homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+    }
+
+    // ===== Tabbar hide/reveal =====
+    const tabbar = document.getElementById("pwaTabbar");
+    let lastScrollY = window.scrollY || 0;
+    let tabbarOffset = 0;
+    let tabbarMax = 140;
+    let scrollRaf = 0;
+    let scrollingTimer = 0;
+
+    function computeTabbarMax(){
+      const safe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-bottom")) || 0;
+      tabbarMax = (tabbar ? tabbar.offsetHeight : 92) + safe + 14;
+    }
+    function tabbarApply(offsetPx, scrolling){
+      if(!tabbar || !isPwaInstalled()) return;
+      if(scrolling) tabbar.classList.add("is-scrolling");
+      else tabbar.classList.remove("is-scrolling");
+      tabbar.style.transform = `translate3d(0, ${offsetPx}px, 0)`;
+    }
+    function tabbarReveal(){
+      tabbarOffset = 0;
+      tabbarApply(0, false);
+    }
+    function tabbarOnScroll(){
+      if(!tabbar || !isPwaInstalled()) return;
+
+      const y = window.scrollY || 0;
+      const dy = y - lastScrollY;
+      lastScrollY = y;
+
+      if(y < 8){
+        tabbarReveal();
+        return;
+      }
+
+      tabbarOffset = Math.max(0, Math.min(tabbarMax, tabbarOffset + dy));
+
+      if(!scrollRaf){
+        scrollRaf = requestAnimationFrame(() => {
+          tabbarApply(tabbarOffset, true);
+          scrollRaf = 0;
+        });
+      }
+
+      clearTimeout(scrollingTimer);
+      scrollingTimer = setTimeout(() => {
+        tabbar.classList.remove("is-scrolling");
+        const snapTo = (tabbarOffset > tabbarMax * 0.55) ? tabbarMax : 0;
+        tabbarOffset = snapTo;
+        tabbarApply(tabbarOffset, false);
+      }, 90);
+    }
+    window.addEventListener("scroll", tabbarOnScroll, { passive:true });
+    window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
+
+    // ===== Router =====
+    function setDocTitle(route){
+      const map = {
+        home: "B•A•S•E•D — Home",
+        cwl: "B•A•S•E•D — CWL",
+        war: "B•A•S•E•D — War",
+        mystats: "B•A•S•E•D — My Stats",
+        more: "B•A•S•E•D — More",
+      };
+      document.title = map[route] || "B•A•S•E•D";
+    }
+
+    function renderRoute(){
+      const route = normalizeRoute(location.hash);
+
+      setupNavUI();
+      setActiveNav(route);
+      applyPwaImageIconStates(route);
+      setDocTitle(route);
+      tabbarReveal();
+
+      if(route !== "home") clearHomeIntervals();
+
+      app.innerHTML = renderRouteContent(route);
+      if(route === "home") startHomeDataLoop();
+    }
+
+    // ===== Boot =====
+    if(!location.hash) location.hash = "#/home";
+    setupNavUI();
+    computeTabbarMax();
+    tabbarReveal();
+    renderRoute();
+
+    window.addEventListener("hashchange", renderRoute);
+    window.addEventListener("pageshow", () => {
+      computeTabbarMax();
+      tabbarReveal();
+      renderRoute();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if(document.visibilityState === "visible"){
+        computeTabbarMax();
+        tabbarReveal();
+        renderRoute();
+      }
+    });
   </script>
 </body>
 </html>
