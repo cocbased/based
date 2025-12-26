@@ -208,12 +208,7 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       MEMBERS (FINAL)
-       - No League column
-       - No "USER" label
-       - Sticky header row + sticky name column
-       - Horizontal scroll allowed
-       - No internal vertical scroll box
+       MEMBERS (sticky header + sticky username col)
        ========================= */
     .members-legend{
       font-size:12px;
@@ -231,8 +226,8 @@
       width:100%;
       margin-top:8px;
 
-      overflow-x:auto;          /* horizontal scroll */
-      overflow-y:visible;       /* NO vertical scroll region */
+      overflow-x:auto;      /* horizontal scroll allowed */
+      overflow-y:visible;   /* no internal vertical scroll box */
       -webkit-overflow-scrolling: touch;
 
       border-radius:10px;
@@ -242,7 +237,7 @@
 
     .members-table{
       width:100%;
-      min-width: 420px; /* forces horizontal scroll on small screens */
+      min-width: 560px;
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
@@ -252,7 +247,7 @@
       position: sticky;
       top: 0;
       z-index: 5;
-      background: #0b1829; /* match card */
+      background: #0b1829;
       border-bottom: 1px solid rgba(255,255,255,0.12);
       padding: 10px 10px;
       font-size:11px;
@@ -268,7 +263,7 @@
       position: sticky;
       left: 0;
       z-index: 6;
-      background: #0b1829; /* match card */
+      background: #0b1829;
       border-right: 1px solid rgba(255,255,255,0.10);
     }
     .members-table thead th:first-child{ z-index: 7; }
@@ -280,12 +275,15 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
+    /* ✅ smaller username column */
     .m-user{
-      max-width: 150px; /* narrower username column */
+      max-width: 110px;
+      width: 110px;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+
     .m-num{
       font-family: monospace;
       text-align:right;
@@ -591,8 +589,6 @@
               <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
               <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
               <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
-              <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2G89820YG" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 2</a>
-              <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2JL9VPYRU" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D 3</a>
               <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
               <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
               <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
@@ -732,13 +728,15 @@
             <table class="members-table">
               <thead>
                 <tr>
-                  <th style="text-align:left;"></th>
-                  <th class="m-num">XP</th>
+                  <th style="text-align:left;">Username</th>
+                  <th class="m-num">TH</th>
                   <th class="m-num">Trophies</th>
+                  <th class="m-num">Total Stars</th>
+                  <th class="m-num">XP</th>
                 </tr>
               </thead>
               <tbody id="members-body">
-                <tr><td colspan="3" style="opacity:.75;">Loading…</td></tr>
+                <tr><td colspan="5" style="opacity:.75;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -983,9 +981,21 @@
 
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return " 👑";   // Leader / Co-Leader
+      if(r.includes("leader")) return " 👑";
       if(r === "elder") return " ⚔️";
       return "";
+    }
+
+    function getThLevel(m){
+      const v = (m.townHallLevel ?? m.th ?? m.TH ?? m.townHall ?? null);
+      const n = (v === null || v === undefined) ? 0 : (v|0);
+      return n > 0 ? n : 0;
+    }
+
+    function getWarStars(m){
+      const v = (m.warStars ?? m.totalWarStars ?? m.warStarCount ?? 0);
+      const n = (v|0);
+      return n >= 0 ? n : 0;
     }
 
     function renderMembers(){
@@ -995,18 +1005,21 @@
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
 
       if(!list){
-        tbody.innerHTML = `<tr><td colspan="3" style="opacity:.75;">Loading…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="opacity:.75;">Loading…</td></tr>`;
         return;
       }
       if(list.length === 0){
-        tbody.innerHTML = `<tr><td colspan="3" style="opacity:.75;">No members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="opacity:.75;">No members found.</td></tr>`;
         return;
       }
 
-      // Sort: trophies desc -> XP desc -> name
+      // Sort: trophies desc -> total stars desc -> XP desc -> name
       const sorted = list.slice().sort((a,b) => {
         const ta = (a.trophies|0), tb = (b.trophies|0);
         if(tb !== ta) return tb - ta;
+
+        const wa = getWarStars(a), wb = getWarStars(b);
+        if(wb !== wa) return wb - wa;
 
         const xa = (a.expLevel|0), xb = (b.expLevel|0);
         if(xb !== xa) return xb - xa;
@@ -1017,14 +1030,18 @@
       tbody.innerHTML = sorted.map(m => {
         const name = escapeHtml(m.name);
         const emoji = roleEmoji(m.role);
-        const xp = (m.expLevel ?? 0) | 0;
+        const th = getThLevel(m);
         const trophies = (m.trophies ?? 0) | 0;
+        const totalStars = getWarStars(m);
+        const xp = (m.expLevel ?? 0) | 0;
 
         return `
           <tr>
             <td class="m-user">${name}${emoji}</td>
-            <td class="m-num">${xp}</td>
+            <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies}</td>
+            <td class="m-num">${totalStars}</td>
+            <td class="m-num">${xp}</td>
           </tr>
         `;
       }).join("");
