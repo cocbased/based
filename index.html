@@ -237,10 +237,11 @@
 
     .members-table{
       width:100%;
-      min-width: 560px;
+      min-width: 520px;  /* tighter, cleaner */
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
+      table-layout: fixed; /* lets colgroup widths actually apply */
     }
 
     .members-table thead th{
@@ -272,22 +273,36 @@
       padding: 10px 10px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
-    /* ✅ smaller username column */
-    .m-user{
-      max-width: 110px;
-      width: 110px;
+    /* ✅ username + emoji always visible */
+    .m-user-cell{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width: 0; /* allow truncation */
+    }
+    .m-user-name{
+      flex: 1 1 auto;
+      min-width: 0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
+    }
+    .m-user-badge{
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     .m-num{
       font-family: monospace;
       text-align:right;
       white-space:nowrap;
+      overflow:hidden;
+      text-overflow:clip;
     }
 
     /* More links */
@@ -726,6 +741,15 @@
 
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
+              <!-- ✅ Optimized widths (TH is tiny; 4-digit cols compact; name gets space) -->
+              <colgroup>
+                <col style="width: 170px;">  <!-- Username -->
+                <col style="width: 44px;">   <!-- TH (2 digits) -->
+                <col style="width: 84px;">   <!-- Trophies (<=4 digits) -->
+                <col style="width: 98px;">   <!-- Total Stars (<=4 digits) -->
+                <col style="width: 58px;">   <!-- XP (<=4 digits) -->
+              </colgroup>
+
               <thead>
                 <tr>
                   <th style="text-align:left;">Username</th>
@@ -981,13 +1005,20 @@
 
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return " 👑";
-      if(r === "elder") return " ⚔️";
+      if(r.includes("leader")) return "👑";
+      if(r === "elder") return "⚔️";
       return "";
     }
 
+    // ✅ Town Hall must come from members.json
+    // Accept any of these keys so you can change your generator without touching HTML again:
+    // - townHallLevel (recommended)
+    // - th
+    // - townHall
+    // - thLevel
     function getThLevel(m){
-      const v = (m.townHallLevel ?? m.th ?? m.TH ?? m.townHall ?? null);
+      const v =
+        (m.townHallLevel ?? m.th ?? m.townHall ?? m.thLevel ?? m.townHall ?? null);
       const n = (v === null || v === undefined) ? 0 : (v|0);
       return n > 0 ? n : 0;
     }
@@ -1029,7 +1060,7 @@
 
       tbody.innerHTML = sorted.map(m => {
         const name = escapeHtml(m.name);
-        const emoji = roleEmoji(m.role);
+        const badge = roleEmoji(m.role);
         const th = getThLevel(m);
         const trophies = (m.trophies ?? 0) | 0;
         const totalStars = getWarStars(m);
@@ -1037,7 +1068,12 @@
 
         return `
           <tr>
-            <td class="m-user">${name}${emoji}</td>
+            <td>
+              <div class="m-user-cell">
+                <span class="m-user-name">${name}</span>
+                <span class="m-user-badge">${badge}</span>
+              </div>
+            </td>
             <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies}</td>
             <td class="m-num">${totalStars}</td>
