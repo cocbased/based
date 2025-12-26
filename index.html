@@ -26,9 +26,6 @@
 
     /* ============================================================
        Desktop/Web stability fixes (NO impact to PWA behavior)
-       - Prevent width jump from scrollbar appearing/disappearing
-       - Prevent topnav wrapping changing layout height
-       - Prevent flex containers from odd shrinking
        ============================================================ */
     html{
       overflow-y: scroll;                 /* fallback */
@@ -145,8 +142,6 @@
       border:1px solid #2b3b55;
       box-sizing:border-box;
       text-align:left;
-
-      /* Make all cards behave the same (helps desktop consistency) */
       display:flex;
       flex-direction:column;
     }
@@ -271,6 +266,76 @@
       font-size:14px;
       opacity:.7;
       text-align:center;
+    }
+
+    /* =========================
+       Members table
+       ========================= */
+    .members-wrap{
+      margin-top:6px;
+    }
+
+    .members-head{
+      display:grid;
+      grid-template-columns: 44px 28px 1fr 84px 64px 78px;
+      gap:8px;
+      align-items:center;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      padding:6px 0 8px;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+    }
+
+    .members-list{
+      margin-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+
+      /* keeps card from being insanely tall */
+      max-height: 420px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 6px;
+    }
+
+    .member-row{
+      display:grid;
+      grid-template-columns: 44px 28px 1fr 84px 64px 78px;
+      gap:8px;
+      align-items:center;
+      font-size:13px;
+      padding:6px 0;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .member-row:last-child{ border-bottom:none; }
+
+    .m-xp,
+    .m-trophies,
+    .m-warstars{
+      font-family: monospace;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .m-role{
+      font-size:12px;
+      opacity:.82;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .m-name{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .m-league{
+      width:22px;
+      height:22px;
+      object-fit:contain;
+      display:block;
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.25));
     }
 
     /* =========================
@@ -504,17 +569,6 @@
       }
     }
 
-    function goRoute(name){
-      const map = {
-        home: "#/home",
-        cwl: "#/cwl",
-        war: "#/war",
-        mystats: "#/my-stats",
-        more: "#/more"
-      };
-      location.hash = map[name] || "#/home";
-    }
-
     // ===== Templates =====
     const app = document.getElementById("app");
 
@@ -666,6 +720,23 @@
             <span class="row-label">League Reset</span>
             <span id="league-reset-timer" class="row-value">Loading…</span>
           </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">Members</div>
+          <div class="members-wrap">
+            <div class="members-head" aria-hidden="true">
+              <div style="text-align:left;">XP</div>
+              <div></div>
+              <div style="text-align:left;">User</div>
+              <div style="text-align:right;">Role</div>
+              <div style="text-align:right;">Trophies</div>
+              <div style="text-align:right;">War ⭐</div>
+            </div>
+            <div id="members-list" class="members-list">
+              <div style="opacity:.75; font-size:13px;">Loading…</div>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -680,14 +751,17 @@
     }
 
     // ===== Home data =====
-    const RAW_WAR_URL_BASE  = "./war.json";
-    const RAW_CLAN_URL_BASE = "./clan_stats.json";
+    const RAW_WAR_URL_BASE     = "./war.json";
+    const RAW_CLAN_URL_BASE    = "./clan_stats.json";
+    const RAW_MEMBERS_URL_BASE = "./members.json";
+
     let homeIntervals = [];
     let warData = null;
     let warFetched = false;
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
     let clanStats = null;
+    let membersData = null;
 
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
     function pad(n){ return n.toString().padStart(2,"0"); }
@@ -891,6 +965,79 @@
       }
     }
 
+    // ===== Members =====
+    function leagueIconSrc(league){
+      // Put your league PNGs in a folder named "league-icons" next to index.html.
+      // Name them by league ID, like: league-icons/29000022.png
+      // (league.id comes from the API)
+      const id = league && (league.id ?? null);
+      if(!id) return "";
+      return `league-icons/${id}.png`;
+    }
+
+    function renderMembers(){
+      const host = document.getElementById("members-list");
+      if(!host) return;
+
+      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
+      if(!list){
+        host.innerHTML = `<div style="opacity:.75; font-size:13px;">Loading…</div>`;
+        return;
+      }
+
+      if(list.length === 0){
+        host.innerHTML = `<div style="opacity:.75; font-size:13px;">No members found.</div>`;
+        return;
+      }
+
+      // Just in case: ensure proper sorting client-side too
+      const sorted = list.slice().sort((a,b) => {
+        const ta = (a.trophies|0), tb = (b.trophies|0);
+        if(tb !== ta) return tb - ta;
+        const wa = (a.warStars|0), wb = (b.warStars|0);
+        if(wb !== wa) return wb - wa;
+        const xa = (a.expLevel|0), xb = (b.expLevel|0);
+        if(xb !== xa) return xb - xa;
+        return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+      });
+
+      host.innerHTML = sorted.map(m => {
+        const xp = (m.expLevel ?? 0) | 0;
+        const name = (m.name || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const role = (m.role || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const trophies = (m.trophies ?? 0) | 0;
+        const warStars = (m.warStars ?? 0) | 0;
+
+        const icon = leagueIconSrc(m.league);
+        const iconHtml = icon
+          ? `<img class="m-league" src="${icon}" alt="" onerror="this.style.display='none';" />`
+          : `<span style="opacity:.35;">—</span>`;
+
+        return `
+          <div class="member-row">
+            <div class="m-xp">${xp}</div>
+            <div>${iconHtml}</div>
+            <div class="m-name">${name}</div>
+            <div class="m-role">${role}</div>
+            <div class="m-trophies">${trophies}</div>
+            <div class="m-warstars">${warStars}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function fetchMembersData(){
+      try{
+        const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        membersData = res.ok ? await res.json() : null;
+      } catch(e){
+        membersData = null;
+      }
+      renderMembers();
+    }
+
+    // ===== Recurring timers (unchanged) =====
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -941,6 +1088,7 @@
 
       fetchWarData();
       fetchClanStats();
+      fetchMembersData();
       updateRecurringTimers();
 
       homeIntervals.push(setInterval(() => {
@@ -948,8 +1096,10 @@
         updateWarTimerOnly(false, null);
       }, 1000));
 
+      // You can change this to 30s / 60s later if you want
       homeIntervals.push(setInterval(fetchWarData, 5*1000));
       homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+      homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
     // ===== Tabbar hide/reveal =====
