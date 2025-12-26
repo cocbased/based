@@ -28,15 +28,15 @@
        Desktop/Web stability fixes (NO impact to PWA behavior)
        ============================================================ */
     html{
-      overflow-y: scroll;                 /* fallback */
-      scrollbar-gutter: stable both-edges;/* modern browsers */
+      overflow-y: scroll;
+      scrollbar-gutter: stable both-edges;
     }
     .topnav{
-      flex-wrap: nowrap;                  /* keep one row */
-      overflow-x: auto;                   /* if too tight, scroll horizontally */
+      flex-wrap: nowrap;
+      overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
-    .topnav::-webkit-scrollbar{ display:none; } /* optional */
+    .topnav::-webkit-scrollbar{ display:none; }
     .topnav a{ flex: 0 0 auto; }
     .stage, #app{ min-height: 0; }
 
@@ -128,7 +128,7 @@
       flex-direction:column;
       align-items:center;
       flex:1;
-      touch-action: auto; /* no custom swipe handling */
+      touch-action: auto;
     }
 
     /* Card + rows */
@@ -207,22 +207,68 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* Generic pages (inside cards) */
-    .page{
-      width:100%;
+    /* Members */
+    .members-legend{
+      font-size:12px;
+      opacity:.85;
       text-align:center;
-      padding:14px 6px 6px;
-      box-sizing:border-box;
+      margin:2px 0 8px;
+      line-height:1.35;
     }
-    .page h1{
-      margin:0 0 10px;
-      font-size:18px;
-      letter-spacing:.02em;
-    }
-    .page p{
-      margin:0;
+
+    .members-head{
+      display:grid;
+      grid-template-columns: 1fr 92px 72px; /* User | League | Trophies */
+      gap:10px;
+      align-items:center;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
       opacity:.75;
-      font-size:14px;
+      padding:6px 0 8px;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+    }
+
+    .members-list{
+      margin-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+
+      max-height: 420px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 6px;
+    }
+
+    .member-row{
+      display:grid;
+      grid-template-columns: 1fr 92px 72px;
+      gap:10px;
+      align-items:center;
+      font-size:13px;
+      padding:6px 0;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .member-row:last-child{ border-bottom:none; }
+
+    .m-user{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .m-league{
+      text-align:right;
+      opacity:.9;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:12px;
+    }
+    .m-trophies{
+      font-family: monospace;
+      text-align:right;
+      white-space:nowrap;
     }
 
     /* More links */
@@ -258,7 +304,6 @@
       border-radius:12px;
     }
 
-    /* Footer pinned at bottom of the card column */
     .page-footer{
       margin-top:auto;
       width:100%;
@@ -269,77 +314,7 @@
     }
 
     /* =========================
-       Members table
-       ========================= */
-    .members-wrap{
-      margin-top:6px;
-    }
-
-    .members-head{
-      display:grid;
-      grid-template-columns: 44px 28px 1fr 84px 64px 78px;
-      gap:8px;
-      align-items:center;
-      font-size:11px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      opacity:.75;
-      padding:6px 0 8px;
-      border-bottom:1px solid rgba(255,255,255,0.10);
-    }
-
-    .members-list{
-      margin-top:8px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-
-      /* keeps card from being insanely tall */
-      max-height: 420px;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      padding-right: 6px;
-    }
-
-    .member-row{
-      display:grid;
-      grid-template-columns: 44px 28px 1fr 84px 64px 78px;
-      gap:8px;
-      align-items:center;
-      font-size:13px;
-      padding:6px 0;
-      border-bottom:1px solid rgba(255,255,255,0.06);
-    }
-    .member-row:last-child{ border-bottom:none; }
-
-    .m-xp,
-    .m-trophies,
-    .m-warstars{
-      font-family: monospace;
-      text-align:right;
-      white-space:nowrap;
-    }
-    .m-role{
-      font-size:12px;
-      opacity:.82;
-      text-align:right;
-      white-space:nowrap;
-    }
-    .m-name{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .m-league{
-      width:22px;
-      height:22px;
-      object-fit:contain;
-      display:block;
-      filter: drop-shadow(0 0 6px rgba(0,0,0,0.25));
-    }
-
-    /* =========================
-       PWA Bottom Tabs + hide-on-scroll behavior
+       PWA Bottom Tabs
        ========================= */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
@@ -724,18 +699,18 @@
           <div class="divider"></div>
 
           <div class="section-title">Members</div>
-          <div class="members-wrap">
-            <div class="members-head" aria-hidden="true">
-              <div style="text-align:left;">XP</div>
-              <div></div>
-              <div style="text-align:left;">User</div>
-              <div style="text-align:right;">Role</div>
-              <div style="text-align:right;">Trophies</div>
-              <div style="text-align:right;">War ⭐</div>
-            </div>
-            <div id="members-list" class="members-list">
-              <div style="opacity:.75; font-size:13px;">Loading…</div>
-            </div>
+          <div class="members-legend">
+            👑 Leader / Co-Leader &nbsp;&nbsp;|&nbsp;&nbsp; ⚔️ Elder
+          </div>
+
+          <div class="members-head" aria-hidden="true">
+            <div style="text-align:left;">User</div>
+            <div style="text-align:right;">League</div>
+            <div style="text-align:right;">Trophies</div>
+          </div>
+
+          <div id="members-list" class="members-list">
+            <div style="opacity:.75; font-size:13px;">Loading…</div>
           </div>
         </div>
       `;
@@ -800,6 +775,7 @@
     }
     function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
     function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
+
     function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false)); }
     function loadLastWarSnapshot(){
       try{
@@ -952,8 +928,8 @@
         setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
         const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-        const l25 = fmtWLTWithPctObj((clanStats.war.last25 !== undefined) ? clanStats.war.last25 : clanStats.war.last25Record);
-        const l50 = fmtWLTWithPctObj((clanStats.war.last50 !== undefined) ? clanStats.war.last50 : clanStats.war.last50Record);
+        const l25 = fmtWLTWithPctObj(clanStats.war.last25);
+        const l50 = fmtWLTWithPctObj(clanStats.war.last50);
 
         setText("war-last10", l10.text);
         setText("war-last25", l25.text);
@@ -966,13 +942,20 @@
     }
 
     // ===== Members =====
-    function leagueIconSrc(league){
-      // Put your league PNGs in a folder named "league-icons" next to index.html.
-      // Name them by league ID, like: league-icons/29000022.png
-      // (league.id comes from the API)
-      const id = league && (league.id ?? null);
-      if(!id) return "";
-      return `league-icons/${id}.png`;
+    function escapeHtml(s){
+      return String(s || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+    }
+
+    function roleEmoji(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return " 👑";      // Leader / Co-Leader
+      if(r === "elder") return " ⚔️";
+      return "";
     }
 
     function renderMembers(){
@@ -984,43 +967,29 @@
         host.innerHTML = `<div style="opacity:.75; font-size:13px;">Loading…</div>`;
         return;
       }
-
       if(list.length === 0){
         host.innerHTML = `<div style="opacity:.75; font-size:13px;">No members found.</div>`;
         return;
       }
 
-      // Just in case: ensure proper sorting client-side too
+      // Ensure sort: trophies desc, then name
       const sorted = list.slice().sort((a,b) => {
         const ta = (a.trophies|0), tb = (b.trophies|0);
         if(tb !== ta) return tb - ta;
-        const wa = (a.warStars|0), wb = (b.warStars|0);
-        if(wb !== wa) return wb - wa;
-        const xa = (a.expLevel|0), xb = (b.expLevel|0);
-        if(xb !== xa) return xb - xa;
         return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
       });
 
       host.innerHTML = sorted.map(m => {
-        const xp = (m.expLevel ?? 0) | 0;
-        const name = (m.name || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-        const role = (m.role || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const name = escapeHtml(m.name);
+        const role = String(m.role || "");
+        const leagueName = escapeHtml((m.league && m.league.name) ? m.league.name : "—");
         const trophies = (m.trophies ?? 0) | 0;
-        const warStars = (m.warStars ?? 0) | 0;
-
-        const icon = leagueIconSrc(m.league);
-        const iconHtml = icon
-          ? `<img class="m-league" src="${icon}" alt="" onerror="this.style.display='none';" />`
-          : `<span style="opacity:.35;">—</span>`;
 
         return `
           <div class="member-row">
-            <div class="m-xp">${xp}</div>
-            <div>${iconHtml}</div>
-            <div class="m-name">${name}</div>
-            <div class="m-role">${role}</div>
+            <div class="m-user">${name}${roleEmoji(role)}</div>
+            <div class="m-league">${leagueName}</div>
             <div class="m-trophies">${trophies}</div>
-            <div class="m-warstars">${warStars}</div>
           </div>
         `;
       }).join("");
@@ -1037,7 +1006,7 @@
       renderMembers();
     }
 
-    // ===== Recurring timers (unchanged) =====
+    // ===== Recurring timers =====
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -1096,7 +1065,6 @@
         updateWarTimerOnly(false, null);
       }, 1000));
 
-      // You can change this to 30s / 60s later if you want
       homeIntervals.push(setInterval(fetchWarData, 5*1000));
       homeIntervals.push(setInterval(fetchClanStats, 5*1000));
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
