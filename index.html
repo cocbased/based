@@ -207,69 +207,86 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* Members */
+    /* =========================
+       MEMBERS (FINAL)
+       - No League column
+       - No "USER" label
+       - Sticky header row + sticky name column
+       - Horizontal scroll allowed
+       - No internal vertical scroll box
+       ========================= */
     .members-legend{
       font-size:12px;
-      opacity:.92;
+      opacity:.9;
       text-align:center;
-      margin:4px 0 10px;
+      margin:2px 0 10px;
       line-height:1.35;
       padding:8px 10px;
       border-radius:10px;
-      border:1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
     }
 
-    .members-head{
-      display:grid;
-      grid-template-columns: 1fr 92px 72px; /* User | League | Trophies */
-      gap:10px;
-      align-items:center;
+    .members-wrap{
+      width:100%;
+      margin-top:8px;
+
+      overflow-x:auto;          /* horizontal scroll */
+      overflow-y:visible;       /* NO vertical scroll region */
+      -webkit-overflow-scrolling: touch;
+
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+    }
+
+    .members-table{
+      width:100%;
+      min-width: 420px; /* forces horizontal scroll on small screens */
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size:13px;
+    }
+
+    .members-table thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #0b1829; /* match card */
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 10px;
       font-size:11px;
       letter-spacing:.08em;
       text-transform:uppercase;
-      opacity:.75;
-      padding:6px 0 8px;
-      border-bottom:1px solid rgba(255,255,255,0.10);
+      opacity:.85;
+      white-space: nowrap;
     }
 
-    .members-list{
-      margin-top:8px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-
-      /* ✅ NO internal scroll box */
-      max-height: none;
-      overflow: visible;
-      padding-right: 0;
+    /* Sticky first column (header + body) */
+    .members-table th:first-child,
+    .members-table td:first-child{
+      position: sticky;
+      left: 0;
+      z-index: 6;
+      background: #0b1829; /* match card */
+      border-right: 1px solid rgba(255,255,255,0.10);
     }
+    .members-table thead th:first-child{ z-index: 7; }
 
-    .member-row{
-      display:grid;
-      grid-template-columns: 1fr 92px 72px;
-      gap:10px;
-      align-items:center;
-      font-size:13px;
-      padding:6px 0;
-      border-bottom:1px solid rgba(255,255,255,0.06);
+    .members-table tbody td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      white-space: nowrap;
     }
-    .member-row:last-child{ border-bottom:none; }
+    .members-table tbody tr:last-child td{ border-bottom:none; }
 
     .m-user{
+      max-width: 150px; /* narrower username column */
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
-    .m-league{
-      text-align:right;
-      opacity:.9;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-size:12px;
-    }
-    .m-trophies{
+    .m-num{
       font-family: monospace;
       text-align:right;
       white-space:nowrap;
@@ -704,7 +721,6 @@
 
           <div class="section-title">Members</div>
 
-          <!-- ✅ More obvious key -->
           <div class="members-legend">
             <strong>Key:</strong>
             👑 <strong>Leader / Co-Leader</strong>
@@ -712,14 +728,19 @@
             ⚔️ <strong>Elder</strong>
           </div>
 
-          <div class="members-head" aria-hidden="true">
-            <div style="text-align:left;">User</div>
-            <div style="text-align:right;">League</div>
-            <div style="text-align:right;">Trophies</div>
-          </div>
-
-          <div id="members-list" class="members-list">
-            <div style="opacity:.75; font-size:13px;">Loading…</div>
+          <div class="members-wrap" aria-label="Clan members list">
+            <table class="members-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;"></th>
+                  <th class="m-num">XP</th>
+                  <th class="m-num">Trophies</th>
+                </tr>
+              </thead>
+              <tbody id="members-body">
+                <tr><td colspan="3" style="opacity:.75;">Loading…</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       `;
@@ -962,90 +983,49 @@
 
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
-      if(r === "leader" || r === "co-leader" || r.includes("leader")) return " 👑";
+      if(r.includes("leader")) return " 👑";   // Leader / Co-Leader
       if(r === "elder") return " ⚔️";
       return "";
     }
 
-    function leagueShort(name){
-      const s = String(name || "").trim();
-      if(!s) return "—";
-      if(/^legend league$/i.test(s)) return "Legend";
-      return s.replace(/\s+League\s+/i, " ").trim(); // "Titan League II" -> "Titan II"
-    }
-
-    function leagueRankValue(shortName){
-      const s = String(shortName || "").toLowerCase();
-      if(s === "legend") return 1000;
-      const order = [
-        ["titan i", 900], ["titan ii", 890], ["titan iii", 880],
-        ["champion i", 870], ["champion ii", 860], ["champion iii", 850],
-        ["master i", 840], ["master ii", 830], ["master iii", 820],
-        ["crystal i", 810], ["crystal ii", 800], ["crystal iii", 790],
-        ["gold i", 780], ["gold ii", 770], ["gold iii", 760],
-        ["silver i", 750], ["silver ii", 740], ["silver iii", 730],
-        ["bronze i", 720], ["bronze ii", 710], ["bronze iii", 700],
-        ["unranked", 0],
-      ];
-      for(const [key, val] of order){
-        if(s === key) return val;
-      }
-      return 1;
-    }
-
     function renderMembers(){
-      const host = document.getElementById("members-list");
-      if(!host) return;
+      const tbody = document.getElementById("members-body");
+      if(!tbody) return;
 
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
+
       if(!list){
-        host.innerHTML = `<div style="opacity:.75; font-size:13px;">Loading…</div>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="opacity:.75;">Loading…</td></tr>`;
         return;
       }
       if(list.length === 0){
-        host.innerHTML = `<div style="opacity:.75; font-size:13px;">No members found.</div>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="opacity:.75;">No members found.</td></tr>`;
         return;
       }
 
-      const prepared = list.map(m => {
-        const leagueRaw =
-          (m.leagueName) ||
-          ((m.league && m.league.name) ? m.league.name : "") ||
-          "";
-        const leagueText = leagueShort(leagueRaw);
+      // Sort: trophies desc -> XP desc -> name
+      const sorted = list.slice().sort((a,b) => {
+        const ta = (a.trophies|0), tb = (b.trophies|0);
+        if(tb !== ta) return tb - ta;
 
-        const trophiesNum = (m.trophies ?? 0) | 0;
-        const xpNum = (m.expLevel ?? m.xp ?? 0) | 0; // "Overall XP" tiebreaker (expLevel)
+        const xa = (a.expLevel|0), xb = (b.expLevel|0);
+        if(xb !== xa) return xb - xa;
 
-        return {
-          ...m,
-          leagueText,
-          leagueRank: leagueRankValue(leagueText),
-          trophiesNum,
-          xpNum,
-        };
-      });
-
-      // ✅ Sort: League -> Trophies -> Overall XP -> Name
-      prepared.sort((a,b) => {
-        if(b.leagueRank !== a.leagueRank) return b.leagueRank - a.leagueRank;
-        if(b.trophiesNum !== a.trophiesNum) return b.trophiesNum - a.trophiesNum;
-        if(b.xpNum !== a.xpNum) return b.xpNum - a.xpNum;
         return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
       });
 
-      host.innerHTML = prepared.map(m => {
+      tbody.innerHTML = sorted.map(m => {
         const name = escapeHtml(m.name);
-        const role = String(m.role || "");
-        const leagueName = escapeHtml(m.leagueText || "—");
-        const trophies = m.trophiesNum;
+        const emoji = roleEmoji(m.role);
+        const xp = (m.expLevel ?? 0) | 0;
+        const trophies = (m.trophies ?? 0) | 0;
 
         return `
-          <div class="member-row">
-            <div class="m-user">${name}${roleEmoji(role)}</div>
-            <div class="m-league">${leagueName}</div>
-            <div class="m-trophies">${trophies}</div>
-          </div>
+          <tr>
+            <td class="m-user">${name}${emoji}</td>
+            <td class="m-num">${xp}</td>
+            <td class="m-num">${trophies}</td>
+          </tr>
         `;
       }).join("");
     }
@@ -1125,60 +1105,6 @@
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
-    // ===== Tabbar hide/reveal =====
-    const tabbar = document.getElementById("pwaTabbar");
-    let lastScrollY = window.scrollY || 0;
-    let tabbarOffset = 0;
-    let tabbarMax = 140;
-    let scrollRaf = 0;
-    let scrollingTimer = 0;
-
-    function computeTabbarMax(){
-      const safe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-bottom")) || 0;
-      tabbarMax = (tabbar ? tabbar.offsetHeight : 92) + safe + 14;
-    }
-    function tabbarApply(offsetPx, scrolling){
-      if(!tabbar || !isPwaInstalled()) return;
-      if(scrolling) tabbar.classList.add("is-scrolling");
-      else tabbar.classList.remove("is-scrolling");
-      tabbar.style.transform = `translate3d(0, ${offsetPx}px, 0)`;
-    }
-    function tabbarReveal(){
-      tabbarOffset = 0;
-      tabbarApply(0, false);
-    }
-    function tabbarOnScroll(){
-      if(!tabbar || !isPwaInstalled()) return;
-
-      const y = window.scrollY || 0;
-      const dy = y - lastScrollY;
-      lastScrollY = y;
-
-      if(y < 8){
-        tabbarReveal();
-        return;
-      }
-
-      tabbarOffset = Math.max(0, Math.min(tabbarMax, tabbarOffset + dy));
-
-      if(!scrollRaf){
-        scrollRaf = requestAnimationFrame(() => {
-          tabbarApply(tabbarOffset, true);
-          scrollRaf = 0;
-        });
-      }
-
-      clearTimeout(scrollingTimer);
-      scrollingTimer = setTimeout(() => {
-        tabbar.classList.remove("is-scrolling");
-        const snapTo = (tabbarOffset > tabbarMax * 0.55) ? tabbarMax : 0;
-        tabbarOffset = snapTo;
-        tabbarApply(tabbarOffset, false);
-      }, 90);
-    }
-    window.addEventListener("scroll", tabbarOnScroll, { passive:true });
-    window.addEventListener("resize", () => { computeTabbarMax(); tabbarApply(tabbarOffset, false); }, { passive:true });
-
     // ===== Router =====
     function setDocTitle(route){
       const map = {
@@ -1198,7 +1124,6 @@
       setActiveNav(route);
       applyPwaImageIconStates(route);
       setDocTitle(route);
-      tabbarReveal();
 
       if(route !== "home") clearHomeIntervals();
 
@@ -1209,22 +1134,12 @@
     // ===== Boot =====
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
-    computeTabbarMax();
-    tabbarReveal();
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
-    window.addEventListener("pageshow", () => {
-      computeTabbarMax();
-      tabbarReveal();
-      renderRoute();
-    });
+    window.addEventListener("pageshow", renderRoute);
     document.addEventListener("visibilitychange", () => {
-      if(document.visibilityState === "visible"){
-        computeTabbarMax();
-        tabbarReveal();
-        renderRoute();
-      }
+      if(document.visibilityState === "visible") renderRoute();
     });
   </script>
 </body>
