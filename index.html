@@ -222,6 +222,40 @@
       border: 1px solid rgba(255,255,255,0.10);
     }
 
+    /* ✅ sort buttons (styled like nav buttons) */
+    .members-sortbar{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      padding:6px 2px 8px;
+      box-sizing:border-box;
+      flex-wrap: nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .members-sortbar::-webkit-scrollbar{ display:none; }
+
+    .sort-btn{
+      flex: 0 0 auto;
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color:#fff;
+      opacity:0.82;
+      font-size:13px;
+      padding:8px 12px;
+      border-radius:999px;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    .sort-btn.active{
+      opacity:1;
+      font-weight:700;
+      border-color: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.08);
+    }
+
     /* subtle scroll hint */
     .members-scrollhint{
       text-align:center;
@@ -322,9 +356,10 @@
       white-space:nowrap;
     }
 
+    /* ✅ center all numeric columns (TH / trophies / war stars / XP) */
     .m-num{
       font-family: monospace;
-      text-align:right;
+      text-align:center;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:clip;
@@ -624,7 +659,7 @@
       return `
         <div class="cards">
           <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
-            <h2 style="margin: 8px 0 14px;">In-Game Events</h2>
+            <p2 style="margin: 8px 0 14px;">In-Game Events</p2>
 
             <div style="width:100%; max-width:280px;">
               <div class="row">
@@ -767,6 +802,15 @@
             🛡️ <strong>Elder</strong>
           </div>
 
+          <!-- ✅ Sort buttons (styled like nav) -->
+          <div class="members-sortbar" id="members-sortbar" aria-label="Sort members">
+            <button class="sort-btn" data-sort="role" type="button">Role</button>
+            <button class="sort-btn" data-sort="th" type="button">TH</button>
+            <button class="sort-btn" data-sort="trophies" type="button">Trophies</button>
+            <button class="sort-btn" data-sort="warStars" type="button">War Stars</button>
+            <button class="sort-btn" data-sort="xp" type="button">XP</button>
+          </div>
+
           <div class="members-scrollhint"><p>← SCROLL / SWIPE FOR MORE →</p></div>
 
           <div class="members-wrap" aria-label="Clan members list">
@@ -825,6 +869,9 @@
     let moreIntervals = [];
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
     function clearMoreIntervals(){ moreIntervals.forEach(id => clearInterval(id)); moreIntervals = []; }
+
+    // ✅ Members sort state (initialize to ROLE as requested)
+    let membersSortMode = "role";
 
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
@@ -1101,9 +1148,49 @@
       return n > 0 ? n : 0;
     }
 
+    function roleRank(role){
+      const r = String(role || "").toLowerCase();
+      // Priority: Leader/Co-Leader > Elder > Member
+      if(r.includes("leader")) return 1;
+      if(r === "elder" || r === "admin") return 2;
+      return 3;
+    }
+
+    function setSortButtonActive(mode){
+      const bar = document.getElementById("members-sortbar");
+      if(!bar) return;
+      bar.querySelectorAll(".sort-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-sort") === mode);
+      });
+    }
+
+    function ensureSortButtonsBound(){
+      const bar = document.getElementById("members-sortbar");
+      if(!bar) return;
+      if(bar.dataset.bound === "1") return;
+
+      bar.addEventListener("click", (e) => {
+        const btn = e.target.closest(".sort-btn");
+        if(!btn) return;
+        const mode = btn.getAttribute("data-sort") || "role";
+        membersSortMode = mode;
+        setSortButtonActive(membersSortMode);
+        renderMembers();
+      });
+
+      bar.dataset.bound = "1";
+    }
+
+    function compareName(a,b){
+      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+    }
+
     function renderMembers(){
       const tbody = document.getElementById("members-body");
       if(!tbody) return;
+
+      ensureSortButtonsBound();
+      setSortButtonActive(membersSortMode);
 
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
 
@@ -1117,16 +1204,56 @@
       }
 
       const sorted = list.slice().sort((a,b) => {
-        const tb = getTrophies(b), ta = getTrophies(a);
+        const ta = getTrophies(a), tb = getTrophies(b);
+        const xa = getXP(a), xb = getXP(b);
+        const wa = getWarStars(a), wb = getWarStars(b);
+        const ha = getThLevel(a), hb = getThLevel(b);
+        const ra = roleRank(a.role), rb = roleRank(b.role);
+
+        // ✅ Sorting logic per your rules:
+        // Role: Role > Trophy > XP
+        if(membersSortMode === "role"){
+          if(ra !== rb) return ra - rb;
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+
+        // TH: TH > Trophies > XP (no explicit tie rules given; this keeps it sensible)
+        if(membersSortMode === "th"){
+          if(hb !== ha) return hb - ha;
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+
+        // Trophies: Trophies > XP
+        if(membersSortMode === "trophies"){
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+
+        // War Stars: WarStars > XP > Trophies
+        if(membersSortMode === "warStars"){
+          if(wb !== wa) return wb - wa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+
+        // XP: XP > Trophies > TH
+        if(membersSortMode === "xp"){
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          if(hb !== ha) return hb - ha;
+          return compareName(a,b);
+        }
+
+        // fallback (shouldn't hit)
         if(tb !== ta) return tb - ta;
-
-        const wb = getWarStars(b), wa = getWarStars(a);
-        if(wb !== wa) return wb - wa;
-
-        const xb = getXP(b), xa = getXP(a);
         if(xb !== xa) return xb - xa;
-
-        return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+        return compareName(a,b);
       });
 
       tbody.innerHTML = sorted.map(m => {
@@ -1209,6 +1336,9 @@
     function startHomeDataLoop(){
       clearHomeIntervals();
       warFetched = false;
+
+      // ✅ initialize to ROLE sorting every time Home loads
+      membersSortMode = "role";
 
       fetchWarData();
       fetchClanStats();
