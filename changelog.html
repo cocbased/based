@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>B•A•S•E•D — Changelog</title>
+
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Disable pinch-zoom (best-effort; iOS may still allow in some cases) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+  <style>
+    :root{
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* Card width cap = 200% of old 340px */
+      --cards-max: 680px;
+    }
+
+    html{
+      overflow-y: scroll;
+      scrollbar-gutter: stable both-edges;
+    }
+
+    body{
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      padding:24px 16px;
+      box-sizing:border-box;
+      overscroll-behavior-x: none;
+    }
+
+    /* Header */
+    .app-icon{
+      width:90px;
+      height:90px;
+      margin-bottom:12px;
+      border-radius:20px;
+      object-fit:contain;
+    }
+    .logo{
+      width:100%;
+      max-width:225px;
+      height:auto;
+      margin-bottom:16px;
+      object-fit:contain;
+    }
+
+    /* Clan tag */
+    .clan-tag-link{
+      color:#fff;
+      text-decoration:none;
+      opacity:.85;
+      font-size:14px;
+      display:inline-block;
+      margin:8px 0 18px;
+    }
+    .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
+
+    /* Stage */
+    .stage{
+      width:100%;
+      max-width:560px;
+      position:relative;
+      flex:1;
+      display:flex;
+      justify-content:center;
+    }
+
+    /* Card */
+    .cards{
+      width:100%;
+      max-width: min(var(--cards-max), 100%);
+      margin-bottom:24px;
+      padding:12px 16px;
+      border-radius:12px;
+      background:#0b1829;
+      border:1px solid #2b3b55;
+      box-sizing:border-box;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+    }
+    .cards-title{ margin:0 0 6px; font-size:16px; text-align:center; }
+    .section-title{
+      margin:10px 0 6px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
+    }
+    .divider{ height:1px; background:rgba(255,255,255,.12); margin:10px 0; }
+
+    /* Changelog list text */
+    .cl-text{
+      font-size:14px;
+      line-height:1.55;
+      opacity:.96;
+    }
+    .cl-text .indent{
+      display:block;
+      margin-left:18px;
+      opacity:.92;
+    }
+
+    /* Buttons (reuse your More page style) */
+    .links{
+      width:100%;
+      max-width:280px;
+      margin: 10px auto 0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+    .link-btn{
+      width:100%;
+      text-align:center;
+      display:block;
+      padding:12px;
+      font-size:16px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      background-color:#fff;
+      color:#000;
+      text-decoration:none;
+      box-sizing:border-box;
+    }
+
+    .page-footer{
+      margin-top:auto;
+      width:100%;
+      padding:18px 0 0;
+      font-size:14px;
+      opacity:.7;
+      text-align:center;
+    }
+  </style>
+
+  <script data-goatcounter="https://based.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
+</head>
+
+<body>
+  <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
+  <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
+
+  <a class="clan-tag-link"
+     href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
+     target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
+
+  <div class="stage">
+    <div class="cards">
+      <h2 class="cards-title">Changelog</h2>
+
+      <div class="section-title">v 1.1</div>
+      <div class="divider"></div>
+
+      <div class="section-title">New Features</div>
+      <div class="cl-text">
+        • New Clan Description section at top of app<br>
+        • Added Capital Hall Level field<br>
+        • New Members section with various player stats on homepage. Chart with scroll/swipe and filters<br>
+        • CWL details moved to CWL page<br>
+        • War details moved to War page<br>
+        • In-Game Event timers moved to More page<br>
+        • New UI for APP version (Recommended Version)<br>
+        <span class="indent">– Native App interface</span>
+        <span class="indent">– Custom menu interface with custom icons</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Fixes</div>
+      <div class="cl-text">
+        • Live stats now update every 5 seconds, or as fast as can be pulled by API<br>
+        • Responsive UI for different device sizes
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Known Bugs</div>
+      <div class="cl-text">
+        • Last 25 and Last 50 war stats logic needs to be fixed, incorrect stats<br>
+        • Short glitch in the Live War stats, flashing text when looking for a new war opponent, resolves itself
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="links">
+        <!-- Simple "back" that works whether user came from More or opened directly -->
+        <a class="link-btn" href="javascript:history.length>1?history.back():location.href='index.html#/more';">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">EST DECEMBER 2023</div>
+</body>
+</html>
