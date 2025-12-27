@@ -227,13 +227,20 @@
 
       display:flex;
       justify-content:space-between;
-      align-items:center;     /* ✅ vertically centered vs filter */
+      align-items:center;     /* vertically centered vs filter */
       gap:12px;
 
       text-align:left;
     }
 
-    /* Key line aligned to table's emoji + username columns */
+    /* Key stacked: Leader/Co on top, Elder underneath */
+    .members-key{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    /* Key lines aligned to table's emoji + username columns */
     .members-keyline{
       display:grid;
       grid-template-columns: var(--m-emoji-col) auto;
@@ -242,9 +249,9 @@
       white-space: nowrap;
     }
     .legend-underline{
-      text-decoration: underline;     /* underline only */
+      text-decoration: underline;
       text-underline-offset: 2px;
-      font-weight: 400;              /* NOT bold */
+      font-weight: 400;
     }
     .key-emoji{
       width: var(--m-emoji-col);
@@ -330,46 +337,20 @@
       white-space: nowrap;
     }
 
-    /* ✅ Meta row in header (Elder + Scroll hint) */
-    .members-table thead tr.members-meta-row th{
+    /* ✅ Scroll hint row in header (its own row across the chart) */
+    .members-table thead tr.members-scroll-row th{
       padding: 8px 10px;
       font-size:10px;
       letter-spacing:.03em;
       text-transform:none;
-      opacity:.80;
-    }
-    .members-meta{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      width:100%;
-    }
-    /* Elder line aligned to emoji+username columns (flush left like names) */
-    .elder-label{
-      display:grid;
-      grid-template-columns: var(--m-emoji-col) auto;
-      align-items:center;
-      column-gap:10px;
-      white-space:nowrap;
-    }
-    .elder-label .e-emoji{
-      width: var(--m-emoji-col);
-      text-align:right;
-      font-size:14px;
-      line-height: 1;
-    }
-    .elder-label .e-text{
-      font-size:12px;
-      line-height:1.1;
-      text-transform:none;
-      letter-spacing:0;
-      opacity:.95;
+      opacity:.78;
     }
     .scroll-hint-inline{
+      display:block;
+      text-align:center;
       font-size:10px;
       letter-spacing:.03em;
-      opacity:.75;
+      opacity:.78;
       white-space:nowrap;
     }
 
@@ -729,7 +710,6 @@
       `);
     }
 
-    // MORE: In-Game Events at top
     function renderMore(){
       return `
         <div class="cards">
@@ -805,11 +785,17 @@
 
           <div class="section-title">Members</div>
 
-          <!-- ✅ NO BOX. Leader/Co aligned to table emoji + username. Vertically centered to filter -->
+          <!-- ✅ NO BOX. Key stacked; aligned to table columns; centered vs filter -->
           <div class="members-controls">
-            <div class="members-keyline" aria-label="Members key">
-              <span class="key-emoji">👑</span>
-              <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
+            <div class="members-key" aria-label="Members key">
+              <div class="members-keyline">
+                <span class="key-emoji">👑</span>
+                <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
+              </div>
+              <div class="members-keyline">
+                <span class="key-emoji">🛡️</span>
+                <span class="key-text">Elder</span>
+              </div>
             </div>
 
             <div class="members-sort">
@@ -829,29 +815,22 @@
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
               <colgroup>
-                <col style="width: var(--m-emoji-col);">   <!-- Emoji -->
-                <col style="width: var(--m-name-col);">    <!-- Username -->
-                <col style="width: 44px;">                 <!-- TH -->
-                <col style="width: 84px;">                 <!-- Trophies -->
-                <col style="width: 98px;">                 <!-- War Stars -->
-                <col style="width: 58px;">                 <!-- XP -->
-                <col style="width: 86px;">                 <!-- Donated -->
-                <col style="width: 96px;">                 <!-- Received -->
+                <col style="width: var(--m-emoji-col);">
+                <col style="width: var(--m-name-col);">
+                <col style="width: 44px;">
+                <col style="width: 84px;">
+                <col style="width: 98px;">
+                <col style="width: 58px;">
+                <col style="width: 86px;">
+                <col style="width: 96px;">
               </colgroup>
 
               <thead>
-                <!-- ✅ Elder on same line as scroll text; row sits above emoji/username -->
-                <tr class="members-meta-row">
-                  <th colspan="2">
-                    <div class="members-meta">
-                      <div class="elder-label" aria-label="Elder key">
-                        <span class="e-emoji">🛡️</span>
-                        <span class="e-text">Elder</span>
-                      </div>
-                      <div class="scroll-hint-inline">← SCROLL / SWIPE →</div>
-                    </div>
+                <!-- ✅ Scroll hint in its own row across the chart -->
+                <tr class="members-scroll-row">
+                  <th colspan="8">
+                    <span class="scroll-hint-inline">← SCROLL / SWIPE FOR MORE →</span>
                   </th>
-                  <th colspan="6"></th>
                 </tr>
 
                 <tr>
@@ -875,7 +854,7 @@
       `;
     }
 
-    // WAR page (moved "War" + "Current War" sections here; remove placeholder title)
+    // WAR page
     function renderWarPage(){
       return `
         <div class="cards">
@@ -1162,7 +1141,6 @@
     }
 
     function renderClanStats(){
-      // Rankings/CWL can render on Home (or anywhere those IDs exist)
       if(clanStats){
         const r = clanStats.rankings || {};
         const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
@@ -1179,7 +1157,6 @@
         setRankingsVisibility(false);
       }
 
-      // War record elements live on WAR route
       if(!document.getElementById("war-record")) return;
 
       setClass("war-record","record-green", false);
@@ -1527,7 +1504,6 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
-      // stop old loops
       clearIntervals(homeIntervals);
       clearIntervals(warIntervals);
       clearIntervals(moreIntervals);
@@ -1537,7 +1513,6 @@
       if(route === "home") startHomeDataLoop();
       if(route === "war")  startWarDataLoop();
       if(route === "more") startMoreTimers();
-      // CWL / My Stats placeholders: no loops needed
     }
 
     if(!location.hash) location.hash = "#/home";
