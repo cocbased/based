@@ -1054,62 +1054,98 @@
       return "";
     }
 
-    /* ✅ Robust getters: supports BOTH shapes:
-       A) members.json has fields directly: townHallLevel, warStars
-       B) members.json wraps raw API member object under "member"
-       C) older keys (th, thLevel, totalWarStars, etc.)
-    */
-    function readIntAny(obj, keys){
+    // ✅ IMPORTANT FIX:
+    // Your JSON is clearly NOT matching the keys we were reading.
+    // So we now:
+    // 1) Accept membersData.members OR membersData.items (common pattern)
+    // 2) Read TH and WarStars using MANY possible keys AND nested objects
+    // 3) Treat "0" as valid only if the key actually exists (so we can show — when missing)
+    function getMemberList(data){
+      if(!data || typeof data !== "object") return null;
+      if(Array.isArray(data.members)) return data.members;
+      if(Array.isArray(data.items)) return data.items;
+      if(Array.isArray(data.clanMembers)) return data.clanMembers;
+      return null;
+    }
+
+    function hasOwn(o,k){ return !!o && Object.prototype.hasOwnProperty.call(o,k); }
+
+    function toNum(v){
+      if(v === null || v === undefined) return null;
+      if(typeof v === "number" && isFinite(v)) return v;
+      const s = String(v).trim();
+      if(!s) return null;
+      const n = Number(s);
+      return (isFinite(n) ? n : null);
+    }
+
+    // returns { found: boolean, value: number|null }
+    function firstNumber(obj, keys){
       for(const k of keys){
-        const v = obj?.[k];
-        if(v !== null && v !== undefined && v !== "") return (v|0);
+        if(hasOwn(obj, k)){
+          const n = toNum(obj[k]);
+          return { found:true, value: (n === null ? null : Math.trunc(n)) };
+        }
       }
-      return 0;
+      return { found:false, value:null };
     }
 
-    function getThLevel(m){
-      // direct fields
-      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      if(n > 0) return n;
+    function pickNumberFromMember(m, keys){
+      // Try top-level
+      let r = firstNumber(m, keys);
+      if(r.found) return r;
 
-      // nested raw member payload (if your generator stores it)
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      return n > 0 ? n : 0;
+      // Try common nested buckets your generator might be using
+      const nests = [m?.player, m?.profile, m?.member, m?.raw, m?.data];
+      for(const n of nests){
+        r = firstNumber(n, keys);
+        if(r.found) return r;
+      }
+
+      return { found:false, value:null };
     }
 
-    function getWarStars(m){
-      // direct fields
-      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      if(n >= 0) return n;
-
-      // nested raw member payload
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      return n >= 0 ? n : 0;
+    function getTh(m){
+      // The ones you explicitly said: townHallLevel
+      const r = pickNumberFromMember(m, [
+        "townHallLevel",   // your generator key
+        "townhallLevel",
+        "town_hall_level",
+        "th",
+        "thLevel",
+        "townHall"
+      ]);
+      return r; // {found, value}
     }
 
-    function getXP(m){
-      let n = readIntAny(m, ["expLevel","xp","level"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["expLevel","xp","level"]);
-      return n > 0 ? n : 0;
+    function getWarStarsVal(m){
+      // The one you explicitly said: warStars
+      const r = pickNumberFromMember(m, [
+        "warStars",        // your generator key
+        "war_stars",
+        "totalWarStars",
+        "warStarCount",
+        "totalStars",
+        "stars"
+      ]);
+      return r;
     }
 
-    function getTrophies(m){
-      let n = readIntAny(m, ["trophies"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["trophies"]);
-      return n > 0 ? n : 0;
+    function getTrophiesVal(m){
+      const r = pickNumberFromMember(m, ["trophies"]);
+      return r;
+    }
+
+    function getXpVal(m){
+      const r = pickNumberFromMember(m, ["expLevel","xp","experienceLevel","level"]);
+      return r;
     }
 
     function renderMembers(){
       const tbody = document.getElementById("members-body");
       if(!tbody) return;
 
-      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
+      const list = getMemberList(membersData);
 
       if(!list){
         tbody.innerHTML = `<tr><td colspan="6" style="opacity:.75;">Loading…</td></tr>`;
@@ -1122,34 +1158,46 @@
 
       // Sort: trophies desc -> warStars desc -> XP desc -> name
       const sorted = list.slice().sort((a,b) => {
-        const tb = getTrophies(b), ta = getTrophies(a);
-        if(tb !== ta) return tb - ta;
+        const tb = getTrophiesVal(b); const ta = getTrophiesVal(a);
+        const tbn = (tb.found && tb.value !== null) ? tb.value : -1;
+        const tan = (ta.found && ta.value !== null) ? ta.value : -1;
+        if(tbn !== tan) return tbn - tan;
 
-        const wb = getWarStars(b), wa = getWarStars(a);
-        if(wb !== wa) return wb - wa;
+        const wb = getWarStarsVal(b); const wa = getWarStarsVal(a);
+        const wbn = (wb.found && wb.value !== null) ? wb.value : -1;
+        const wan = (wa.found && wa.value !== null) ? wa.value : -1;
+        if(wbn !== wan) return wbn - wan;
 
-        const xb = getXP(b), xa = getXP(a);
-        if(xb !== xa) return xb - xa;
+        const xb = getXpVal(b); const xa = getXpVal(a);
+        const xbn = (xb.found && xb.value !== null) ? xb.value : -1;
+        const xan = (xa.found && xa.value !== null) ? xa.value : -1;
+        if(xbn !== xan) return xbn - xan;
 
         return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
-      });
+      }).reverse();
 
       tbody.innerHTML = sorted.map(m => {
         const badge = roleEmoji(m.role);
         const name = escapeHtml(m.name);
-        const th = getThLevel(m);
-        const trophies = getTrophies(m);
-        const warStars = getWarStars(m);
-        const xp = getXP(m);
+
+        const th = getTh(m);
+        const trophies = getTrophiesVal(m);
+        const warStars = getWarStarsVal(m);
+        const xp = getXpVal(m);
+
+        const thText = (th.found && th.value !== null && th.value > 0) ? String(th.value) : "—";
+        const troText = (trophies.found && trophies.value !== null) ? String(trophies.value) : "—";
+        const warText = (warStars.found && warStars.value !== null) ? String(warStars.value) : "—";
+        const xpText  = (xp.found && xp.value !== null) ? String(xp.value) : "—";
 
         return `
           <tr>
             <td class="m-emoji">${badge || ""}</td>
             <td><span class="m-user-name">${name}</span></td>
-            <td class="m-num">${th ? th : "—"}</td>
-            <td class="m-num">${trophies ? trophies : 0}</td>
-            <td class="m-num">${warStars ? warStars : 0}</td>
-            <td class="m-num">${xp ? xp : 0}</td>
+            <td class="m-num">${thText}</td>
+            <td class="m-num">${troText}</td>
+            <td class="m-num">${warText}</td>
+            <td class="m-num">${xpText}</td>
           </tr>
         `;
       }).join("");
