@@ -226,24 +226,21 @@
     .members-scrollhint{
       text-align:center;
       font-size:12px;
-      font-weight:400;          /* not bold */
+      font-weight:400;
       letter-spacing:.03em;
       color:#fff;
-      opacity:.70;              /* subtle */
+      opacity:.70;
       margin: 2px 0 10px;
       user-select:none;
     }
-    .members-scrollhint p{
-      margin:0;
-      padding:0;
-    }
+    .members-scrollhint p{ margin:0; padding:0; }
 
     .members-wrap{
       width:100%;
       margin-top:8px;
 
-      overflow-x:auto;      /* horizontal scroll allowed */
-      overflow-y:visible;   /* no internal vertical scroll box */
+      overflow-x:auto;
+      overflow-y:visible;
       -webkit-overflow-scrolling: touch;
 
       border-radius:10px;
@@ -253,7 +250,7 @@
 
     .members-table{
       width:100%;
-      min-width: 560px;
+      min-width: 520px;
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
@@ -274,28 +271,24 @@
       white-space: nowrap;
     }
 
-    /* Sticky left columns:
-       1) Emoji col
-       2) Username col
-    */
+    /* Sticky left columns */
     .members-table th:nth-child(1),
     .members-table td:nth-child(1){
       position: sticky;
       left: 0;
       z-index: 7;
       background: #0b1829;
-      /* ✅ no border so it visually merges into username column */
-      border-right: none;
+      border-right: none; /* merge into username */
     }
     .members-table thead th:nth-child(1){ z-index: 9; }
 
     .members-table th:nth-child(2),
     .members-table td:nth-child(2){
       position: sticky;
-      left: 30px; /* must match emoji column width */
+      left: 30px; /* must match emoji col width */
       z-index: 6;
       background: #0b1829;
-      border-right: 1px solid rgba(255,255,255,0.10); /* keep right border of the combined left block */
+      border-right: 1px solid rgba(255,255,255,0.10);
     }
     .members-table thead th:nth-child(2){ z-index: 8; }
 
@@ -308,14 +301,18 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
-    /* Emoji cell: narrow, right aligned, no weird “dot” spacing */
+    /* ✅ Emoji column: NEVER ellipsize (prevents “..” / “…” look) */
+    .members-table td.m-emoji,
+    .members-table th.m-emoji{
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: nowrap !important;
+    }
+
     .m-emoji{
       text-align:right;
       font-size:14px;
-      padding: 10px 6px 10px 10px; /* a touch of left padding, tighter right */
-      white-space:nowrap;
-      overflow: visible;
-      text-overflow: clip;
+      padding: 10px 6px 10px 10px;
       letter-spacing: 0;
     }
 
@@ -773,7 +770,7 @@
             <table class="members-table">
               <colgroup>
                 <col style="width: 30px;">   <!-- Emoji -->
-                <col style="width: 170px;">  <!-- Username -->
+                <col style="width: 102px;">  <!-- Username (≈60% of 170px) -->
                 <col style="width: 44px;">   <!-- TH -->
                 <col style="width: 84px;">   <!-- Trophies -->
                 <col style="width: 98px;">   <!-- Total Stars -->
@@ -782,7 +779,7 @@
 
               <thead>
                 <tr>
-                  <th style="text-align:right;"></th>
+                  <th class="m-emoji" style="text-align:right;"></th>
                   <th style="text-align:left;"></th>
                   <th class="m-num">TH</th>
                   <th class="m-num">Trophies</th>
@@ -1042,8 +1039,7 @@
     }
 
     function getThLevel(m){
-      const v =
-        (m.townHallLevel ?? m.th ?? m.townHall ?? m.thLevel ?? m.townHall ?? null);
+      const v = (m.townHallLevel ?? m.th ?? m.townHall ?? m.thLevel ?? null);
       const n = (v === null || v === undefined) ? 0 : (v|0);
       return n > 0 ? n : 0;
     }
@@ -1092,7 +1088,7 @@
 
         return `
           <tr>
-            <td class="m-emoji">${badge ? badge : ""}</td>
+            <td class="m-emoji">${badge || ""}</td>
             <td><span class="m-user-name">${name}</span></td>
             <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies}</td>
@@ -1114,7 +1110,6 @@
       renderMembers();
     }
 
-    // ===== Recurring timers =====
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -1178,7 +1173,6 @@
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
-    // ===== Router =====
     function setDocTitle(route){
       const map = {
         home: "B•A•S•E•D — Home",
@@ -1204,7 +1198,6 @@
       if(route === "home") startHomeDataLoop();
     }
 
-    // ===== Boot =====
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
     renderRoute();
