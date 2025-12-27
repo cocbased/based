@@ -172,13 +172,14 @@
     }
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
-    .row-value-text{
-      font-family: inherit;
-      text-align:right;
-      flex: 1;
-      white-space: normal;
+
+    /* ✅ Centered clan description block */
+    .clan-desc-block{
+      text-align:center;
+      white-space: pre-line; /* allows \n to render as line breaks */
       line-height: 1.25;
       opacity: .95;
+      padding: 2px 0 6px;
     }
 
     #rankings-block{ display:none; }
@@ -309,31 +310,29 @@
       color:#fff;
     }
 
-    /* ✅ Scroll hint OUTSIDE the horizontal scroller so it doesn't move */
+    /* ✅ Scroll hint (NOT boxed + closer to table) */
     .members-scroll-hint{
       position: sticky;
       top: 0;
       z-index: 6;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:block;
       text-align:center;
       font-size:10px;
       letter-spacing:.03em;
       opacity:.78;
-      padding:8px 10px;
-      margin: 0 0 8px;
-      background: rgba(11,24,41,0.92);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 10px;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      padding:4px 0;
+      margin: 0 0 4px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       white-space: nowrap;
     }
 
     .members-wrap{
       width:100%;
-      margin-top:8px;
+      margin-top:4px;
 
       overflow-x:auto;
       overflow-y:visible;
@@ -765,7 +764,7 @@
       `;
     }
 
-    // HOME (no Clan/CWL/War/Capital titles; only divider above Members)
+    // HOME
     function renderHome(){
       return `
         <div class="cards">
@@ -784,11 +783,9 @@
             <div class="divider"></div>
           </div>
 
-          <div class="section-title">CLAN DESCRIPTION</div>
-          <div class="row" style="align-items:flex-start;">
-            <span class="row-label">Description</span>
-            <span id="clan-desc" class="row-value-text">Loading…</span>
-          </div>
+          <!-- ✅ No title here; description centered -->
+          <div id="clan-desc" class="clan-desc-block">Loading…</div>
+          <div class="divider"></div>
 
           <div class="row">
             <span class="row-label">CWL League</span>
@@ -819,10 +816,6 @@
           <div class="row">
             <span class="row-label">Capital Hall Level</span>
             <span id="capital-hall-level" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Capital Hall Upgrades</span>
-            <span id="capital-hall-upgrades" class="row-value">Loading…</span>
           </div>
 
           <!-- ✅ Keep only this divider above Members -->
@@ -893,7 +886,7 @@
       `;
     }
 
-    // CWL page (duplicated CWL section into its own card)
+    // CWL page
     function renderCwlPage(){
       return `
         <div class="cards">
@@ -1209,11 +1202,6 @@
       return (typeof v === "number") ? v : null;
     }
 
-    function pickCapitalUpgrades(stats){
-      const v = stats?.clanCapital?.upgrades;
-      return (typeof v === "number") ? v : null;
-    }
-
     function renderClanStats(){
       if(clanStats){
         const r = clanStats.rankings || {};
@@ -1225,12 +1213,19 @@
           setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
         }
 
-        // Clan Description
-        setText("clan-desc",
-          (typeof clanStats.description === "string" && clanStats.description.trim())
-            ? clanStats.description.trim()
-            : "—"
-        );
+        // Clan Description (centered + forced line break between "Events." and "TH##" if present)
+        {
+          const el = document.getElementById("clan-desc");
+          if(el){
+            let desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
+            if(desc){
+              desc = desc.replace(/Events\.\s*(TH\d+)/i, "Events.\n$1");
+              el.textContent = desc;
+            } else {
+              el.textContent = "—";
+            }
+          }
+        }
 
         // CWL values (Home + CWL page)
         const cwlLeague = (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—";
@@ -1240,11 +1235,9 @@
         setText("cwl-league-cwlpage", cwlLeague);
         setText("cwl-finish-cwlpage", cwlFinish);
 
-        // Capital fields
+        // Capital Hall Level
         const hall = pickCapitalHallLevel(clanStats);
-        const upgrades = pickCapitalUpgrades(clanStats);
         setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
-        setText("capital-hall-upgrades", (typeof upgrades === "number") ? String(upgrades) : "—");
 
       } else {
         setRankingsVisibility(false);
@@ -1254,7 +1247,6 @@
         setText("cwl-league-cwlpage","—");
         setText("cwl-finish-cwlpage","—");
         setText("capital-hall-level","—");
-        setText("capital-hall-upgrades","—");
       }
 
       // WAR page bindings
