@@ -503,6 +503,12 @@
 
     .pwa-tabbar.is-scrolling{ transition: none; }
 
+    /* ✅ Auto-hide state (slide down out of view) */
+    .pwa-tabbar.is-hidden{
+      transform: translate3d(0, calc(var(--tabbar-h) + var(--safe-bottom) + 6px), 0);
+      pointer-events: none;
+    }
+
     .pwa-tabbar .tabs{
       height: 100%;
       max-width: 560px;
@@ -690,6 +696,82 @@
       });
     }
 
+    // ============================================================
+    // ✅ PWA Tabbar Auto-hide on scroll (down hides, up shows)
+    // ============================================================
+    let __pwaHideInit = false;
+    let __lastScrollY = 0;
+    let __tabHidden = false;
+    let __scrollTicking = false;
+
+    function setPwaTabHidden(hidden){
+      const tabbar = document.getElementById("pwaTabbar");
+      if(!tabbar) return;
+      __tabHidden = !!hidden;
+      tabbar.classList.toggle("is-hidden", __tabHidden);
+    }
+
+    function initPwaTabbarAutoHide(){
+      if(__pwaHideInit) return;
+      __pwaHideInit = true;
+
+      const tabbar = document.getElementById("pwaTabbar");
+      if(!tabbar) return;
+
+      // Start visible
+      __lastScrollY = window.scrollY || 0;
+      setPwaTabHidden(false);
+
+      const THRESH_PX = 10;     // ignore tiny jitters
+      const TOP_SHOW_Y = 20;    // always show near top
+      const HIDE_AFTER_Y = 60;  // only allow hiding after some scroll
+
+      function onScroll(){
+        if(__scrollTicking) return;
+        __scrollTicking = true;
+
+        requestAnimationFrame(() => {
+          const y = window.scrollY || document.documentElement.scrollTop || 0;
+          const dy = y - __lastScrollY;
+
+          // Always show near top
+          if(y <= TOP_SHOW_Y){
+            setPwaTabHidden(false);
+            __lastScrollY = y;
+            __scrollTicking = false;
+            return;
+          }
+
+          // Ignore jitter
+          if(Math.abs(dy) < THRESH_PX){
+            __scrollTicking = false;
+            return;
+          }
+
+          // Down = hide (after some scrolling), Up = show
+          if(dy > 0 && y > HIDE_AFTER_Y){
+            setPwaTabHidden(true);
+          } else if(dy < 0){
+            setPwaTabHidden(false);
+          }
+
+          __lastScrollY = y;
+          __scrollTicking = false;
+        });
+      }
+
+      // Passive scroll listener for iOS smoothness
+      window.addEventListener("scroll", onScroll, { passive:true });
+
+      // If user taps near bottom, show it (feels natural)
+      window.addEventListener("touchstart", (e) => {
+        const tabbarNow = document.getElementById("pwaTabbar");
+        if(!tabbarNow) return;
+        // If currently hidden, a touch anywhere shows it (fast)
+        if(tabbarNow.classList.contains("is-hidden")) setPwaTabHidden(false);
+      }, { passive:true });
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -699,6 +781,11 @@
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
+
+        // ✅ ensure auto-hide is active + starts visible
+        initPwaTabbarAutoHide();
+        setPwaTabHidden(false);
+
       } else {
         if(topNav) topNav.style.display = "flex";
         if(tabbar) tabbar.style.display = "none";
@@ -954,7 +1041,7 @@
                   <span id="war-stars-us">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-destr-us">—</span> <span>🎯</span>
+                  <span id="war-destr-us">—</span <span>🎯</span>
                 </div>
                 <div class="war-substat">
                   <span id="war-attacks-us">—</span> <span>⚔️</span>
@@ -1628,6 +1715,9 @@
       clearIntervals(homeIntervals);
       clearIntervals(warIntervals);
       clearIntervals(moreIntervals);
+
+      // ✅ whenever route changes, ensure tabbar is visible again
+      if(isPwaInstalled()) setPwaTabHidden(false);
 
       app.innerHTML = renderRouteContent(route);
 
