@@ -770,7 +770,7 @@
             <table class="members-table">
               <colgroup>
                 <col style="width: 30px;">   <!-- Emoji -->
-                <col style="width: 102px;">  <!-- Username (≈60% of 170px) -->
+                <col style="width: 102px;">  <!-- Username -->
                 <col style="width: 44px;">   <!-- TH -->
                 <col style="width: 84px;">   <!-- Trophies -->
                 <col style="width: 98px;">   <!-- Total Stars -->
@@ -1038,15 +1038,14 @@
       return "";
     }
 
+    /* ✅ HARD-FIX: use the generator’s real fields */
     function getThLevel(m){
-      const v = (m.townHallLevel ?? m.th ?? m.townHall ?? m.thLevel ?? null);
-      const n = (v === null || v === undefined) ? 0 : (v|0);
+      const n = (m && m.townHallLevel != null) ? (m.townHallLevel|0) : 0;
       return n > 0 ? n : 0;
     }
 
     function getWarStars(m){
-      const v = (m.warStars ?? m.totalWarStars ?? m.warStarCount ?? 0);
-      const n = (v|0);
+      const n = (m && m.warStars != null) ? (m.warStars|0) : 0;
       return n >= 0 ? n : 0;
     }
 
@@ -1210,3 +1209,4 @@
   </script>
 </body>
 </html>
+
