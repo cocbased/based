@@ -241,22 +241,27 @@
       font-weight: 400;              /* NOT bold */
     }
 
+    /* ✅ filter box 70% size + centered options */
     .members-sort{
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:6px;
-      min-width:150px;
+      width:70%;
+      max-width:160px;
+      min-width:120px;
     }
     .members-sort label{
       font-size:11px;
       letter-spacing:.08em;
       text-transform:uppercase;
       opacity:.70;
+      text-align:center;
+      width:100%;
     }
     .members-sort select{
       width:100%;
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.06); /* match key box better */
       color:#fff;
       border:1px solid rgba(255,255,255,0.10);
       border-radius:999px;
@@ -265,6 +270,12 @@
       outline:none;
       appearance:none;
       -webkit-appearance:none;
+      text-align:center;
+      text-align-last:center;
+    }
+    .members-sort select option{
+      background:#0b1829; /* readable on desktop dropdown */
+      color:#fff;
     }
 
     /* subtle scroll hint */
@@ -295,7 +306,7 @@
 
     .members-table{
       width:100%;
-      min-width: 520px;
+      min-width: 720px; /* was 520; add room for donated/received */
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
@@ -374,7 +385,7 @@
       text-underline-offset: 2px;
     }
 
-    /* center all numeric columns (TH / trophies / war stars / XP) */
+    /* center all numeric columns */
     .m-num{
       font-family: monospace;
       text-align:center;
@@ -715,7 +726,7 @@
       `;
     }
 
-    // HOME (no In-Game Events section)
+    // HOME
     function renderHome(){
       return `
         <div class="cards">
@@ -828,6 +839,8 @@
                 <option value="trophies">Trophies</option>
                 <option value="warStars">War Stars</option>
                 <option value="xp">XP</option>
+                <option value="donated">Donated</option>
+                <option value="received">Received</option>
               </select>
             </div>
           </div>
@@ -843,6 +856,8 @@
                 <col style="width: 84px;">   <!-- Trophies -->
                 <col style="width: 98px;">   <!-- War Stars -->
                 <col style="width: 58px;">   <!-- XP -->
+                <col style="width: 86px;">   <!-- Donated -->
+                <col style="width: 96px;">   <!-- Received -->
               </colgroup>
 
               <thead>
@@ -853,10 +868,12 @@
                   <th class="m-num">Trophies</th>
                   <th class="m-num">War Stars</th>
                   <th class="m-num">XP</th>
+                  <th class="m-num">Donated</th>
+                  <th class="m-num">Received</th>
                 </tr>
               </thead>
               <tbody id="members-body">
-                <tr><td colspan="6" style="opacity:.75;">Loading…</td></tr>
+                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1173,6 +1190,23 @@
       return n > 0 ? n : 0;
     }
 
+    // ✅ NEW: Donated / Received
+    function getDonations(m){
+      let n = readIntAny(m, ["donations","troopsDonated","donated"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donations","troopsDonated","donated"]);
+      return n >= 0 ? n : 0;
+    }
+
+    function getDonationsReceived(m){
+      let n = readIntAny(m, ["donationsReceived","troopsReceived","received"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donationsReceived","troopsReceived","received"]);
+      return n >= 0 ? n : 0;
+    }
+
     function roleRank(role){
       const r = String(role || "").toLowerCase();
       // Priority: Leader/Co-Leader > Elder > Member
@@ -1208,11 +1242,11 @@
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
 
       if(!list){
-        tbody.innerHTML = `<tr><td colspan="6" style="opacity:.75;">Loading…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
         return;
       }
       if(list.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" style="opacity:.75;">No members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
         return;
       }
 
@@ -1222,6 +1256,8 @@
         const wa = getWarStars(a), wb = getWarStars(b);
         const ha = getThLevel(a), hb = getThLevel(b);
         const ra = roleRank(a.role), rb = roleRank(b.role);
+        const da = getDonations(a), db = getDonations(b);
+        const rxa = getDonationsReceived(a), rxb = getDonationsReceived(b);
 
         // Role: Role > Trophy > XP
         if(membersSortMode === "role"){
@@ -1262,6 +1298,22 @@
           return compareName(a,b);
         }
 
+        // ✅ Donated: Donated > XP > Trophies
+        if(membersSortMode === "donated"){
+          if(db !== da) return db - da;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+
+        // ✅ Received: Received > XP > Trophies
+        if(membersSortMode === "received"){
+          if(rxb !== rxa) return rxb - rxa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+
         // fallback
         if(tb !== ta) return tb - ta;
         if(xb !== xa) return xb - xa;
@@ -1275,6 +1327,8 @@
         const trophies = getTrophies(m);
         const warStars = getWarStars(m);
         const xp = getXP(m);
+        const donated = getDonations(m);
+        const received = getDonationsReceived(m);
 
         const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
 
@@ -1286,6 +1340,8 @@
             <td class="m-num">${trophies ? trophies : 0}</td>
             <td class="m-num">${warStars ? warStars : 0}</td>
             <td class="m-num">${xp ? xp : 0}</td>
+            <td class="m-num">${donated}</td>
+            <td class="m-num">${received}</td>
           </tr>
         `;
       }).join("");
