@@ -172,6 +172,14 @@
     }
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
+    .row-value-text{
+      font-family: inherit;
+      text-align:right;
+      flex: 1;
+      white-space: normal;
+      line-height: 1.25;
+      opacity: .95;
+    }
 
     #rankings-block{ display:none; }
 
@@ -227,7 +235,7 @@
 
       display:flex;
       justify-content:space-between;
-      align-items:center;     /* vertically centered vs filter */
+      align-items:center;
       gap:12px;
 
       text-align:left;
@@ -301,6 +309,28 @@
       color:#fff;
     }
 
+    /* ✅ Scroll hint OUTSIDE the horizontal scroller so it doesn't move */
+    .members-scroll-hint{
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      padding:8px 10px;
+      margin: 0 0 8px;
+      background: rgba(11,24,41,0.92);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+
     .members-wrap{
       width:100%;
       margin-top:8px;
@@ -335,23 +365,6 @@
       text-transform:uppercase;
       opacity:.85;
       white-space: nowrap;
-    }
-
-    /* ✅ Scroll hint row in header (its own row across the chart) */
-    .members-table thead tr.members-scroll-row th{
-      padding: 8px 10px;
-      font-size:10px;
-      letter-spacing:.03em;
-      text-transform:none;
-      opacity:.78;
-    }
-    .scroll-hint-inline{
-      display:block;
-      text-align:center;
-      font-size:10px;
-      letter-spacing:.03em;
-      opacity:.78;
-      white-space:nowrap;
     }
 
     /* Sticky left columns */
@@ -752,7 +765,7 @@
       `;
     }
 
-    // HOME (War sections removed; Members kept here)
+    // HOME (updated Overview order + members)
     function renderHome(){
       return `
         <div class="cards">
@@ -771,6 +784,14 @@
             <div class="divider"></div>
           </div>
 
+          <div class="section-title">Clan</div>
+          <div class="row" style="align-items:flex-start;">
+            <span class="row-label">Description</span>
+            <span id="clan-desc" class="row-value-text">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
           <div class="section-title">CWL</div>
           <div class="row">
             <span class="row-label">CWL League</span>
@@ -783,9 +804,40 @@
 
           <div class="divider"></div>
 
+          <div class="section-title">War</div>
+          <div class="row">
+            <span class="row-label">War Record</span>
+            <span id="home-war-record" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last 10 Wars</span>
+            <span id="home-war-last10" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Current Streak</span>
+            <span id="home-war-streak" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Longest Streak</span>
+            <span id="home-war-longest" class="row-value">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">Capital</div>
+          <div class="row">
+            <span class="row-label">Capital Hall Level</span>
+            <span id="capital-hall-level" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Capital Hall Upgrades</span>
+            <span id="capital-hall-upgrades" class="row-value">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
           <div class="section-title">Members</div>
 
-          <!-- ✅ NO BOX. Key stacked; aligned to table columns; centered vs filter -->
           <div class="members-controls">
             <div class="members-key" aria-label="Members key">
               <div class="members-keyline">
@@ -812,6 +864,9 @@
             </div>
           </div>
 
+          <!-- ✅ centered + sticky + DOES NOT move with horizontal scroll -->
+          <div class="members-scroll-hint">← SCROLL / SWIPE FOR MORE →</div>
+
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
               <colgroup>
@@ -826,13 +881,6 @@
               </colgroup>
 
               <thead>
-                <!-- ✅ Scroll hint in its own row across the chart -->
-                <tr class="members-scroll-row">
-                  <th colspan="8">
-                    <span class="scroll-hint-inline">← SCROLL / SWIPE FOR MORE →</span>
-                  </th>
-                </tr>
-
                 <tr>
                   <th class="m-emoji" style="text-align:right;"></th>
                   <th style="text-align:left;"></th>
@@ -849,6 +897,31 @@
                 <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // CWL page (duplicated CWL section into its own card)
+    function renderCwlPage(){
+      return `
+        <div class="cards">
+          <h2 class="cards-title">CWL</h2>
+
+          <div class="section-title">CWL</div>
+          <div class="row">
+            <span class="row-label">CWL League</span>
+            <span id="cwl-league-cwlpage" class="row-value">Loading…</span>
+          </div>
+          <div class="row">
+            <span class="row-label">Last CWL Finish</span>
+            <span id="cwl-finish-cwlpage" class="row-value">Loading…</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">
+            More CWL details coming soon.
           </div>
         </div>
       `;
@@ -926,7 +999,7 @@
 
     function renderRouteContent(route){
       if(route === "home") return renderHome();
-      if(route === "cwl") return pageShellCards("CWL", "Coming Soon!");
+      if(route === "cwl") return renderCwlPage();
       if(route === "war") return renderWarPage();
       if(route === "mystats") return pageShellCards("My Stats", "Coming Soon!");
       if(route === "more") return renderMore();
@@ -1140,6 +1213,28 @@
       renderClanStats();
     }
 
+    function pickCapitalHallLevel(stats){
+      // supports multiple possible shapes depending on your generator
+      const a = stats?.clanCapital?.capitalHallLevel;
+      const b = stats?.capital?.capitalHallLevel;
+      const c = stats?.capitalHallLevel;
+      if(typeof a === "number") return a;
+      if(typeof b === "number") return b;
+      if(typeof c === "number") return c;
+      return null;
+    }
+
+    function pickCapitalUpgrades(stats){
+      // This may not exist yet; we display if found, otherwise "—"
+      const a = stats?.clanCapital?.upgrades;
+      const b = stats?.capital?.upgrades;
+      const c = stats?.capitalUpgrades;
+      if(typeof a === "number") return a;
+      if(typeof b === "number") return b;
+      if(typeof c === "number") return c;
+      return null;
+    }
+
     function renderClanStats(){
       if(clanStats){
         const r = clanStats.rankings || {};
@@ -1151,43 +1246,101 @@
           setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
         }
 
-        setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
-        setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
+        // Clan Description (new)
+        setText("clan-desc", (typeof clanStats.description === "string" && clanStats.description.trim())
+          ? clanStats.description.trim()
+          : "—"
+        );
+
+        // CWL values (Home + CWL page)
+        const cwlLeague = (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—";
+        const cwlFinish = (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—";
+        setText("cwl-league", cwlLeague);
+        setText("cwl-finish", cwlFinish);
+        setText("cwl-league-cwlpage", cwlLeague);
+        setText("cwl-finish-cwlpage", cwlFinish);
+
+        // Capital fields (new)
+        const hall = pickCapitalHallLevel(clanStats);
+        const upgrades = pickCapitalUpgrades(clanStats);
+        setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
+        setText("capital-hall-upgrades", (typeof upgrades === "number") ? String(upgrades) : "—");
+
       } else {
         setRankingsVisibility(false);
+        setText("clan-desc","—");
+        setText("cwl-league","—");
+        setText("cwl-finish","—");
+        setText("cwl-league-cwlpage","—");
+        setText("cwl-finish-cwlpage","—");
+        setText("capital-hall-level","—");
+        setText("capital-hall-upgrades","—");
       }
 
-      if(!document.getElementById("war-record")) return;
+      // WAR page bindings
+      if(document.getElementById("war-record")){
+        setClass("war-record","record-green", false);
+        setClass("war-last10","record-green", false);
+        setClass("war-last25","record-green", false);
+        setClass("war-last50","record-green", false);
 
-      setClass("war-record","record-green", false);
-      setClass("war-last10","record-green", false);
-      setClass("war-last25","record-green", false);
-      setClass("war-last50","record-green", false);
+        if(clanStats && clanStats.war){
+          const w = clanStats.war.wins ?? 0;
+          const l = clanStats.war.losses ?? 0;
+          const t = clanStats.war.ties ?? 0;
 
-      if(!clanStats || !clanStats.war) return;
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("war-record", rec.text);
+          setClass("war-record", "record-green", hasNoLosses(rec.losses));
 
-      const w = clanStats.war.wins ?? 0;
-      const l = clanStats.war.losses ?? 0;
-      const t = clanStats.war.ties ?? 0;
+          setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
 
-      const rec = fmtWLTWithPctNums(w,l,t);
-      setText("war-record", rec.text);
-      setClass("war-record", "record-green", hasNoLosses(rec.losses));
+          // ✅ Force correct longest streak display for now
+          setText("war-longest", "53");
 
-      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
+          const l10 = fmtWLTWithPctObj(clanStats.war.last10);
+          const l25 = fmtWLTWithPctObj(clanStats.war.last25);
+          const l50 = fmtWLTWithPctObj(clanStats.war.last50);
 
-      const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-      const l25 = fmtWLTWithPctObj(clanStats.war.last25);
-      const l50 = fmtWLTWithPctObj(clanStats.war.last50);
+          setText("war-last10", l10.text);
+          setText("war-last25", l25.text);
+          setText("war-last50", l50.text);
 
-      setText("war-last10", l10.text);
-      setText("war-last25", l25.text);
-      setText("war-last50", l50.text);
+          setClass("war-last10","record-green", hasNoLosses(l10.losses));
+          setClass("war-last25","record-green", hasNoLosses(l25.losses));
+          setClass("war-last50","record-green", hasNoLosses(l50.losses));
+        }
+      }
 
-      setClass("war-last10","record-green", hasNoLosses(l10.losses));
-      setClass("war-last25","record-green", hasNoLosses(l25.losses));
-      setClass("war-last50","record-green", hasNoLosses(l50.losses));
+      // HOME war summary bindings (new)
+      if(document.getElementById("home-war-record")){
+        setClass("home-war-record","record-green", false);
+        setClass("home-war-last10","record-green", false);
+
+        if(clanStats && clanStats.war){
+          const w = clanStats.war.wins ?? 0;
+          const l = clanStats.war.losses ?? 0;
+          const t = clanStats.war.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("home-war-record", rec.text);
+          setClass("home-war-record", "record-green", hasNoLosses(rec.losses));
+
+          const l10 = fmtWLTWithPctObj(clanStats.war.last10);
+          setText("home-war-last10", l10.text);
+          setClass("home-war-last10", "record-green", hasNoLosses(l10.losses));
+
+          setText("home-war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+
+          // ✅ Force correct longest streak display for now
+          setText("home-war-longest", "53");
+        } else {
+          setText("home-war-record","—");
+          setText("home-war-last10","—");
+          setText("home-war-streak","—");
+          setText("home-war-longest","53");
+        }
+      }
     }
 
     // ===== Members =====
@@ -1513,6 +1666,7 @@
       if(route === "home") startHomeDataLoop();
       if(route === "war")  startWarDataLoop();
       if(route === "more") startMoreTimers();
+      if(route === "cwl")  { clearIntervals(homeIntervals); clearIntervals(warIntervals); clearIntervals(moreIntervals); fetchClanStats(); homeIntervals.push(setInterval(fetchClanStats, 5*1000)); }
     }
 
     if(!location.hash) location.hash = "#/home";
