@@ -773,7 +773,7 @@
                 <col style="width: 102px;">  <!-- Username -->
                 <col style="width: 44px;">   <!-- TH -->
                 <col style="width: 84px;">   <!-- Trophies -->
-                <col style="width: 98px;">   <!-- Total Stars -->
+                <col style="width: 98px;">   <!-- War Stars -->
                 <col style="width: 58px;">   <!-- XP -->
               </colgroup>
 
@@ -783,7 +783,7 @@
                   <th style="text-align:left;"></th>
                   <th class="m-num">TH</th>
                   <th class="m-num">Trophies</th>
-                  <th class="m-num">Total Stars</th>
+                  <th class="m-num">War Stars</th>
                   <th class="m-num">XP</th>
                 </tr>
               </thead>
@@ -831,9 +831,15 @@
     }
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
     function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
-    function setClass(id, className, on){ const el = document.getElementById(id); if(!el) return; el.classList.toggle(className, !!on); }
-    function setRankingsVisibility(show){ const block = document.getElementById("rankings-block"); if(block) block.style.display = show ? "block" : "none"; }
-    function setWarVsVisibility(show){ const vs = document.getElementById("war-vs"); if(vs) vs.style.display = show ? "block" : "none"; }
+
+    function setRankingsVisibility(show){
+      const block = document.getElementById("rankings-block");
+      if(block) block.style.display = show ? "block" : "none";
+    }
+    function setWarVsVisibility(show){
+      const vs = document.getElementById("war-vs");
+      if(vs) vs.style.display = show ? "block" : "none";
+    }
     function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
     function fmtPct(v){
       if(typeof v !== "number" || !isFinite(v)) return "—";
@@ -856,7 +862,15 @@
     function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
     function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
 
-    function resetWarHighlights(){ ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false)); }
+    function setClass(id, className, on){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+    function resetWarHighlights(){
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false));
+    }
+
     function loadLastWarSnapshot(){
       try{
         const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
@@ -866,7 +880,9 @@
       } catch(e){}
       return null;
     }
-    function saveLastWarSnapshot(w){ try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){} }
+    function saveLastWarSnapshot(w){
+      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
+    }
     lastWarSnapshot = loadLastWarSnapshot();
 
     async function fetchWarData(){
@@ -1038,15 +1054,55 @@
       return "";
     }
 
-    /* ✅ HARD-FIX: use the generator’s real fields */
+    /* ✅ Robust getters: supports BOTH shapes:
+       A) members.json has fields directly: townHallLevel, warStars
+       B) members.json wraps raw API member object under "member"
+       C) older keys (th, thLevel, totalWarStars, etc.)
+    */
+    function readIntAny(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== null && v !== undefined && v !== "") return (v|0);
+      }
+      return 0;
+    }
+
     function getThLevel(m){
-      const n = (m && m.townHallLevel != null) ? (m.townHallLevel|0) : 0;
+      // direct fields
+      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
+      if(n > 0) return n;
+
+      // nested raw member payload (if your generator stores it)
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
       return n > 0 ? n : 0;
     }
 
     function getWarStars(m){
-      const n = (m && m.warStars != null) ? (m.warStars|0) : 0;
+      // direct fields
+      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
+      if(n >= 0) return n;
+
+      // nested raw member payload
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
       return n >= 0 ? n : 0;
+    }
+
+    function getXP(m){
+      let n = readIntAny(m, ["expLevel","xp","level"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["expLevel","xp","level"]);
+      return n > 0 ? n : 0;
+    }
+
+    function getTrophies(m){
+      let n = readIntAny(m, ["trophies"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["trophies"]);
+      return n > 0 ? n : 0;
     }
 
     function renderMembers(){
@@ -1064,14 +1120,15 @@
         return;
       }
 
+      // Sort: trophies desc -> warStars desc -> XP desc -> name
       const sorted = list.slice().sort((a,b) => {
-        const ta = (a.trophies|0), tb = (b.trophies|0);
+        const tb = getTrophies(b), ta = getTrophies(a);
         if(tb !== ta) return tb - ta;
 
-        const wa = getWarStars(a), wb = getWarStars(b);
+        const wb = getWarStars(b), wa = getWarStars(a);
         if(wb !== wa) return wb - wa;
 
-        const xa = (a.expLevel|0), xb = (b.expLevel|0);
+        const xb = getXP(b), xa = getXP(a);
         if(xb !== xa) return xb - xa;
 
         return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
@@ -1081,18 +1138,18 @@
         const badge = roleEmoji(m.role);
         const name = escapeHtml(m.name);
         const th = getThLevel(m);
-        const trophies = (m.trophies ?? 0) | 0;
-        const totalStars = getWarStars(m);
-        const xp = (m.expLevel ?? 0) | 0;
+        const trophies = getTrophies(m);
+        const warStars = getWarStars(m);
+        const xp = getXP(m);
 
         return `
           <tr>
             <td class="m-emoji">${badge || ""}</td>
             <td><span class="m-user-name">${name}</span></td>
             <td class="m-num">${th ? th : "—"}</td>
-            <td class="m-num">${trophies}</td>
-            <td class="m-num">${totalStars}</td>
-            <td class="m-num">${xp}</td>
+            <td class="m-num">${trophies ? trophies : 0}</td>
+            <td class="m-num">${warStars ? warStars : 0}</td>
+            <td class="m-num">${xp ? xp : 0}</td>
           </tr>
         `;
       }).join("");
@@ -1209,4 +1266,3 @@
   </script>
 </body>
 </html>
-
