@@ -619,11 +619,33 @@
       `);
     }
 
+    // ✅ MORE now shows In-Game Events at the top (replaces "More")
     function renderMore(){
       return `
         <div class="cards">
           <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
-            <h1 style="margin: 8px 0 14px;">More</h1>
+            <h1 style="margin: 8px 0 14px;">In-Game Events</h1>
+
+            <div style="width:100%; max-width:280px;">
+              <div class="row">
+                <span class="row-label">Raid Weekend</span>
+                <span id="raid-timer" class="row-value">Loading…</span>
+              </div>
+              <div class="row">
+                <span class="row-label">Clan Games</span>
+                <span id="clan-games-timer" class="row-value">Loading…</span>
+              </div>
+              <div class="row">
+                <span class="row-label">Season End</span>
+                <span id="season-end-timer" class="row-value">Loading…</span>
+              </div>
+              <div class="row">
+                <span class="row-label">League Reset</span>
+                <span id="league-reset-timer" class="row-value">Loading…</span>
+              </div>
+
+              <div class="divider"></div>
+            </div>
 
             <div class="links">
               <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
@@ -640,6 +662,7 @@
       `;
     }
 
+    // ✅ HOME removed the In-Game Events section
     function renderHome(){
       return `
         <div class="cards">
@@ -735,26 +758,6 @@
 
           <div class="divider"></div>
 
-          <div class="section-title">In-Game Events</div>
-          <div class="row">
-            <span class="row-label">Raid Weekend</span>
-            <span id="raid-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Clan Games</span>
-            <span id="clan-games-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Season End</span>
-            <span id="season-end-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">League Reset</span>
-            <span id="league-reset-timer" class="row-value">Loading…</span>
-          </div>
-
-          <div class="divider"></div>
-
           <div class="section-title">Members</div>
 
           <div class="members-legend">
@@ -818,7 +821,11 @@
     let clanStats = null;
     let membersData = null;
 
+    // ✅ separate interval bucket for More page timers
+    let moreIntervals = [];
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
+    function clearMoreIntervals(){ moreIntervals.forEach(id => clearInterval(id)); moreIntervals = []; }
+
     function pad(n){ return n.toString().padStart(2,"0"); }
     function formatCountdown(ms){
       if(ms<=0) return "Active now";
@@ -1054,11 +1061,6 @@
       return "";
     }
 
-    /* ✅ Robust getters: supports BOTH shapes:
-       A) members.json has fields directly: townHallLevel, warStars
-       B) members.json wraps raw API member object under "member"
-       C) older keys (th, thLevel, totalWarStars, etc.)
-    */
     function readIntAny(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
@@ -1068,22 +1070,16 @@
     }
 
     function getThLevel(m){
-      // direct fields
       let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
       if(n > 0) return n;
-
-      // nested raw member payload (if your generator stores it)
       const mm = m?.member || m?.player || m?.raw || null;
       n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
       return n > 0 ? n : 0;
     }
 
     function getWarStars(m){
-      // direct fields
       let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
       if(n >= 0) return n;
-
-      // nested raw member payload
       const mm = m?.member || m?.player || m?.raw || null;
       n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
       return n >= 0 ? n : 0;
@@ -1120,7 +1116,6 @@
         return;
       }
 
-      // Sort: trophies desc -> warStars desc -> XP desc -> name
       const sorted = list.slice().sort((a,b) => {
         const tb = getTrophies(b), ta = getTrophies(a);
         if(tb !== ta) return tb - ta;
@@ -1166,6 +1161,7 @@
       renderMembers();
     }
 
+    // ===== Timers (used by BOTH Home and More) =====
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -1217,10 +1213,9 @@
       fetchWarData();
       fetchClanStats();
       fetchMembersData();
-      updateRecurringTimers();
 
+      // Home: war timer updates every second
       homeIntervals.push(setInterval(() => {
-        updateRecurringTimers();
         updateWarTimerOnly(false, null);
       }, 1000));
 
@@ -1229,6 +1224,14 @@
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
+    // ✅ More: only needs the in-game timers, tick every second
+    function startMoreTimers(){
+      clearMoreIntervals();
+      updateRecurringTimers();
+      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
+    }
+
+    // ===== Router + tab UI =====
     function setDocTitle(route){
       const map = {
         home: "B•A•S•E•D — Home",
@@ -1248,10 +1251,14 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
+      // stop loops that don't apply
       if(route !== "home") clearHomeIntervals();
+      if(route !== "more") clearMoreIntervals();
 
       app.innerHTML = renderRouteContent(route);
+
       if(route === "home") startHomeDataLoop();
+      if(route === "more") startMoreTimers();
     }
 
     if(!location.hash) location.hash = "#/home";
