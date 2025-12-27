@@ -765,7 +765,7 @@
       `;
     }
 
-    // HOME (updated Overview order + members)
+    // HOME (no Clan/CWL/War/Capital titles; only divider above Members)
     function renderHome(){
       return `
         <div class="cards">
@@ -784,15 +784,12 @@
             <div class="divider"></div>
           </div>
 
-          <div class="section-title">Clan</div>
+          <div class="section-title">CLAN DESCRIPTION</div>
           <div class="row" style="align-items:flex-start;">
             <span class="row-label">Description</span>
             <span id="clan-desc" class="row-value-text">Loading…</span>
           </div>
 
-          <div class="divider"></div>
-
-          <div class="section-title">CWL</div>
           <div class="row">
             <span class="row-label">CWL League</span>
             <span id="cwl-league" class="row-value">Loading…</span>
@@ -802,9 +799,6 @@
             <span id="cwl-finish" class="row-value">Loading…</span>
           </div>
 
-          <div class="divider"></div>
-
-          <div class="section-title">War</div>
           <div class="row">
             <span class="row-label">War Record</span>
             <span id="home-war-record" class="row-value">Loading…</span>
@@ -822,9 +816,6 @@
             <span id="home-war-longest" class="row-value">Loading…</span>
           </div>
 
-          <div class="divider"></div>
-
-          <div class="section-title">Capital</div>
           <div class="row">
             <span class="row-label">Capital Hall Level</span>
             <span id="capital-hall-level" class="row-value">Loading…</span>
@@ -834,6 +825,7 @@
             <span id="capital-hall-upgrades" class="row-value">Loading…</span>
           </div>
 
+          <!-- ✅ Keep only this divider above Members -->
           <div class="divider"></div>
 
           <div class="section-title">Members</div>
@@ -864,7 +856,6 @@
             </div>
           </div>
 
-          <!-- ✅ centered + sticky + DOES NOT move with horizontal scroll -->
           <div class="members-scroll-hint">← SCROLL / SWIPE FOR MORE →</div>
 
           <div class="members-wrap" aria-label="Clan members list">
@@ -1214,25 +1205,13 @@
     }
 
     function pickCapitalHallLevel(stats){
-      // supports multiple possible shapes depending on your generator
-      const a = stats?.clanCapital?.capitalHallLevel;
-      const b = stats?.capital?.capitalHallLevel;
-      const c = stats?.capitalHallLevel;
-      if(typeof a === "number") return a;
-      if(typeof b === "number") return b;
-      if(typeof c === "number") return c;
-      return null;
+      const v = stats?.clanCapital?.capitalHallLevel;
+      return (typeof v === "number") ? v : null;
     }
 
     function pickCapitalUpgrades(stats){
-      // This may not exist yet; we display if found, otherwise "—"
-      const a = stats?.clanCapital?.upgrades;
-      const b = stats?.capital?.upgrades;
-      const c = stats?.capitalUpgrades;
-      if(typeof a === "number") return a;
-      if(typeof b === "number") return b;
-      if(typeof c === "number") return c;
-      return null;
+      const v = stats?.clanCapital?.upgrades;
+      return (typeof v === "number") ? v : null;
     }
 
     function renderClanStats(){
@@ -1246,10 +1225,11 @@
           setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
         }
 
-        // Clan Description (new)
-        setText("clan-desc", (typeof clanStats.description === "string" && clanStats.description.trim())
-          ? clanStats.description.trim()
-          : "—"
+        // Clan Description
+        setText("clan-desc",
+          (typeof clanStats.description === "string" && clanStats.description.trim())
+            ? clanStats.description.trim()
+            : "—"
         );
 
         // CWL values (Home + CWL page)
@@ -1260,7 +1240,7 @@
         setText("cwl-league-cwlpage", cwlLeague);
         setText("cwl-finish-cwlpage", cwlFinish);
 
-        // Capital fields (new)
+        // Capital fields
         const hall = pickCapitalHallLevel(clanStats);
         const upgrades = pickCapitalUpgrades(clanStats);
         setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
@@ -1294,9 +1274,7 @@
           setClass("war-record", "record-green", hasNoLosses(rec.losses));
 
           setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-
-          // ✅ Force correct longest streak display for now
-          setText("war-longest", "53");
+          setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
           const l10 = fmtWLTWithPctObj(clanStats.war.last10);
           const l25 = fmtWLTWithPctObj(clanStats.war.last25);
@@ -1312,7 +1290,7 @@
         }
       }
 
-      // HOME war summary bindings (new)
+      // HOME war summary bindings
       if(document.getElementById("home-war-record")){
         setClass("home-war-record","record-green", false);
         setClass("home-war-last10","record-green", false);
@@ -1331,14 +1309,12 @@
           setClass("home-war-last10", "record-green", hasNoLosses(l10.losses));
 
           setText("home-war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-
-          // ✅ Force correct longest streak display for now
-          setText("home-war-longest", "53");
+          setText("home-war-longest", `${clanStats.war.longestStreak ?? "—"}`);
         } else {
           setText("home-war-record","—");
           setText("home-war-last10","—");
           setText("home-war-streak","—");
-          setText("home-war-longest","53");
+          setText("home-war-longest","—");
         }
       }
     }
@@ -1666,7 +1642,11 @@
       if(route === "home") startHomeDataLoop();
       if(route === "war")  startWarDataLoop();
       if(route === "more") startMoreTimers();
-      if(route === "cwl")  { clearIntervals(homeIntervals); clearIntervals(warIntervals); clearIntervals(moreIntervals); fetchClanStats(); homeIntervals.push(setInterval(fetchClanStats, 5*1000)); }
+      if(route === "cwl"){
+        clearIntervals(homeIntervals); clearIntervals(warIntervals); clearIntervals(moreIntervals);
+        fetchClanStats();
+        homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+      }
     }
 
     if(!location.hash) location.hash = "#/home";
