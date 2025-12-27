@@ -22,6 +22,13 @@
       --tabbar-h: 92px;
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
+
+      /* Members column sizing (keep key aligned with table) */
+      --m-emoji-col: 30px;
+      --m-name-col: 102px;
+
+      /* Card width cap = 200% of old 340px */
+      --cards-max: 680px;
     }
 
     /* ============================================================
@@ -134,9 +141,7 @@
     /* Card + rows */
     .cards{
       width:100%;
-      /* responsive, but never wider than 200% of old 340px (=680px) */
-      max-width: clamp(340px, 92vw, 680px);
-
+      max-width: min(var(--cards-max), 100%);
       margin-bottom:24px;
       padding:12px 16px;
       border-radius:12px;
@@ -213,48 +218,54 @@
        MEMBERS (sticky header + sticky left columns)
        ========================= */
 
-    /* ✅ NO BOX: Key (left) + Sort dropdown (right), vertically centered */
+    /* Key + Sort (NO BOX) */
     .members-controls{
       font-size:12px;
       opacity:.9;
-      margin:2px 0 10px;
+      margin:2px 0 8px;
       line-height:1.35;
 
       display:flex;
       justify-content:space-between;
-      align-items:center;          /* ✅ vertical centering between key + filter */
+      align-items:center;     /* ✅ vertically centered vs filter */
       gap:12px;
 
       text-align:left;
-      padding:0;                   /* ✅ remove box padding */
-      background: transparent;      /* ✅ remove box */
-      border: none;                /* ✅ remove box */
-      border-radius: 0;            /* ✅ remove rounding */
     }
 
-    .members-key{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      align-self:center;           /* ✅ ensure it aligns with dropdown */
+    /* Key line aligned to table's emoji + username columns */
+    .members-keyline{
+      display:grid;
+      grid-template-columns: var(--m-emoji-col) auto;
+      align-items:center;
+      column-gap: 10px;
+      white-space: nowrap;
     }
     .legend-underline{
       text-decoration: underline;     /* underline only */
       text-underline-offset: 2px;
       font-weight: 400;              /* NOT bold */
     }
+    .key-emoji{
+      width: var(--m-emoji-col);
+      text-align:right;
+      font-size:14px;
+      line-height: 1;
+    }
+    .key-text{
+      font-size:12px;
+      line-height: 1.2;
+    }
 
-    /* ✅ filter box 70% size + centered options */
+    /* filter box 70% size + centered options */
     .members-sort{
       display:flex;
       flex-direction:column;
       align-items:center;
-      justify-content:center;
       gap:6px;
       width:70%;
       max-width:160px;
       min-width:120px;
-      align-self:center;
     }
     .members-sort label{
       font-size:11px;
@@ -266,7 +277,7 @@
     }
     .members-sort select{
       width:100%;
-      background: rgba(255,255,255,0.06); /* subtle, since box is removed */
+      background: rgba(255,255,255,0.06);
       color:#fff;
       border:1px solid rgba(255,255,255,0.10);
       border-radius:999px;
@@ -279,22 +290,9 @@
       text-align-last:center;
     }
     .members-sort select option{
-      background:#0b1829; /* readable on desktop dropdown */
+      background:#0b1829;
       color:#fff;
     }
-
-    /* subtle scroll hint */
-    .members-scrollhint{
-      text-align:center;
-      font-size:12px;
-      font-weight:400;
-      letter-spacing:.03em;
-      color:#fff;
-      opacity:.70;
-      margin: 2px 0 10px;
-      user-select:none;
-    }
-    .members-scrollhint p{ margin:0; padding:0; }
 
     .members-wrap{
       width:100%;
@@ -311,7 +309,7 @@
 
     .members-table{
       width:100%;
-      min-width: 720px; /* add room for donated/received */
+      min-width: 720px;
       border-collapse: separate;
       border-spacing: 0;
       font-size:13px;
@@ -332,6 +330,49 @@
       white-space: nowrap;
     }
 
+    /* ✅ Meta row in header (Elder + Scroll hint) */
+    .members-table thead tr.members-meta-row th{
+      padding: 8px 10px;
+      font-size:10px;
+      letter-spacing:.03em;
+      text-transform:none;
+      opacity:.80;
+    }
+    .members-meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      width:100%;
+    }
+    /* Elder line aligned to emoji+username columns (flush left like names) */
+    .elder-label{
+      display:grid;
+      grid-template-columns: var(--m-emoji-col) auto;
+      align-items:center;
+      column-gap:10px;
+      white-space:nowrap;
+    }
+    .elder-label .e-emoji{
+      width: var(--m-emoji-col);
+      text-align:right;
+      font-size:14px;
+      line-height: 1;
+    }
+    .elder-label .e-text{
+      font-size:12px;
+      line-height:1.1;
+      text-transform:none;
+      letter-spacing:0;
+      opacity:.95;
+    }
+    .scroll-hint-inline{
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.75;
+      white-space:nowrap;
+    }
+
     /* Sticky left columns */
     .members-table th:nth-child(1),
     .members-table td:nth-child(1){
@@ -339,14 +380,14 @@
       left: 0;
       z-index: 7;
       background: #0b1829;
-      border-right: none; /* merge into username */
+      border-right: none;
     }
     .members-table thead th:nth-child(1){ z-index: 9; }
 
     .members-table th:nth-child(2),
     .members-table td:nth-child(2){
       position: sticky;
-      left: 30px; /* must match emoji col width */
+      left: var(--m-emoji-col);
       z-index: 6;
       background: #0b1829;
       border-right: 1px solid rgba(255,255,255,0.10);
@@ -731,7 +772,7 @@
       `;
     }
 
-    // HOME
+    // HOME (War sections removed; Members kept here)
     function renderHome(){
       return `
         <div class="cards">
@@ -762,6 +803,82 @@
 
           <div class="divider"></div>
 
+          <div class="section-title">Members</div>
+
+          <!-- ✅ NO BOX. Leader/Co aligned to table emoji + username. Vertically centered to filter -->
+          <div class="members-controls">
+            <div class="members-keyline" aria-label="Members key">
+              <span class="key-emoji">👑</span>
+              <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
+            </div>
+
+            <div class="members-sort">
+              <label for="membersSortSelect">Sort by</label>
+              <select id="membersSortSelect">
+                <option value="role">Role</option>
+                <option value="th">TH</option>
+                <option value="trophies">Trophies</option>
+                <option value="warStars">War Stars</option>
+                <option value="xp">XP</option>
+                <option value="donated">Donated</option>
+                <option value="received">Received</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="members-wrap" aria-label="Clan members list">
+            <table class="members-table">
+              <colgroup>
+                <col style="width: var(--m-emoji-col);">   <!-- Emoji -->
+                <col style="width: var(--m-name-col);">    <!-- Username -->
+                <col style="width: 44px;">                 <!-- TH -->
+                <col style="width: 84px;">                 <!-- Trophies -->
+                <col style="width: 98px;">                 <!-- War Stars -->
+                <col style="width: 58px;">                 <!-- XP -->
+                <col style="width: 86px;">                 <!-- Donated -->
+                <col style="width: 96px;">                 <!-- Received -->
+              </colgroup>
+
+              <thead>
+                <!-- ✅ Elder on same line as scroll text; row sits above emoji/username -->
+                <tr class="members-meta-row">
+                  <th colspan="2">
+                    <div class="members-meta">
+                      <div class="elder-label" aria-label="Elder key">
+                        <span class="e-emoji">🛡️</span>
+                        <span class="e-text">Elder</span>
+                      </div>
+                      <div class="scroll-hint-inline">← SCROLL / SWIPE →</div>
+                    </div>
+                  </th>
+                  <th colspan="6"></th>
+                </tr>
+
+                <tr>
+                  <th class="m-emoji" style="text-align:right;"></th>
+                  <th style="text-align:left;"></th>
+                  <th class="m-num">TH</th>
+                  <th class="m-num">Trophies</th>
+                  <th class="m-num">War Stars</th>
+                  <th class="m-num">XP</th>
+                  <th class="m-num">Donated</th>
+                  <th class="m-num">Received</th>
+                </tr>
+              </thead>
+
+              <tbody id="members-body">
+                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // WAR page (moved "War" + "Current War" sections here; remove placeholder title)
+    function renderWarPage(){
+      return `
+        <div class="cards">
           <div class="section-title">War</div>
           <div class="row">
             <span class="row-label">War Record</span>
@@ -824,64 +941,6 @@
               </div>
             </div>
           </div>
-
-          <div class="divider"></div>
-
-          <div class="section-title">Members</div>
-
-          <!-- ✅ NO BOX: Key (left) + Sort dropdown (right), vertically centered -->
-          <div class="members-controls">
-            <div class="members-key">
-              <div>👑 <span class="legend-underline">Leader</span> / Co</div>
-              <div>🛡️ Elder</div>
-            </div>
-
-            <div class="members-sort">
-              <label for="membersSortSelect">Sort by</label>
-              <select id="membersSortSelect">
-                <option value="role">Role</option>
-                <option value="th">TH</option>
-                <option value="trophies">Trophies</option>
-                <option value="warStars">War Stars</option>
-                <option value="xp">XP</option>
-                <option value="donated">Donated</option>
-                <option value="received">Received</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="members-scrollhint"><p>← SCROLL / SWIPE FOR MORE →</p></div>
-
-          <div class="members-wrap" aria-label="Clan members list">
-            <table class="members-table">
-              <colgroup>
-                <col style="width: 30px;">   <!-- Emoji -->
-                <col style="width: 102px;">  <!-- Username -->
-                <col style="width: 44px;">   <!-- TH -->
-                <col style="width: 84px;">   <!-- Trophies -->
-                <col style="width: 98px;">   <!-- War Stars -->
-                <col style="width: 58px;">   <!-- XP -->
-                <col style="width: 86px;">   <!-- Donated -->
-                <col style="width: 96px;">   <!-- Received -->
-              </colgroup>
-
-              <thead>
-                <tr>
-                  <th class="m-emoji" style="text-align:right;"></th>
-                  <th style="text-align:left;"></th>
-                  <th class="m-num">TH</th>
-                  <th class="m-num">Trophies</th>
-                  <th class="m-num">War Stars</th>
-                  <th class="m-num">XP</th>
-                  <th class="m-num">Donated</th>
-                  <th class="m-num">Received</th>
-                </tr>
-              </thead>
-              <tbody id="members-body">
-                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       `;
     }
@@ -889,31 +948,33 @@
     function renderRouteContent(route){
       if(route === "home") return renderHome();
       if(route === "cwl") return pageShellCards("CWL", "Coming Soon!");
-      if(route === "war") return pageShellCards("WAR", "Coming Soon!");
+      if(route === "war") return renderWarPage();
       if(route === "mystats") return pageShellCards("My Stats", "Coming Soon!");
       if(route === "more") return renderMore();
       return renderHome();
     }
 
-    // ===== Home data =====
+    // ===== Data endpoints =====
     const RAW_WAR_URL_BASE     = "./war.json";
     const RAW_CLAN_URL_BASE    = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE = "./members.json";
 
+    // ===== Interval buckets by route =====
     let homeIntervals = [];
+    let warIntervals  = [];
+    let moreIntervals = [];
+
+    function clearIntervals(arr){ arr.forEach(id => clearInterval(id)); arr.length = 0; }
+
     let warData = null;
     let warFetched = false;
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
+
     let clanStats = null;
     let membersData = null;
 
-    // separate interval bucket for More page timers
-    let moreIntervals = [];
-    function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
-    function clearMoreIntervals(){ moreIntervals.forEach(id => clearInterval(id)); moreIntervals = []; }
-
-    // Members sort state (initialize to ROLE)
+    // Members sort state
     let membersSortMode = "role";
 
     function pad(n){ return n.toString().padStart(2,"0"); }
@@ -943,9 +1004,20 @@
       const rounded = Math.round(v * 10) / 10;
       return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
     }
-    function isFullStars(stars, teamSize){ if(typeof stars !== "number" || typeof teamSize !== "number") return false; return stars === teamSize * 3; }
-    function isFullDestruction(pct){ if(typeof pct !== "number" || !isFinite(pct)) return false; return pct === 100; }
-    function winPctFromWLT(w, l, t){ const W=(w|0), L=(l|0), T=(t|0); const total=W+L+T; if(total<=0) return null; return (W + 0.5*T)/total; }
+    function isFullStars(stars, teamSize){
+      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
+      return stars === teamSize * 3;
+    }
+    function isFullDestruction(pct){
+      if(typeof pct !== "number" || !isFinite(pct)) return false;
+      return pct === 100;
+    }
+    function winPctFromWLT(w, l, t){
+      const W=(w|0), L=(l|0), T=(t|0);
+      const total=W+L+T;
+      if(total<=0) return null;
+      return (W + 0.5*T)/total;
+    }
     function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
     function fmtWLTWithPctObj(obj){
       if(!obj || typeof obj !== "object") return { text:"—", losses:null };
@@ -956,7 +1028,10 @@
       const pct=winPctFromWLT(w,l,t);
       return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
     }
-    function fmtWLTWithPctNums(w,l,t){ const pct=winPctFromWLT(w,l,t); return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) }; }
+    function fmtWLTWithPctNums(w,l,t){
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
+    }
     function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
 
     function setClass(id, className, on){
@@ -1087,6 +1162,24 @@
     }
 
     function renderClanStats(){
+      // Rankings/CWL can render on Home (or anywhere those IDs exist)
+      if(clanStats){
+        const r = clanStats.rankings || {};
+        const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
+        setRankingsVisibility(hasAnyRank);
+
+        if(hasAnyRank){
+          setText("rank-global-trophies", fmtTop200(r.globalTrophies));
+          setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
+        }
+
+        setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
+        setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
+      } else {
+        setRankingsVisibility(false);
+      }
+
+      // War record elements live on WAR route
       if(!document.getElementById("war-record")) return;
 
       setClass("war-record","record-green", false);
@@ -1094,44 +1187,30 @@
       setClass("war-last25","record-green", false);
       setClass("war-last50","record-green", false);
 
-      if(!clanStats){ setRankingsVisibility(false); return; }
+      if(!clanStats || !clanStats.war) return;
 
-      const r = clanStats.rankings || {};
-      const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
-      setRankingsVisibility(hasAnyRank);
+      const w = clanStats.war.wins ?? 0;
+      const l = clanStats.war.losses ?? 0;
+      const t = clanStats.war.ties ?? 0;
 
-      if(hasAnyRank){
-        setText("rank-global-trophies", fmtTop200(r.globalTrophies));
-        setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
-      }
+      const rec = fmtWLTWithPctNums(w,l,t);
+      setText("war-record", rec.text);
+      setClass("war-record", "record-green", hasNoLosses(rec.losses));
 
-      setText("cwl-league", (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—");
-      setText("cwl-finish", (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—");
+      setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
+      setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
 
-      if(clanStats.war){
-        const w = clanStats.war.wins ?? 0;
-        const l = clanStats.war.losses ?? 0;
-        const t = clanStats.war.ties ?? 0;
+      const l10 = fmtWLTWithPctObj(clanStats.war.last10);
+      const l25 = fmtWLTWithPctObj(clanStats.war.last25);
+      const l50 = fmtWLTWithPctObj(clanStats.war.last50);
 
-        const rec = fmtWLTWithPctNums(w,l,t);
-        setText("war-record", rec.text);
-        setClass("war-record", "record-green", hasNoLosses(rec.losses));
+      setText("war-last10", l10.text);
+      setText("war-last25", l25.text);
+      setText("war-last50", l50.text);
 
-        setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-        setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
-
-        const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-        const l25 = fmtWLTWithPctObj(clanStats.war.last25);
-        const l50 = fmtWLTWithPctObj(clanStats.war.last50);
-
-        setText("war-last10", l10.text);
-        setText("war-last25", l25.text);
-        setText("war-last50", l50.text);
-
-        setClass("war-last10","record-green", hasNoLosses(l10.losses));
-        setClass("war-last25","record-green", hasNoLosses(l25.losses));
-        setClass("war-last50","record-green", hasNoLosses(l50.losses));
-      }
+      setClass("war-last10","record-green", hasNoLosses(l10.losses));
+      setClass("war-last25","record-green", hasNoLosses(l25.losses));
+      setClass("war-last50","record-green", hasNoLosses(l50.losses));
     }
 
     // ===== Members =====
@@ -1195,7 +1274,6 @@
       return n > 0 ? n : 0;
     }
 
-    // Donated / Received
     function getDonations(m){
       let n = readIntAny(m, ["donations","troopsDonated","donated"]);
       if(n >= 0) return n;
@@ -1214,7 +1292,6 @@
 
     function roleRank(role){
       const r = String(role || "").toLowerCase();
-      // Priority: Leader/Co-Leader > Elder > Member
       if(r.includes("leader")) return 1;
       if(r === "elder" || r === "admin") return 2;
       return 3;
@@ -1355,7 +1432,7 @@
       renderMembers();
     }
 
-    // ===== Timers (used by BOTH Home and More) =====
+    // ===== Timers (More page) =====
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
       const diffToFriday = (5 - day + 7) % 7;
@@ -1401,26 +1478,31 @@
     }
 
     function startHomeDataLoop(){
-      clearHomeIntervals();
-      warFetched = false;
+      clearIntervals(homeIntervals);
 
       membersSortMode = "role";
 
-      fetchWarData();
       fetchClanStats();
       fetchMembersData();
 
-      homeIntervals.push(setInterval(() => {
-        updateWarTimerOnly(false, null);
-      }, 1000));
-
-      homeIntervals.push(setInterval(fetchWarData, 5*1000));
       homeIntervals.push(setInterval(fetchClanStats, 5*1000));
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
+    function startWarDataLoop(){
+      clearIntervals(warIntervals);
+      warFetched = false;
+
+      fetchWarData();
+      fetchClanStats();
+
+      warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
+      warIntervals.push(setInterval(fetchWarData, 5*1000));
+      warIntervals.push(setInterval(fetchClanStats, 5*1000));
+    }
+
     function startMoreTimers(){
-      clearMoreIntervals();
+      clearIntervals(moreIntervals);
       updateRecurringTimers();
       moreIntervals.push(setInterval(updateRecurringTimers, 1000));
     }
@@ -1445,13 +1527,17 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
-      if(route !== "home") clearHomeIntervals();
-      if(route !== "more") clearMoreIntervals();
+      // stop old loops
+      clearIntervals(homeIntervals);
+      clearIntervals(warIntervals);
+      clearIntervals(moreIntervals);
 
       app.innerHTML = renderRouteContent(route);
 
       if(route === "home") startHomeDataLoop();
+      if(route === "war")  startWarDataLoop();
       if(route === "more") startMoreTimers();
+      // CWL / My Stats placeholders: no loops needed
     }
 
     if(!location.hash) location.hash = "#/home";
