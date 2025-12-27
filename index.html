@@ -221,6 +221,26 @@
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.10);
     }
+    .members-legend .legend-line{
+      display:block;
+      white-space:nowrap;
+    }
+    .legend-strong-underline{
+      font-weight:800;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ✅ Sort label */
+    .members-sortlabel{
+      text-align:center;
+      font-size:12px;
+      font-weight:400;
+      letter-spacing:.03em;
+      opacity:.70;
+      margin: 6px 0 6px;
+      user-select:none;
+    }
 
     /* ✅ sort buttons (styled like nav buttons) */
     .members-sortbar{
@@ -233,7 +253,12 @@
       flex-wrap: nowrap;
       overflow-x:auto;
       -webkit-overflow-scrolling: touch;
+
+      /* desktop drag UX */
+      cursor: grab;
+      user-select: none;
     }
+    .members-sortbar.dragging{ cursor: grabbing; }
     .members-sortbar::-webkit-scrollbar{ display:none; }
 
     .sort-btn{
@@ -354,6 +379,11 @@
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
+    }
+    .m-user-name.m-leader{
+      font-weight:800;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     /* ✅ center all numeric columns (TH / trophies / war stars / XP) */
@@ -659,7 +689,7 @@
       return `
         <div class="cards">
           <main class="page" style="display:flex; flex-direction:column; align-items:center; flex:1; padding:12px 0 0;">
-            <p2 style="margin: 8px 0 14px;">In-Game Events</p2>
+            <h2 style="margin: 8px 0 14px;">In-Game Events</h2>
 
             <div style="width:100%; max-width:280px;">
               <div class="row">
@@ -795,12 +825,14 @@
 
           <div class="section-title">Members</div>
 
+          <!-- ✅ Clean legend format -->
           <div class="members-legend">
-            <strong>Key:</strong>
-            👑 <strong>Leader / Co-Leader</strong>
-            &nbsp;&nbsp;•&nbsp;&nbsp;
-            🛡️ <strong>Elder</strong>
+            <span class="legend-line">👑 <span class="legend-strong-underline">Leader</span> / Co-Leader</span>
+            <span class="legend-line">🛡️ Elder</span>
           </div>
+
+          <!-- ✅ subtle centered label -->
+          <div class="members-sortlabel">Sort by:</div>
 
           <!-- ✅ Sort buttons (styled like nav) -->
           <div class="members-sortbar" id="members-sortbar" aria-label="Sort members">
@@ -1108,6 +1140,10 @@
       return "";
     }
 
+    function isLeaderOnly(role){
+      return String(role || "").trim().toLowerCase() === "leader";
+    }
+
     function readIntAny(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
@@ -1164,9 +1200,67 @@
       });
     }
 
+    // ✅ Desktop/Web: click+drag to scroll sort filters (PWA/mobile unaffected)
+    function enableDragScroll(el){
+      if(!el) return;
+      if(el.dataset.dragscroll === "1") return;
+
+      // only enable for non-PWA + desktop pointer
+      const isDesktopPointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+      if(isPwaInstalled() || !isDesktopPointer){
+        el.style.cursor = "";
+        el.dataset.dragscroll = "1";
+        return;
+      }
+
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+
+      const onDown = (e) => {
+        // Don't start drag if clicking a button
+        const btn = e.target.closest && e.target.closest(".sort-btn");
+        if(btn) return;
+
+        isDown = true;
+        el.classList.add("dragging");
+        startX = e.pageX;
+        scrollLeft = el.scrollLeft;
+        e.preventDefault();
+      };
+
+      const onMove = (e) => {
+        if(!isDown) return;
+        const dx = (e.pageX - startX);
+        el.scrollLeft = scrollLeft - dx;
+      };
+
+      const onUp = () => {
+        isDown = false;
+        el.classList.remove("dragging");
+      };
+
+      el.addEventListener("mousedown", onDown);
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+
+      // allow wheel to scroll horizontally on desktop
+      el.addEventListener("wheel", (e) => {
+        // if the user scrolls vertically over the bar, translate to horizontal
+        if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){
+          el.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }, { passive:false });
+
+      el.dataset.dragscroll = "1";
+    }
+
     function ensureSortButtonsBound(){
       const bar = document.getElementById("members-sortbar");
       if(!bar) return;
+      enableDragScroll(bar);
+
       if(bar.dataset.bound === "1") return;
 
       bar.addEventListener("click", (e) => {
@@ -1210,7 +1304,6 @@
         const ha = getThLevel(a), hb = getThLevel(b);
         const ra = roleRank(a.role), rb = roleRank(b.role);
 
-        // ✅ Sorting logic per your rules:
         // Role: Role > Trophy > XP
         if(membersSortMode === "role"){
           if(ra !== rb) return ra - rb;
@@ -1219,11 +1312,11 @@
           return compareName(a,b);
         }
 
-        // TH: TH > Trophies > XP (no explicit tie rules given; this keeps it sensible)
+        // ✅ TH: TH level > XP > War Stars (your requested tiebreakers)
         if(membersSortMode === "th"){
           if(hb !== ha) return hb - ha;
-          if(tb !== ta) return tb - ta;
           if(xb !== xa) return xb - xa;
+          if(wb !== wa) return wb - wa;
           return compareName(a,b);
         }
 
@@ -1250,7 +1343,7 @@
           return compareName(a,b);
         }
 
-        // fallback (shouldn't hit)
+        // fallback
         if(tb !== ta) return tb - ta;
         if(xb !== xa) return xb - xa;
         return compareName(a,b);
@@ -1264,10 +1357,12 @@
         const warStars = getWarStars(m);
         const xp = getXP(m);
 
+        const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
+
         return `
           <tr>
             <td class="m-emoji">${badge || ""}</td>
-            <td><span class="m-user-name">${name}</span></td>
+            <td><span class="m-user-name ${leaderClass}">${name}</span></td>
             <td class="m-num">${th ? th : "—"}</td>
             <td class="m-num">${trophies ? trophies : 0}</td>
             <td class="m-num">${warStars ? warStars : 0}</td>
@@ -1337,7 +1432,7 @@
       clearHomeIntervals();
       warFetched = false;
 
-      // ✅ initialize to ROLE sorting every time Home loads
+      // initialize to ROLE sorting every time Home loads
       membersSortMode = "role";
 
       fetchWarData();
@@ -1354,7 +1449,7 @@
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
     }
 
-    // ✅ More: only needs the in-game timers, tick every second
+    // More: only needs the in-game timers, tick every second
     function startMoreTimers(){
       clearMoreIntervals();
       updateRecurringTimers();
@@ -1381,7 +1476,6 @@
       applyPwaImageIconStates(route);
       setDocTitle(route);
 
-      // stop loops that don't apply
       if(route !== "home") clearHomeIntervals();
       if(route !== "more") clearMoreIntervals();
 
