@@ -210,75 +210,61 @@
     /* =========================
        MEMBERS (sticky header + sticky left columns)
        ========================= */
-    .members-legend{
+
+    /* Controls: Key (left) + Sort dropdown (right) in SAME box */
+    .members-controls{
       font-size:12px;
       opacity:.9;
-      text-align:center;
       margin:2px 0 10px;
       line-height:1.35;
-      padding:8px 10px;
+      padding:10px 12px;
       border-radius:10px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.10);
-    }
-    .members-legend .legend-line{
-      display:block;
-      white-space:nowrap;
-    }
-    .legend-strong-underline{
-      font-weight:800;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
 
-    /* ✅ Sort label */
-    .members-sortlabel{
-      text-align:center;
-      font-size:12px;
-      font-weight:400;
-      letter-spacing:.03em;
-      opacity:.70;
-      margin: 6px 0 6px;
-      user-select:none;
-    }
-
-    /* ✅ sort buttons (styled like nav buttons) */
-    .members-sortbar{
-      width:100%;
       display:flex;
-      justify-content:center;
-      gap:10px;
-      padding:6px 2px 8px;
-      box-sizing:border-box;
-      flex-wrap: nowrap;
-      overflow-x:auto;
-      -webkit-overflow-scrolling: touch;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
 
-      /* desktop drag UX */
-      cursor: grab;
-      user-select: none;
+      text-align:left; /* key is left aligned */
     }
-    .members-sortbar.dragging{ cursor: grabbing; }
-    .members-sortbar::-webkit-scrollbar{ display:none; }
 
-    .sort-btn{
-      flex: 0 0 auto;
-      appearance:none;
-      border:1px solid rgba(255,255,255,0.10);
+    .members-key{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .legend-underline{
+      text-decoration: underline;     /* underline only */
+      text-underline-offset: 2px;
+      font-weight: 400;              /* NOT bold */
+    }
+
+    .members-sort{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      min-width:150px;
+    }
+    .members-sort label{
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.70;
+    }
+    .members-sort select{
+      width:100%;
       background: rgba(255,255,255,0.04);
       color:#fff;
-      opacity:0.82;
-      font-size:13px;
-      padding:8px 12px;
+      border:1px solid rgba(255,255,255,0.10);
       border-radius:999px;
-      white-space:nowrap;
-      cursor:pointer;
-    }
-    .sort-btn.active{
-      opacity:1;
-      font-weight:700;
-      border-color: rgba(255,255,255,0.22);
-      background: rgba(255,255,255,0.08);
+      padding:8px 12px;
+      font-size:13px;
+      outline:none;
+      appearance:none;
+      -webkit-appearance:none;
     }
 
     /* subtle scroll hint */
@@ -360,7 +346,7 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
-    /* ✅ Emoji column: NEVER ellipsize (prevents “..” / “…” look) */
+    /* Emoji column: NEVER ellipsize */
     .members-table td.m-emoji,
     .members-table th.m-emoji{
       overflow: visible !important;
@@ -380,13 +366,15 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+
+    /* Leader row underline ONLY (no bold) */
     .m-user-name.m-leader{
-      font-weight:800;
+      font-weight:400;
       text-decoration: underline;
       text-underline-offset: 2px;
     }
 
-    /* ✅ center all numeric columns (TH / trophies / war stars / XP) */
+    /* center all numeric columns (TH / trophies / war stars / XP) */
     .m-num{
       font-family: monospace;
       text-align:center;
@@ -684,7 +672,7 @@
       `);
     }
 
-    // ✅ MORE now shows In-Game Events at the top (replaces "More")
+    // MORE: In-Game Events at top
     function renderMore(){
       return `
         <div class="cards">
@@ -727,7 +715,7 @@
       `;
     }
 
-    // ✅ HOME removed the In-Game Events section
+    // HOME (no In-Game Events section)
     function renderHome(){
       return `
         <div class="cards">
@@ -825,22 +813,23 @@
 
           <div class="section-title">Members</div>
 
-          <!-- ✅ Clean legend format -->
-          <div class="members-legend">
-            <span class="legend-line">👑 <span class="legend-strong-underline">Leader</span> / Co-Leader</span>
-            <span class="legend-line">🛡️ Elder</span>
-          </div>
+          <!-- Key (left) + Sort dropdown (right) in the SAME box -->
+          <div class="members-controls">
+            <div class="members-key">
+              <div>👑 <span class="legend-underline">Leader</span> / Co-Leader</div>
+              <div>🛡️ Elder</div>
+            </div>
 
-          <!-- ✅ subtle centered label -->
-          <div class="members-sortlabel">Sort by:</div>
-
-          <!-- ✅ Sort buttons (styled like nav) -->
-          <div class="members-sortbar" id="members-sortbar" aria-label="Sort members">
-            <button class="sort-btn" data-sort="role" type="button">Role</button>
-            <button class="sort-btn" data-sort="th" type="button">TH</button>
-            <button class="sort-btn" data-sort="trophies" type="button">Trophies</button>
-            <button class="sort-btn" data-sort="warStars" type="button">War Stars</button>
-            <button class="sort-btn" data-sort="xp" type="button">XP</button>
+            <div class="members-sort">
+              <label for="membersSortSelect">Sort by</label>
+              <select id="membersSortSelect">
+                <option value="role">Role</option>
+                <option value="th">TH</option>
+                <option value="trophies">Trophies</option>
+                <option value="warStars">War Stars</option>
+                <option value="xp">XP</option>
+              </select>
+            </div>
           </div>
 
           <div class="members-scrollhint"><p>← SCROLL / SWIPE FOR MORE →</p></div>
@@ -897,12 +886,12 @@
     let clanStats = null;
     let membersData = null;
 
-    // ✅ separate interval bucket for More page timers
+    // separate interval bucket for More page timers
     let moreIntervals = [];
     function clearHomeIntervals(){ homeIntervals.forEach(id => clearInterval(id)); homeIntervals = []; }
     function clearMoreIntervals(){ moreIntervals.forEach(id => clearInterval(id)); moreIntervals = []; }
 
-    // ✅ Members sort state (initialize to ROLE as requested)
+    // Members sort state (initialize to ROLE)
     let membersSortMode = "role";
 
     function pad(n){ return n.toString().padStart(2,"0"); }
@@ -1192,99 +1181,29 @@
       return 3;
     }
 
-    function setSortButtonActive(mode){
-      const bar = document.getElementById("members-sortbar");
-      if(!bar) return;
-      bar.querySelectorAll(".sort-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.getAttribute("data-sort") === mode);
-      });
-    }
-
-    // ✅ Desktop/Web: click+drag to scroll sort filters (PWA/mobile unaffected)
-    function enableDragScroll(el){
-      if(!el) return;
-      if(el.dataset.dragscroll === "1") return;
-
-      // only enable for non-PWA + desktop pointer
-      const isDesktopPointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
-      if(isPwaInstalled() || !isDesktopPointer){
-        el.style.cursor = "";
-        el.dataset.dragscroll = "1";
-        return;
-      }
-
-      let isDown = false;
-      let startX = 0;
-      let scrollLeft = 0;
-
-      const onDown = (e) => {
-        // Don't start drag if clicking a button
-        const btn = e.target.closest && e.target.closest(".sort-btn");
-        if(btn) return;
-
-        isDown = true;
-        el.classList.add("dragging");
-        startX = e.pageX;
-        scrollLeft = el.scrollLeft;
-        e.preventDefault();
-      };
-
-      const onMove = (e) => {
-        if(!isDown) return;
-        const dx = (e.pageX - startX);
-        el.scrollLeft = scrollLeft - dx;
-      };
-
-      const onUp = () => {
-        isDown = false;
-        el.classList.remove("dragging");
-      };
-
-      el.addEventListener("mousedown", onDown);
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-
-      // allow wheel to scroll horizontally on desktop
-      el.addEventListener("wheel", (e) => {
-        // if the user scrolls vertically over the bar, translate to horizontal
-        if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){
-          el.scrollLeft += e.deltaY;
-          e.preventDefault();
-        }
-      }, { passive:false });
-
-      el.dataset.dragscroll = "1";
-    }
-
-    function ensureSortButtonsBound(){
-      const bar = document.getElementById("members-sortbar");
-      if(!bar) return;
-      enableDragScroll(bar);
-
-      if(bar.dataset.bound === "1") return;
-
-      bar.addEventListener("click", (e) => {
-        const btn = e.target.closest(".sort-btn");
-        if(!btn) return;
-        const mode = btn.getAttribute("data-sort") || "role";
-        membersSortMode = mode;
-        setSortButtonActive(membersSortMode);
-        renderMembers();
-      });
-
-      bar.dataset.bound = "1";
-    }
-
     function compareName(a,b){
       return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+    }
+
+    function ensureSortDropdownBound(){
+      const sel = document.getElementById("membersSortSelect");
+      if(!sel) return;
+
+      sel.value = membersSortMode;
+
+      if(sel.dataset.bound === "1") return;
+      sel.addEventListener("change", () => {
+        membersSortMode = sel.value || "role";
+        renderMembers();
+      });
+      sel.dataset.bound = "1";
     }
 
     function renderMembers(){
       const tbody = document.getElementById("members-body");
       if(!tbody) return;
 
-      ensureSortButtonsBound();
-      setSortButtonActive(membersSortMode);
+      ensureSortDropdownBound();
 
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
 
@@ -1312,7 +1231,7 @@
           return compareName(a,b);
         }
 
-        // ✅ TH: TH level > XP > War Stars (your requested tiebreakers)
+        // TH: TH level > XP > War Stars
         if(membersSortMode === "th"){
           if(hb !== ha) return hb - ha;
           if(xb !== xa) return xb - xa;
