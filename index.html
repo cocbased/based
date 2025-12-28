@@ -224,43 +224,36 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       MEMBERS (sticky header + sticky left columns)
+       MEMBERS (match screenshot layout)
        ========================= */
 
-    /* Key + Sort (NO BOX) */
-    .members-controls{
-      font-size:12px;
-      opacity:.9;
-      margin:2px 0 8px;
-      line-height:1.35;
-
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-
-      text-align:left;
+    /* One header row: left legend, centered scroll text, right SORT button */
+    .members-headerbar{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:end; /* drops legend down to match the scroll line */
+      gap: 12px;
+      margin: 0 0 8px;
     }
 
-    /* Key stacked: Leader/Co on top, Elder underneath */
-    .members-key{
+    /* Left legend aligned exactly to table columns */
+    .members-legend{
+      justify-self:start;
+      text-align:left;
+      padding-left: 10px; /* matches table cell left padding */
       display:flex;
       flex-direction:column;
       gap:6px;
+      transform: translateY(2px); /* tiny drop to match screenshot */
     }
 
-    /* Key lines aligned to table's emoji + username columns */
+    /* Emoji column width matches table emoji column; text starts where username starts */
     .members-keyline{
       display:grid;
       grid-template-columns: var(--m-emoji-col) auto;
       align-items:center;
       column-gap: 10px;
       white-space: nowrap;
-    }
-    .legend-underline{
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      font-weight: 400;
     }
     .key-emoji{
       width: var(--m-emoji-col);
@@ -272,67 +265,73 @@
       font-size:12px;
       line-height: 1.2;
     }
-
-    /* filter box 70% size + centered options */
-    .members-sort{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:6px;
-      width:70%;
-      max-width:160px;
-      min-width:120px;
-    }
-    .members-sort label{
-      font-size:11px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      opacity:.70;
-      text-align:center;
-      width:100%;
-    }
-    .members-sort select{
-      width:100%;
-      background: rgba(255,255,255,0.06);
-      color:#fff;
-      border:1px solid rgba(255,255,255,0.10);
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:13px;
-      outline:none;
-      appearance:none;
-      -webkit-appearance:none;
-      text-align:center;
-      text-align-last:center;
-    }
-    .members-sort select option{
-      background:#0b1829;
-      color:#fff;
+    .legend-underline{
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-weight: 400;
     }
 
-    /* ✅ Scroll hint (NOT boxed + closer to table) */
-    .members-scroll-hint{
-      position: sticky;
-      top: 0;
-      z-index: 6;
-      display:block;
+    /* Center scroll/swipe text (same line as legend bottom edge) */
+    .members-scroll-inline{
+      justify-self:center;
+      align-self:end;
       text-align:center;
       font-size:10px;
       letter-spacing:.03em;
       opacity:.78;
-      padding:4px 0;
-      margin: 0 0 4px;
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
       white-space: nowrap;
+      padding-bottom: 2px;
     }
 
+    /* Right SORT button centered between the two legend rows */
+    .members-sortbtn-wrap{
+      justify-self:end;
+      align-self:center; /* centers between the 2 legend rows */
+      padding-right: 4px;
+    }
+
+    /* Button look */
+    .sort-btn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 160px;
+      height: 34px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.06);
+      color:#fff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Invisible select overlay so native picker opens, while UI still says SORT */
+    .sort-btn select{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      opacity:0;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+
+    .sort-btn select option{
+      background:#0b1829;
+      color:#fff;
+    }
+
+    /* Table wrapper */
     .members-wrap{
       width:100%;
-      margin-top:4px;
+      margin-top:2px;
 
       overflow-x:auto;
       overflow-y:visible;
@@ -760,14 +759,11 @@
         });
       }
 
-      // Passive scroll listener for iOS smoothness
       window.addEventListener("scroll", onScroll, { passive:true });
 
-      // If user taps near bottom, show it (feels natural)
-      window.addEventListener("touchstart", (e) => {
+      window.addEventListener("touchstart", () => {
         const tabbarNow = document.getElementById("pwaTabbar");
         if(!tabbarNow) return;
-        // If currently hidden, a touch anywhere shows it (fast)
         if(tabbarNow.classList.contains("is-hidden")) setPwaTabHidden(false);
       }, { passive:true });
     }
@@ -782,7 +778,6 @@
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
 
-        // ✅ ensure auto-hide is active + starts visible
         initPwaTabbarAutoHide();
         setPwaTabHidden(false);
 
@@ -906,13 +901,14 @@
             <span id="capital-hall-level" class="row-value">Loading…</span>
           </div>
 
-          <!-- ✅ Keep only this divider above Members -->
           <div class="divider"></div>
 
-          <div class="section-title">Members</div>
+          <!-- ✅ MEMBERS title matches Clan Overview font specs -->
+          <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
 
-          <div class="members-controls">
-            <div class="members-key" aria-label="Members key">
+          <!-- ✅ Header bar layout matches screenshot -->
+          <div class="members-headerbar" aria-label="Members header controls">
+            <div class="members-legend" aria-label="Members key">
               <div class="members-keyline">
                 <span class="key-emoji">👑</span>
                 <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
@@ -923,21 +919,23 @@
               </div>
             </div>
 
-            <div class="members-sort">
-              <label for="membersSortSelect">Sort by</label>
-              <select id="membersSortSelect">
-                <option value="role">Role</option>
-                <option value="th">TH</option>
-                <option value="trophies">Trophies</option>
-                <option value="warStars">War Stars</option>
-                <option value="xp">XP</option>
-                <option value="donated">Donated</option>
-                <option value="received">Received</option>
-              </select>
+            <div class="members-scroll-inline">← SCROLL / SWIPE FOR MORE →</div>
+
+            <div class="members-sortbtn-wrap">
+              <div class="sort-btn">
+                SORT
+                <select id="membersSortSelect" aria-label="Sort members">
+                  <option value="role">Role</option>
+                  <option value="th">TH</option>
+                  <option value="trophies">Trophies</option>
+                  <option value="warStars">War Stars</option>
+                  <option value="xp">XP</option>
+                  <option value="donated">Donated</option>
+                  <option value="received">Received</option>
+                </select>
+              </div>
             </div>
           </div>
-
-          <div class="members-scroll-hint">← SCROLL / SWIPE FOR MORE →</div>
 
           <div class="members-wrap" aria-label="Clan members list">
             <table class="members-table">
@@ -1042,7 +1040,7 @@
                   <span id="war-stars-us">—</span> <span>⭐</span>
                 </div>
                 <div class="war-substat">
-                  <span id="war-destr-us">—</span <span>🎯</span>
+                  <span id="war-destr-us">—</span> <span>🎯</span>
                 </div>
                 <div class="war-substat">
                   <span id="war-attacks-us">—</span> <span>⚔️</span>
