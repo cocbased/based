@@ -173,7 +173,7 @@
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
 
-    /* ✅ Centered clan description block */
+    /* Centered clan description block */
     .clan-desc-block{
       text-align:center;
       white-space: pre-line;
@@ -224,12 +224,8 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       MEMBERS (simpler: key left-justified)
-       Layout:
-         Row 1: [Leader/Co] (left)
-         Row 2: [Elder] (left) | [← SCROLL →] (center) | [SORT] (right)
+       MEMBERS header (key left-justified)
        ========================= */
-
     .members-headerbar{
       background: transparent;
       border: none;
@@ -256,7 +252,6 @@
       justify-self:start;
     }
 
-    /* Left-justified key lines */
     .members-keyline{
       display:flex;
       align-items:center;
@@ -338,7 +333,7 @@
       color:#fff;
     }
 
-    /* Table wrapper */
+    /* Members table wrapper */
     .members-wrap{
       width:100%;
       margin-top:2px;
@@ -405,7 +400,6 @@
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
 
-    /* Emoji column: NEVER ellipsize */
     .members-table td.m-emoji,
     .members-table th.m-emoji{
       overflow: visible !important;
@@ -426,14 +420,12 @@
       white-space:nowrap;
     }
 
-    /* Leader row underline ONLY (no bold) */
     .m-user-name.m-leader{
       font-weight:400;
       text-decoration: underline;
       text-underline-offset: 2px;
     }
 
-    /* center all numeric columns */
     .m-num{
       font-family: monospace;
       text-align:center;
@@ -617,28 +609,24 @@
           <span class="label">Home</span>
         </div>
       </a>
-
       <a href="#/cwl" data-route="cwl" data-img-key="cwl">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">CWL</span>
         </div>
       </a>
-
       <a href="#/war" data-route="war" data-img-key="war">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">War</span>
         </div>
       </a>
-
       <a href="#/my-stats" data-route="mystats" data-img-key="my-stats">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
           <span class="label">My Stats</span>
         </div>
       </a>
-
       <a href="#/more" data-route="more" data-img-key="more">
         <div class="tab-inner">
           <span class="icon" aria-hidden="true"><img alt="" /></span>
@@ -908,7 +896,6 @@
 
           <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
 
-          <!-- Header -->
           <div class="members-headerbar" aria-label="Members header controls">
             <div class="members-leaderline">
               <div class="members-keyline">
@@ -980,7 +967,6 @@
       `;
     }
 
-    // CWL page
     function renderCwlPage(){
       return `
         <div class="cards">
@@ -1005,11 +991,11 @@
       `;
     }
 
-    // WAR page
     function renderWarPage(){
       return `
         <div class="cards">
           <div class="section-title">War</div>
+
           <div class="row">
             <span class="row-label">War Record</span>
             <span id="war-record" class="row-value">Loading…</span>
@@ -1093,7 +1079,6 @@
     let homeIntervals = [];
     let warIntervals  = [];
     let moreIntervals = [];
-
     function clearIntervals(arr){ arr.forEach(id => clearInterval(id)); arr.length = 0; }
 
     let warData = null;
@@ -1124,7 +1109,25 @@
       const block = document.getElementById("rankings-block");
       if(block) block.style.display = show ? "block" : "none";
     }
+    function setWarVsVisibility(show){
+      const vs = document.getElementById("war-vs");
+      if(vs) vs.style.display = show ? "block" : "none";
+    }
+
     function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
+    function fmtPct(v){
+      if(typeof v !== "number" || !isFinite(v)) return "—";
+      const rounded = Math.round(v * 10) / 10;
+      return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
+    }
+    function isFullStars(stars, teamSize){
+      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
+      return stars === teamSize * 3;
+    }
+    function isFullDestruction(pct){
+      if(typeof pct !== "number" || !isFinite(pct)) return false;
+      return pct === 100;
+    }
 
     function winPctFromWLT(w, l, t){
       const W=(w|0), L=(l|0), T=(t|0);
@@ -1154,12 +1157,132 @@
       el.classList.toggle(className, !!on);
     }
 
+    function resetWarHighlights(){
+      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false));
+    }
+
+    function loadLastWarSnapshot(){
+      try{
+        const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(obj && typeof obj === "object" && obj.state && obj.state !== "notInWar") return obj;
+      } catch(e){}
+      return null;
+    }
+    function saveLastWarSnapshot(w){
+      try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
+    }
+    lastWarSnapshot = loadLastWarSnapshot();
+
+    async function fetchWarData(){
+      try{
+        const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        warData = res.ok ? await res.json() : null;
+
+        if(warData && warData.state && warData.state !== "notInWar"){
+          lastWarSnapshot = warData;
+          saveLastWarSnapshot(warData);
+        }
+      } catch(e){
+        warData = null;
+      }
+      warFetched = true;
+      renderWarSection();
+    }
+
+    function updateWarTimerOnly(isPrevious, displayOverride){
+      const warElem = document.getElementById("war-timer");
+      if(!warElem) return;
+
+      const src = displayOverride || warData;
+      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
+      if(isPrevious){ warElem.textContent="Previous war ended"; return; }
+      if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
+
+      const end = new Date(src.warEndIso);
+      const now = new Date();
+      if(isNaN(end.getTime())) warElem.textContent="No war started";
+      else if(now >= end) warElem.textContent="War ended";
+      else warElem.textContent = formatCountdown(end - now);
+    }
+
+    function renderWarSection(){
+      if(!document.getElementById("war-timer")) return;
+
+      resetWarHighlights();
+      setWarVsVisibility(false);
+
+      if(!warFetched){ setText("war-timer","Loading…"); return; }
+
+      let display = warData;
+      if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
+
+      if(!display || !display.state){ setText("war-timer","Waiting…"); return; }
+
+      if(display.state === "notInWar"){
+        setText("war-timer","No war started");
+        setText("war-name-us","—"); setText("war-name-opp","—");
+        setText("war-stars-us","—"); setText("war-stars-opp","—");
+        setText("war-destr-us","—"); setText("war-destr-opp","—");
+        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
+        return;
+      }
+
+      const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
+      setWarVsVisibility(true);
+
+      setText("war-name-us",(display.ourName || "US"));
+      setText("war-name-opp",(display.oppName || "OPPONENT"));
+
+      const teamSize = (typeof display.teamSize === "number") ? display.teamSize : null;
+      const maxStars = teamSize ? teamSize * 3 : null;
+
+      const ourStars = (typeof display.ourStars === "number") ? display.ourStars : 0;
+      const oppStars = (typeof display.oppStars === "number") ? display.oppStars : 0;
+
+      setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
+      setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
+
+      const ourDestr =
+        (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
+        (typeof display.ourDestruction === "number") ? display.ourDestruction : null;
+
+      const oppDestr =
+        (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
+        (typeof display.oppDestruction === "number") ? display.oppDestruction : null;
+
+      setText("war-destr-us", fmtPct(ourDestr));
+      setText("war-destr-opp", fmtPct(oppDestr));
+
+      if(teamSize && typeof display.ourAttacksUsed === "number" && typeof display.oppAttacksUsed === "number"){
+        const total = teamSize * 2;
+        const ourUsed = Math.max(0, Math.min(total, display.ourAttacksUsed));
+        const oppUsed = Math.max(0, Math.min(total, display.oppAttacksUsed));
+        setText("war-attacks-us", `${ourUsed}/${total}`);
+        setText("war-attacks-opp", `${oppUsed}/${total}`);
+      } else {
+        setText("war-attacks-us","Updating…");
+        setText("war-attacks-opp","Updating…");
+      }
+
+      setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
+      setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
+      setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
+      setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
+
+      updateWarTimerOnly(showingPrevious, display);
+    }
+
     async function fetchClanStats(){
       try{
         const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
         clanStats = res.ok ? await res.json() : null;
-      } catch(e){ clanStats = null; }
+      } catch(e){
+        clanStats = null;
+      }
       renderClanStats();
     }
 
@@ -1179,6 +1302,7 @@
           setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
         }
 
+        // Description
         {
           const el = document.getElementById("clan-desc");
           if(el){
@@ -1192,6 +1316,7 @@
           }
         }
 
+        // CWL values (Home + CWL page)
         const cwlLeague = (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—";
         const cwlFinish = (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—";
         setText("cwl-league", cwlLeague);
@@ -1199,6 +1324,7 @@
         setText("cwl-league-cwlpage", cwlLeague);
         setText("cwl-finish-cwlpage", cwlFinish);
 
+        // Capital Hall
         const hall = pickCapitalHallLevel(clanStats);
         setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
 
@@ -1212,11 +1338,9 @@
         setText("capital-hall-level","—");
       }
 
+      // WAR page bindings
       if(document.getElementById("war-record")){
-        setClass("war-record","record-green", false);
-        setClass("war-last10","record-green", false);
-        setClass("war-last25","record-green", false);
-        setClass("war-last50","record-green", false);
+        ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
 
         if(clanStats && clanStats.war){
           const w = clanStats.war.wins ?? 0;
@@ -1244,6 +1368,7 @@
         }
       }
 
+      // HOME war summary bindings
       if(document.getElementById("home-war-record")){
         setClass("home-war-record","record-green", false);
         setClass("home-war-last10","record-green", false);
@@ -1406,35 +1531,41 @@
           if(xb !== xa) return xb - xa;
           return compareName(a,b);
         }
+
         if(membersSortMode === "th"){
           if(hb !== ha) return hb - ha;
           if(xb !== xa) return xb - xa;
           if(wb !== wa) return wb - wa;
           return compareName(a,b);
         }
+
         if(membersSortMode === "trophies"){
           if(tb !== ta) return tb - ta;
           if(xb !== xa) return xb - xa;
           return compareName(a,b);
         }
+
         if(membersSortMode === "warStars"){
           if(wb !== wa) return wb - wa;
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           return compareName(a,b);
         }
+
         if(membersSortMode === "xp"){
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           if(hb !== ha) return hb - ha;
           return compareName(a,b);
         }
+
         if(membersSortMode === "donated"){
           if(db !== da) return db - da;
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           return compareName(a,b);
         }
+
         if(membersSortMode === "received"){
           if(rxb !== rxa) return rxb - rxa;
           if(xb !== xa) return xb - xa;
@@ -1485,13 +1616,78 @@
       renderMembers();
     }
 
+    // ===== Timers (More page) =====
+    function getNextRaidWeekendEnd(now){
+      const day = now.getUTCDay();
+      const diffToFriday = (5 - day + 7) % 7;
+      let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
+      let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
+      if(now > mondayEnd){
+        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
+        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      }
+      return mondayEnd;
+    }
+    function getNextClanGamesEnd(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      const start = makeUTC(y,m,22,8);
+      const end   = makeUTC(y,m,28,8);
+      if(now < start) return end;
+      if(now <= end) return end;
+      const nextMonth = new Date(Date.UTC(y, m+1, 1));
+      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
+    }
+    function getNextSeasonEnd(now){ return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8); }
+    function getNextLeagueReset(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      let first = makeUTC(y,m,1,5);
+      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
+      let reset = makeUTC(y,m,1+diffToMonday,5);
+      if(now > reset){
+        const nm = new Date(Date.UTC(y, m+1, 1));
+        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
+        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
+        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
+      }
+      return reset;
+    }
+    function updateRecurringTimers(){
+      if(!document.getElementById("raid-timer")) return;
+      const now = new Date();
+      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
+    }
+
     function startHomeDataLoop(){
       clearIntervals(homeIntervals);
       membersSortMode = "role";
+
       fetchClanStats();
       fetchMembersData();
+
       homeIntervals.push(setInterval(fetchClanStats, 5*1000));
       homeIntervals.push(setInterval(fetchMembersData, 10*1000));
+    }
+
+    function startWarDataLoop(){
+      clearIntervals(warIntervals);
+      warFetched = false;
+
+      fetchClanStats();   // ✅ drives war record + streaks
+      fetchWarData();     // ✅ drives current war box
+
+      warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
+      warIntervals.push(setInterval(fetchWarData, 5*1000));
+      warIntervals.push(setInterval(fetchClanStats, 5*1000));
+    }
+
+    function startMoreTimers(){
+      clearIntervals(moreIntervals);
+      updateRecurringTimers();
+      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
     }
 
     // ===== Router + tab UI =====
@@ -1518,9 +1714,14 @@
       clearIntervals(warIntervals);
       clearIntervals(moreIntervals);
 
+      if(isPwaInstalled()) setPwaTabHidden(false);
+
       app.innerHTML = renderRouteContent(route);
 
       if(route === "home") startHomeDataLoop();
+      if(route === "war")  startWarDataLoop();
+      if(route === "more") startMoreTimers();
+
       if(route === "cwl"){
         fetchClanStats();
         homeIntervals.push(setInterval(fetchClanStats, 5*1000));
