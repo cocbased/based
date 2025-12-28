@@ -272,27 +272,34 @@
       font-weight: 400;
     }
 
-    .members-scroll-inline{
-      grid-column: 2 / 3;
+     .members-scroll-inline{
+      grid-column: 1 / -1;     /* span full width */
       grid-row: 2 / 3;
-      justify-self:center;
+
+      display:flex;
+      justify-content:center;
 
       text-align:center;
       font-size:10px;
       letter-spacing:.03em;
       opacity:.78;
       white-space: nowrap;
+
       line-height: 1;
       padding: 0;
       margin: 0;
+
+      pointer-events:none;
     }
+
 
     .members-sortbtn-wrap{
       grid-column: 3 / 4;
-      grid-row: 2 / 3;
+      grid-row: 1 / 3;        /* span both rows */
       justify-self:end;
-      align-self:center;
+      align-self:center;     /* true vertical centering */
     }
+
 
     .sort-btn{
       position:relative;
@@ -300,16 +307,16 @@
       align-items:center;
       justify-content:center;
 
-      min-width: 96px;
+      min-width: 58px;        /* ~60% of previous width */
       height: 36px;
-      padding: 0 14px;
+      padding: 0 10px;        /* tighter horizontal padding */
 
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.06);
       color:#fff;
 
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
@@ -317,6 +324,7 @@
       user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
+
 
     .sort-btn select{
       position:absolute;
@@ -899,7 +907,7 @@
           <div class="members-headerbar" aria-label="Members header controls">
             <div class="members-leaderline">
               <div class="members-keyline">
-                <span class="key-emoji">👑</span>
+                <span class="key-emoji">&nbsp;&nbsp;👑</span>
                 <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
               </div>
             </div>
@@ -909,7 +917,7 @@
 
             <div class="members-elderline">
               <div class="members-keyline">
-                <span class="key-emoji">🛡️</span>
+                <span class="key-emoji">&nbsp;&nbsp;🛡️</span>
                 <span class="key-text">Elder</span>
               </div>
             </div>
