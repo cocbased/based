@@ -225,10 +225,11 @@
 
     /* =========================
        WAR CHART (Spreadsheet-style)
+       ✅ Attacks column removed
+       ✅ Target column removed (targets appear next to name)
+       ✅ Player column 60% width (220px -> 132px)
        ========================= */
-    .war-chart-wrap{
-      margin-top: 12px;
-    }
+    .war-chart-wrap{ margin-top: 12px; }
 
     .war-chart-title{
       margin: 10px 0 6px;
@@ -246,10 +247,7 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
-
-    .war-chart-block + .war-chart-block{
-      margin-top: 10px;
-    }
+    .war-chart-block + .war-chart-block{ margin-top: 10px; }
 
     .war-chart-head{
       display:flex;
@@ -275,8 +273,7 @@
     }
 
     .war-dot{
-      width:10px;
-      height:10px;
+      width:10px; height:10px;
       border-radius: 999px;
       background: rgba(255,255,255,0.85);
       box-shadow: 0 0 0 3px rgba(255,255,255,0.10);
@@ -295,13 +292,15 @@
     }
 
     .war-sheet{
-      min-width: 860px; /* forces spreadsheet feel */
+      min-width: 760px;
       width: 100%;
     }
 
+    /* NEW GRID (6 columns):
+       # | Player | Defender | % | Stars | Total */
     .war-sheet-row{
       display:grid;
-      grid-template-columns: 42px 220px 82px 82px 220px 78px 120px 74px;
+      grid-template-columns: 42px 132px 260px 78px 120px 74px;
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
@@ -344,10 +343,30 @@
       overflow:hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width: 0;
     }
     .war-player .role{
       font-size: 12px;
       opacity: .70;
+    }
+
+    /* Target chips (appear next to username only after attacks) */
+    .war-targetchips{
+      display:inline-flex;
+      gap:6px;
+      flex: 0 0 auto;
+    }
+    .war-chip{
+      font-family: monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      opacity: .95;
     }
 
     .atk2{
@@ -359,15 +378,12 @@
     .atkline{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap: 10px;
+      justify-content:flex-start;
       width: 100%;
       font-family: monospace;
       font-size: 12px;
       opacity:.95;
     }
-    .atkline .lbl{ opacity:.70; font-weight: 800; }
-    .atkline .val{ font-weight: 900; }
 
     .stars{
       display:flex;
@@ -386,7 +402,6 @@
       color: rgba(255,255,255,0.18);
       text-shadow: none;
     }
-
     .muted{ opacity: .65; }
 
     /* =========================
@@ -438,23 +453,19 @@
       font-weight: 400;
     }
 
-     .members-scroll-inline{
+    .members-scroll-inline{
       grid-column: 1 / -1;
       grid-row: 2 / 3;
-
       display:flex;
       justify-content:center;
-
       text-align:center;
       font-size:10px;
       letter-spacing:.03em;
       opacity:.78;
       white-space: nowrap;
-
       line-height: 1;
       padding: 0;
       margin: 0;
-
       pointer-events:none;
     }
 
@@ -508,11 +519,9 @@
     .members-wrap{
       width:100%;
       margin-top:2px;
-
       overflow-x:auto;
       overflow-y:visible;
       -webkit-overflow-scrolling: touch;
-
       border-radius:10px;
       border:1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
@@ -1377,7 +1386,7 @@
         warDetail = null;
       }
       warDetailFetched = true;
-      renderWarChart(); // live update chart if on WAR page
+      renderWarChart();
     }
 
     function updateWarTimerOnly(isPrevious, displayOverride){
@@ -1464,16 +1473,34 @@
     }
 
     // =========================
-    // WAR CHART RENDER
+    // WAR CHART RENDER (simplified + role fix)
     // =========================
-    function roleLabel(role){
-      const r = String(role || "").toLowerCase();
+    function normalizeRole(role){
+      const r = String(role || "").trim().toLowerCase();
+      if(!r) return "";
+      if(r === "co-leader") return "coleader";
+      return r;
+    }
+
+    function roleLabelFromRole(role){
+      const r = normalizeRole(role);
       if(r === "leader") return "Leader";
-      if(r === "coleader" || r === "coLeader") return "Co";
+      if(r === "coleader") return "Co";
       if(r === "admin") return "Elder";
       if(r === "elder") return "Elder";
-      if(!r) return "Member";
-      return r.charAt(0).toUpperCase() + r.slice(1);
+      if(r === "member") return "Member";
+      return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "Member";
+    }
+
+    function buildOurRoleMap(){
+      const map = new Map();
+      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : [];
+      for(const m of list){
+        if(!m) continue;
+        const tag = m.tag || m.playerTag || m.memberTag;
+        if(tag) map.set(tag, m.role || "");
+      }
+      return map;
     }
 
     function starsHTML(n){
@@ -1507,6 +1534,18 @@
       return "—";
     }
 
+    function targetChipsHTML(member){
+      const atks = member?.attacks || [];
+      const nums = atks
+        .map(a => (a && a.defenderMapPosition != null) ? Number(a.defenderMapPosition) : null)
+        .filter(v => v != null && Number.isFinite(v));
+
+      if(nums.length === 0) return "";
+      return `<span class="war-targetchips">
+        ${nums.map(n => `<span class="war-chip">${n}</span>`).join("")}
+      </span>`;
+    }
+
     function renderWarChart(){
       const mount = document.getElementById("war-chart-mount");
       if(!mount) return;
@@ -1527,14 +1566,15 @@
       const ourMembers = Array.isArray(our.members) ? our.members.slice() : [];
       const oppMembers = Array.isArray(opp.members) ? opp.members.slice() : [];
 
-      // Ensure stable ordering
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
       oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
       const ourDefIdx = buildDefenderIndex(oppMembers);
       const oppDefIdx = buildDefenderIndex(ourMembers);
 
-      function rowHTML(member, defenderIdx){
+      const ourRoleMap = buildOurRoleMap();
+
+      function rowHTML(member, defenderIdx, roleMapOrNull){
         const a1 = (member.attacks || [])[0] || null;
         const a2 = (member.attacks || [])[1] || null;
 
@@ -1547,42 +1587,35 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
+        const tag = member.tag;
+        const roleFromMap = (roleMapOrNull && tag && roleMapOrNull.has(tag)) ? roleMapOrNull.get(tag) : "";
+        const roleText = roleLabelFromRole(roleFromMap || member.role || "");
+
         return `
           <div class="war-sheet-row">
             <div class="war-cell right mono">${member.mapPosition ?? "—"}.</div>
 
             <div class="war-cell">
               <div class="war-player">
-                <div class="name" title="${member.name || ""}">${member.name || "—"}</div>
-                <div class="role">${roleLabel(member.role)}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center">
-              <div class="atk2">
-                <div class="atkline"><span class="lbl">Atk 1</span><span class="val">${a1 ? "✔" : "—"}</span></div>
-                <div class="atkline"><span class="lbl">Atk 2</span><span class="val">${a2 ? "✔" : "—"}</span></div>
-              </div>
-            </div>
-
-            <div class="war-cell center">
-              <div class="atk2">
-                <div class="atkline"><span class="lbl">A1</span><span class="val">${a1 ? (a1.defenderMapPosition ?? "—") : "—"}</span></div>
-                <div class="atkline"><span class="lbl">A2</span><span class="val">${a2 ? (a2.defenderMapPosition ?? "—") : "—"}</span></div>
+                <div class="name" title="${member.name || ""}">
+                  <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${member.name || "—"}</span>
+                  ${targetChipsHTML(member)}
+                </div>
+                <div class="role">${roleText}</div>
               </div>
             </div>
 
             <div class="war-cell">
               <div class="atk2">
-                <div class="atkline"><span class="lbl">A1</span><span class="val" title="${a1Target}">${a1 ? a1Target : "—"}</span></div>
-                <div class="atkline"><span class="lbl">A2</span><span class="val" title="${a2Target}">${a2 ? a2Target : "—"}</span></div>
+                <div class="atkline" title="${a1Target}">${a1 ? a1Target : "—"}</div>
+                <div class="atkline" title="${a2Target}">${a2 ? a2Target : "—"}</div>
               </div>
             </div>
 
             <div class="war-cell center mono">
               <div class="atk2">
-                <div class="atkline" style="justify-content:center;"><span class="val">${a1 ? a1Pct : "—"}</span></div>
-                <div class="atkline" style="justify-content:center;"><span class="val">${a2 ? a2Pct : "—"}</span></div>
+                <div class="atkline" style="justify-content:center;">${a1 ? a1Pct : "—"}</div>
+                <div class="atkline" style="justify-content:center;">${a2 ? a2Pct : "—"}</div>
               </div>
             </div>
 
@@ -1598,7 +1631,7 @@
         `;
       }
 
-      function blockHTML(title, tag, isOpp, members, defenderIdx){
+      function blockHTML(title, tag, isOpp, members, defenderIdx, roleMapOrNull){
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1613,15 +1646,13 @@
               <div class="war-sheet-row head">
                 <div class="war-cell right mono">#</div>
                 <div class="war-cell">Player</div>
-                <div class="war-cell center mono">Attacks</div>
-                <div class="war-cell center mono">Target</div>
                 <div class="war-cell">Defender</div>
                 <div class="war-cell center mono">%</div>
                 <div class="war-cell center">Stars</div>
                 <div class="war-cell center mono">Total</div>
               </div>
 
-              ${(members || []).map(m => rowHTML(m, defenderIdx)).join("")}
+              ${(members || []).map(m => rowHTML(m, defenderIdx, roleMapOrNull)).join("")}
             </div>
           </div>
         `;
@@ -1629,8 +1660,8 @@
 
       mount.innerHTML = `
         <div class="war-chart-title">War Chart</div>
-        ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx)}
-        ${blockHTML(opp.name, opp.tag, true,  oppMembers, oppDefIdx)}
+        ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx, ourRoleMap)}
+        ${blockHTML(opp.name, opp.tag, true,  oppMembers, oppDefIdx, null)}
       `;
     }
 
@@ -1841,7 +1872,7 @@
     }
 
     function compareName(a,b){
-      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+      return String(a.name||"").localeCompare(String(a.name||""), undefined, { sensitivity:"base" });
     }
 
     function ensureSortDropdownBound(){
@@ -1890,41 +1921,35 @@
           if(xb !== xa) return xb - xa;
           return compareName(a,b);
         }
-
         if(membersSortMode === "th"){
           if(hb !== ha) return hb - ha;
           if(xb !== xa) return xb - xa;
           if(wb !== wa) return wb - wa;
           return compareName(a,b);
         }
-
         if(membersSortMode === "trophies"){
           if(tb !== ta) return tb - ta;
           if(xb !== xa) return xb - xa;
           return compareName(a,b);
         }
-
         if(membersSortMode === "warStars"){
           if(wb !== wa) return wb - wa;
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           return compareName(a,b);
         }
-
         if(membersSortMode === "xp"){
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           if(hb !== ha) return hb - ha;
           return compareName(a,b);
         }
-
         if(membersSortMode === "donated"){
           if(db !== da) return db - da;
           if(xb !== xa) return xb - xa;
           if(tb !== ta) return tb - ta;
           return compareName(a,b);
         }
-
         if(membersSortMode === "received"){
           if(rxb !== rxa) return rxb - rxa;
           if(xb !== xa) return xb - xa;
@@ -1973,6 +1998,7 @@
         membersData = null;
       }
       renderMembers();
+      renderWarChart(); // ✅ roles can update chart too
     }
 
     // ===== Timers (More page) =====
@@ -2039,11 +2065,13 @@
       fetchClanStats();
       fetchWarData();
       fetchWarDetail();
+      fetchMembersData(); // ✅ required for role display in war chart
 
       warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
       warIntervals.push(setInterval(fetchWarData, 5*1000));
       warIntervals.push(setInterval(fetchWarDetail, 5*1000));
       warIntervals.push(setInterval(fetchClanStats, 5*1000));
+      warIntervals.push(setInterval(fetchMembersData, 15*1000));
     }
 
     function startMoreTimers(){
