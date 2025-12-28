@@ -229,19 +229,21 @@
        - row 1: Leader/Co
        - row 2: Elder (left) + ← SCROLL → (center) + SORT (right)
        - sort button taller/easier to tap
+       - scroll truly centered (independent of left/right widths)
        ========================= */
 
     .members-headerbar{
       display:grid;
-      grid-template-columns: 1fr auto auto;  /* left | center | right */
-      grid-template-rows: auto auto;         /* row1 leader, row2 elder+scroll+sort */
+      grid-template-columns: 1fr auto;     /* left legend | right sort */
+      grid-template-rows: auto auto;       /* row1 leader, row2 elder+scroll */
       column-gap: 12px;
       row-gap: 6px;
       align-items:center;
       margin: 0 0 8px;
+      position: relative;                 /* allows absolute centered scroll */
     }
 
-    /* Align the legend block to the same left padding as table cells (10px) */
+    /* Align legend lines with table cell padding (10px) */
     .members-leaderline{
       grid-column: 1 / 2;
       grid-row: 1 / 2;
@@ -279,27 +281,9 @@
       font-weight: 400;
     }
 
-    /* Scroll text on SAME row as Elder + Sort */
-    .members-scroll-inline{
-      grid-column: 1 / -1;   /* span full width */
-      grid-row: 2 / 3;
-
-      display:flex;
-      justify-content:center;
-
-      text-align:center;
-      font-size:10px;
-      letter-spacing:.03em;
-      opacity:.78;
-      white-space:nowrap;
-      line-height:1;
-      padding:0;
-      margin:0;
-    }
-
-
+    /* Sort sits on row 2, right side */
     .members-sortbtn-wrap{
-      grid-column: 3 / 4;
+      grid-column: 2 / 3;
       grid-row: 2 / 3;
       justify-self:end;
       align-self:center;
@@ -344,6 +328,25 @@
     .sort-btn select option{
       background:#0b1829;
       color:#fff;
+    }
+
+    /* Scroll text: pinned to true center of the headerbar */
+    .members-scroll-inline{
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%);
+      bottom: 3px;                 /* aligns with row 2 baseline nicely */
+      z-index: 1;
+      pointer-events:none;
+
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      white-space:nowrap;
+      line-height:1;
+      padding:0;
+      margin:0;
     }
 
     /* Table wrapper */
@@ -935,7 +938,7 @@
               </div>
             </div>
 
-            <!-- Row 2: Elder (left) + SCROLL (center) + SORT (right) -->
+            <!-- Row 2: Elder (left) -->
             <div class="members-elderline" aria-label="Members key elder">
               <div class="members-keyline">
                 <span class="key-emoji">🛡️</span>
@@ -943,8 +946,10 @@
               </div>
             </div>
 
+            <!-- Row 2: Centered SCROLL -->
             <div class="members-scroll-inline">← SCROLL →</div>
 
+            <!-- Row 2: SORT (right) -->
             <div class="members-sortbtn-wrap">
               <div class="sort-btn">
                 SORT
