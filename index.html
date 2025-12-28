@@ -224,6 +224,172 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
+       WAR CHART (Spreadsheet-style)
+       ========================= */
+    .war-chart-wrap{
+      margin-top: 12px;
+    }
+
+    .war-chart-title{
+      margin: 10px 0 6px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
+    }
+
+    .war-chart-block{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+      border-radius: 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .war-chart-block + .war-chart-block{
+      margin-top: 10px;
+    }
+
+    .war-chart-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      position: sticky;
+      left: 0;
+    }
+
+    .war-chart-clan{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .war-dot{
+      width:10px;
+      height:10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.85);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.10);
+      flex: 0 0 auto;
+    }
+    .war-dot.opp{
+      background: rgba(255,215,0,0.9);
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.14);
+    }
+
+    .war-chart-sub{
+      font-family: monospace;
+      font-size: 12px;
+      opacity: .75;
+      white-space: nowrap;
+    }
+
+    .war-sheet{
+      min-width: 860px; /* forces spreadsheet feel */
+      width: 100%;
+    }
+
+    .war-sheet-row{
+      display:grid;
+      grid-template-columns: 42px 220px 82px 82px 220px 78px 120px 74px;
+      align-items: stretch;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .war-sheet-row:last-child{ border-bottom:none; }
+
+    .war-sheet-row.head{
+      background: rgba(0,0,0,0.18);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .war-cell{
+      padding: 10px 10px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .war-cell:last-child{ border-right:none; }
+
+    .war-cell.mono{ font-family: monospace; }
+    .war-cell.center{ justify-content:center; text-align:center; }
+    .war-cell.right{ justify-content:flex-end; text-align:right; }
+    .war-cell.bold{ font-weight: 900; }
+
+    .war-player{
+      display:flex;
+      flex-direction:column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .war-player .name{
+      font-weight: 900;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .war-player .role{
+      font-size: 12px;
+      opacity: .70;
+    }
+
+    .atk2{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      width: 100%;
+    }
+    .atkline{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      width: 100%;
+      font-family: monospace;
+      font-size: 12px;
+      opacity:.95;
+    }
+    .atkline .lbl{ opacity:.70; font-weight: 800; }
+    .atkline .val{ font-weight: 900; }
+
+    .stars{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .star{
+      font-size: 14px;
+      line-height: 1;
+      color: rgba(255,215,0,0.95);
+      text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    }
+    .star.dim{
+      color: rgba(255,255,255,0.18);
+      text-shadow: none;
+    }
+
+    .muted{ opacity: .65; }
+
+    /* =========================
        MEMBERS header (key left-justified)
        ========================= */
     .members-headerbar{
@@ -273,7 +439,7 @@
     }
 
      .members-scroll-inline{
-      grid-column: 1 / -1;     /* span full width */
+      grid-column: 1 / -1;
       grid-row: 2 / 3;
 
       display:flex;
@@ -294,9 +460,9 @@
 
     .members-sortbtn-wrap{
       grid-column: 3 / 4;
-      grid-row: 1 / 3;        /* span both rows */
+      grid-row: 1 / 3;
       justify-self:end;
-      align-self:center;     /* true vertical centering */
+      align-self:center;
     }
 
     .sort-btn{
@@ -305,9 +471,9 @@
       align-items:center;
       justify-content:center;
 
-      min-width: 58px;        /* ~60% of previous width */
+      min-width: 58px;
       height: 36px;
-      padding: 0 10px;        /* tighter horizontal padding */
+      padding: 0 10px;
 
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.10);
@@ -801,7 +967,6 @@
       `);
     }
 
-    // ✅ FIXED: More page uses same responsive "row" layout as other pages
     function renderMore(){
       return `
         <div class="cards">
@@ -1058,6 +1223,11 @@
               </div>
             </div>
           </div>
+
+          <div class="divider"></div>
+
+          <!-- War Chart Mount -->
+          <div id="war-chart-mount" class="war-chart-wrap"></div>
         </div>
       `;
     }
@@ -1072,9 +1242,10 @@
     }
 
     // ===== Data endpoints =====
-    const RAW_WAR_URL_BASE     = "./war.json";
-    const RAW_CLAN_URL_BASE    = "./clan_stats.json";
-    const RAW_MEMBERS_URL_BASE = "./members.json";
+    const RAW_WAR_URL_BASE        = "./war.json";
+    const RAW_WAR_DETAIL_URL_BASE = "./war_detail.json";
+    const RAW_CLAN_URL_BASE       = "./clan_stats.json";
+    const RAW_MEMBERS_URL_BASE    = "./members.json";
 
     // ===== Interval buckets by route =====
     let homeIntervals = [];
@@ -1084,6 +1255,10 @@
 
     let warData = null;
     let warFetched = false;
+
+    let warDetail = null;
+    let warDetailFetched = false;
+
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
 
@@ -1193,6 +1368,18 @@
       renderWarSection();
     }
 
+    async function fetchWarDetail(){
+      try{
+        const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        warDetail = res.ok ? await res.json() : null;
+      } catch(e){
+        warDetail = null;
+      }
+      warDetailFetched = true;
+      renderWarChart(); // live update chart if on WAR page
+    }
+
     function updateWarTimerOnly(isPrevious, displayOverride){
       const warElem = document.getElementById("war-timer");
       if(!warElem) return;
@@ -1274,6 +1461,177 @@
       setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
 
       updateWarTimerOnly(showingPrevious, display);
+    }
+
+    // =========================
+    // WAR CHART RENDER
+    // =========================
+    function roleLabel(role){
+      const r = String(role || "").toLowerCase();
+      if(r === "leader") return "Leader";
+      if(r === "coleader" || r === "coLeader") return "Co";
+      if(r === "admin") return "Elder";
+      if(r === "elder") return "Elder";
+      if(!r) return "Member";
+      return r.charAt(0).toUpperCase() + r.slice(1);
+    }
+
+    function starsHTML(n){
+      const s = Number(n || 0);
+      return `
+        <span class="star ${s>=1 ? "" : "dim"}">★</span>
+        <span class="star ${s>=2 ? "" : "dim"}">★</span>
+        <span class="star ${s>=3 ? "" : "dim"}">★</span>
+      `;
+    }
+
+    function totalStars(member){
+      const atks = member?.attacks || [];
+      return atks.reduce((sum,a)=>sum + (Number(a.stars)||0), 0);
+    }
+
+    function buildDefenderIndex(members){
+      const idx = new Map();
+      (members || []).forEach(m => {
+        if(m && m.tag) idx.set(m.tag, m.name || "");
+        if(m && (m.mapPosition !== null && m.mapPosition !== undefined)) idx.set(String(m.mapPosition), m.name || "");
+      });
+      return idx;
+    }
+
+    function defenderNameForAttack(a, defenderIdx){
+      if(!a) return "—";
+      if(a.defenderTag && defenderIdx.has(a.defenderTag)) return defenderIdx.get(a.defenderTag) || "—";
+      if(a.defenderMapPosition != null && defenderIdx.has(String(a.defenderMapPosition))) return defenderIdx.get(String(a.defenderMapPosition)) || `#${a.defenderMapPosition}`;
+      if(a.defenderMapPosition != null) return `#${a.defenderMapPosition}`;
+      return "—";
+    }
+
+    function renderWarChart(){
+      const mount = document.getElementById("war-chart-mount");
+      if(!mount) return;
+
+      if(!warDetailFetched){
+        mount.innerHTML = `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        return;
+      }
+
+      if(!warDetail || warDetail.state === "error"){
+        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        return;
+      }
+
+      const our = warDetail.our || {};
+      const opp = warDetail.opponent || {};
+
+      const ourMembers = Array.isArray(our.members) ? our.members.slice() : [];
+      const oppMembers = Array.isArray(opp.members) ? opp.members.slice() : [];
+
+      // Ensure stable ordering
+      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+
+      const ourDefIdx = buildDefenderIndex(oppMembers);
+      const oppDefIdx = buildDefenderIndex(ourMembers);
+
+      function rowHTML(member, defenderIdx){
+        const a1 = (member.attacks || [])[0] || null;
+        const a2 = (member.attacks || [])[1] || null;
+
+        const a1Target = defenderNameForAttack(a1, defenderIdx);
+        const a2Target = defenderNameForAttack(a2, defenderIdx);
+
+        const a1Pct = (a1 && a1.destructionPercentage != null) ? `${a1.destructionPercentage}%` : "—";
+        const a2Pct = (a2 && a2.destructionPercentage != null) ? `${a2.destructionPercentage}%` : "—";
+
+        const a1Stars = a1 ? Number(a1.stars||0) : 0;
+        const a2Stars = a2 ? Number(a2.stars||0) : 0;
+
+        return `
+          <div class="war-sheet-row">
+            <div class="war-cell right mono">${member.mapPosition ?? "—"}.</div>
+
+            <div class="war-cell">
+              <div class="war-player">
+                <div class="name" title="${member.name || ""}">${member.name || "—"}</div>
+                <div class="role">${roleLabel(member.role)}</div>
+              </div>
+            </div>
+
+            <div class="war-cell center">
+              <div class="atk2">
+                <div class="atkline"><span class="lbl">Atk 1</span><span class="val">${a1 ? "✔" : "—"}</span></div>
+                <div class="atkline"><span class="lbl">Atk 2</span><span class="val">${a2 ? "✔" : "—"}</span></div>
+              </div>
+            </div>
+
+            <div class="war-cell center">
+              <div class="atk2">
+                <div class="atkline"><span class="lbl">A1</span><span class="val">${a1 ? (a1.defenderMapPosition ?? "—") : "—"}</span></div>
+                <div class="atkline"><span class="lbl">A2</span><span class="val">${a2 ? (a2.defenderMapPosition ?? "—") : "—"}</span></div>
+              </div>
+            </div>
+
+            <div class="war-cell">
+              <div class="atk2">
+                <div class="atkline"><span class="lbl">A1</span><span class="val" title="${a1Target}">${a1 ? a1Target : "—"}</span></div>
+                <div class="atkline"><span class="lbl">A2</span><span class="val" title="${a2Target}">${a2 ? a2Target : "—"}</span></div>
+              </div>
+            </div>
+
+            <div class="war-cell center mono">
+              <div class="atk2">
+                <div class="atkline" style="justify-content:center;"><span class="val">${a1 ? a1Pct : "—"}</span></div>
+                <div class="atkline" style="justify-content:center;"><span class="val">${a2 ? a2Pct : "—"}</span></div>
+              </div>
+            </div>
+
+            <div class="war-cell center">
+              <div class="atk2">
+                <div class="stars">${a1 ? starsHTML(a1Stars) : `<span class="muted">—</span>`}</div>
+                <div class="stars">${a2 ? starsHTML(a2Stars) : `<span class="muted">—</span>`}</div>
+              </div>
+            </div>
+
+            <div class="war-cell center mono bold">${totalStars(member)}★</div>
+          </div>
+        `;
+      }
+
+      function blockHTML(title, tag, isOpp, members, defenderIdx){
+        return `
+          <div class="war-chart-block">
+            <div class="war-chart-head">
+              <div class="war-chart-clan" title="${title || ""}">
+                <span class="war-dot ${isOpp ? "opp" : ""}"></span>
+                <span>${title || (isOpp ? "Opponent" : "Our Clan")}</span>
+              </div>
+              <div class="war-chart-sub">${tag || ""}</div>
+            </div>
+
+            <div class="war-sheet">
+              <div class="war-sheet-row head">
+                <div class="war-cell right mono">#</div>
+                <div class="war-cell">Player</div>
+                <div class="war-cell center mono">Attacks</div>
+                <div class="war-cell center mono">Target</div>
+                <div class="war-cell">Defender</div>
+                <div class="war-cell center mono">%</div>
+                <div class="war-cell center">Stars</div>
+                <div class="war-cell center mono">Total</div>
+              </div>
+
+              ${(members || []).map(m => rowHTML(m, defenderIdx)).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      mount.innerHTML = `
+        <div class="war-chart-title">War Chart</div>
+        ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx)}
+        ${blockHTML(opp.name, opp.tag, true,  oppMembers, oppDefIdx)}
+      `;
     }
 
     async function fetchClanStats(){
@@ -1676,12 +2034,15 @@
     function startWarDataLoop(){
       clearIntervals(warIntervals);
       warFetched = false;
+      warDetailFetched = false;
 
-      fetchClanStats();   // ✅ drives war record + streaks
-      fetchWarData();     // ✅ drives current war box
+      fetchClanStats();
+      fetchWarData();
+      fetchWarDetail();
 
       warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
       warIntervals.push(setInterval(fetchWarData, 5*1000));
+      warIntervals.push(setInterval(fetchWarDetail, 5*1000));
       warIntervals.push(setInterval(fetchClanStats, 5*1000));
     }
 
