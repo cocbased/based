@@ -296,20 +296,25 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-width: 160px;
+
+      min-width: 92px;      /* half-width */
       height: 34px;
-      padding: 0 16px;
+      padding: 0 12px;
+
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.06);
       color:#fff;
+
       font-size: 12px;
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
+
       user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
+
 
     /* Invisible select overlay so native picker opens, while UI still says SORT */
     .sort-btn select{
