@@ -224,44 +224,48 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       MEMBERS (simplified + stable)
-       - legend left-justified
-       - scroll/swipe ALWAYS its own narrow row
-       - sort button ~40% smaller
+       MEMBERS (requested layout)
+       - emoji aligned to table emoji column
+       - row 1: Leader/Co
+       - row 2: Elder (left) + ← SCROLL → (center) + SORT (right)
+       - sort button taller/easier to tap
        ========================= */
 
     .members-headerbar{
       display:grid;
-      grid-template-columns: 1fr auto; /* legend left, sort right */
-      grid-template-rows: auto auto;   /* row1 controls, row2 hint */
+      grid-template-columns: 1fr auto auto;  /* left | center | right */
+      grid-template-rows: auto auto;         /* row1 leader, row2 elder+scroll+sort */
       column-gap: 12px;
       row-gap: 6px;
       align-items:center;
       margin: 0 0 8px;
     }
 
-    .members-legend{
+    /* Align the legend block to the same left padding as table cells (10px) */
+    .members-leaderline{
       grid-column: 1 / 2;
       grid-row: 1 / 2;
       justify-self:start;
-      text-align:left;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      padding-left: 0;
-      transform:none;
+      padding-left:10px;
+    }
+    .members-elderline{
+      grid-column: 1 / 2;
+      grid-row: 2 / 3;
+      justify-self:start;
+      padding-left:10px;
     }
 
+    /* Keyline uses same emoji column width as table + right-align like table emoji */
     .members-keyline{
-      display:flex;
+      display:grid;
+      grid-template-columns: var(--m-emoji-col) auto;
       align-items:center;
-      gap:10px;
+      column-gap:10px;
       white-space:nowrap;
     }
-
     .key-emoji{
-      width:auto;
-      text-align:left;
+      width: var(--m-emoji-col);
+      text-align:right;   /* matches .m-emoji */
       font-size:14px;
       line-height:1;
     }
@@ -275,31 +279,45 @@
       font-weight: 400;
     }
 
-    .members-sortbtn-wrap{
+    /* Scroll text on SAME row as Elder + Sort */
+    .members-scroll-inline{
       grid-column: 2 / 3;
-      grid-row: 1 / 2;
-      justify-self:end;
-      align-self:center;
-      padding-right: 0;
+      grid-row: 2 / 3;
+      justify-self:center;
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      white-space:nowrap;
+      line-height:1;
+      padding:0;
+      margin:0;
     }
 
-    /* ✅ SORT button ~40% smaller than your previous 92x34 */
+    .members-sortbtn-wrap{
+      grid-column: 3 / 4;
+      grid-row: 2 / 3;
+      justify-self:end;
+      align-self:center;
+    }
+
+    /* Taller + still compact */
     .sort-btn{
       position:relative;
       display:inline-flex;
       align-items:center;
       justify-content:center;
 
-      min-width: 56px;
-      height: 20px;
-      padding: 0 8px;
+      min-width: 62px;
+      height: 30px;      /* taller for easier tap */
+      padding: 0 10px;
 
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.06);
       color:#fff;
 
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: .07em;
       text-transform: uppercase;
@@ -308,7 +326,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Invisible select overlay so native picker opens, while UI still says SORT */
+    /* Invisible select overlay so native picker opens */
     .sort-btn select{
       position:absolute;
       inset:0;
@@ -319,28 +337,9 @@
       appearance:none;
       -webkit-appearance:none;
     }
-
     .sort-btn select option{
       background:#0b1829;
       color:#fff;
-    }
-
-    /* Scroll hint ALWAYS its own narrow row */
-    .members-scroll-inline{
-      grid-column: 1 / 3;
-      grid-row: 2 / 3;
-      justify-self:center;
-
-      text-align:center;
-      font-size:10px;
-      letter-spacing:.03em;
-      opacity:.78;
-      white-space: nowrap;
-
-      /* narrow row */
-      line-height: 1;
-      padding: 0;
-      margin: 0;
     }
 
     /* Table wrapper */
@@ -921,18 +920,26 @@
           <!-- ✅ MEMBERS title matches Clan Overview font specs -->
           <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
 
-          <!-- ✅ Simplified header (legend + sort on row 1, scroll on row 2) -->
+          <!-- ✅ Requested layout -->
           <div class="members-headerbar" aria-label="Members header controls">
-            <div class="members-legend" aria-label="Members key">
+
+            <!-- Row 1: Leader/Co -->
+            <div class="members-leaderline" aria-label="Members key leader/co">
               <div class="members-keyline">
                 <span class="key-emoji">👑</span>
                 <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
               </div>
+            </div>
+
+            <!-- Row 2: Elder (left) + SCROLL (center) + SORT (right) -->
+            <div class="members-elderline" aria-label="Members key elder">
               <div class="members-keyline">
                 <span class="key-emoji">🛡️</span>
                 <span class="key-text">Elder</span>
               </div>
             </div>
+
+            <div class="members-scroll-inline">← SCROLL →</div>
 
             <div class="members-sortbtn-wrap">
               <div class="sort-btn">
@@ -948,8 +955,6 @@
                 </select>
               </div>
             </div>
-
-            <div class="members-scroll-inline">← SCROLL / SWIPE →</div>
           </div>
 
           <div class="members-wrap" aria-label="Clan members list">
