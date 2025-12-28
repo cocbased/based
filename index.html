@@ -224,10 +224,11 @@
     .record-green{ color:#38d172; font-weight:900; }
 
     /* =========================
-       WAR CHART (Spreadsheet-style)
-       ✅ Attacks column removed
-       ✅ Target column removed (targets appear next to name)
-       ✅ Player column 60% width (220px -> 132px)
+       WAR CHART (iPhone-fit, no horizontal scroll)
+       ✅ # narrow, no right border
+       ✅ Defender same width as Player + right aligned
+       ✅ % narrow, Stars narrow, Total narrow
+       ✅ NO vertical borders (only outside border)
        ========================= */
     .war-chart-wrap{ margin-top: 12px; }
 
@@ -244,8 +245,7 @@
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
       border-radius: 10px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow: hidden;                 /* ✅ no horizontal scroll */
     }
     .war-chart-block + .war-chart-block{ margin-top: 10px; }
 
@@ -257,8 +257,6 @@
       padding: 10px 10px;
       background: rgba(255,255,255,0.04);
       border-bottom: 1px solid rgba(255,255,255,0.10);
-      position: sticky;
-      left: 0;
     }
 
     .war-chart-clan{
@@ -270,6 +268,7 @@
       white-space: nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      min-width: 0;
     }
 
     .war-dot{
@@ -289,18 +288,24 @@
       font-size: 12px;
       opacity: .75;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .war-sheet{
-      min-width: 760px;
       width: 100%;
     }
 
-    /* NEW GRID (6 columns):
+    /* 6 columns:
        # | Player | Defender | % | Stars | Total */
     .war-sheet-row{
       display:grid;
-      grid-template-columns: 42px 132px 260px 78px 120px 74px;
+      grid-template-columns:
+        26px                      /* # fits “99.” */
+        minmax(0, 1fr)            /* Player */
+        minmax(0, 1fr)            /* Defender */
+        40px                      /* % fits “100%” */
+        64px                      /* Stars fits 3 */
+        36px;                     /* Total fits “9★” */
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
@@ -308,34 +313,37 @@
 
     .war-sheet-row.head{
       background: rgba(0,0,0,0.18);
-      position: sticky;
-      top: 0;
-      z-index: 3;
       border-bottom: 1px solid rgba(255,255,255,0.10);
     }
 
+    /* ✅ NO vertical borders anywhere */
     .war-cell{
-      padding: 10px 10px;
-      font-size: 13px;
+      padding: 8px 8px;
+      font-size: 12.5px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      border-right: 1px solid rgba(255,255,255,0.06);
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:6px;
+      border-right: none !important;
     }
-    .war-cell:last-child{ border-right:none; }
 
     .war-cell.mono{ font-family: monospace; }
     .war-cell.center{ justify-content:center; text-align:center; }
     .war-cell.right{ justify-content:flex-end; text-align:right; }
     .war-cell.bold{ font-weight: 900; }
 
+    /* # col */
+    .war-cell.numcol{
+      padding-right: 6px;
+      opacity: .95;
+    }
+
     .war-player{
       display:flex;
       flex-direction:column;
-      gap: 3px;
+      gap: 2px;
       min-width: 0;
     }
     .war-player .name{
@@ -345,24 +353,24 @@
       white-space: nowrap;
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:6px;
       min-width: 0;
     }
     .war-player .role{
-      font-size: 12px;
+      font-size: 11px;
       opacity: .70;
     }
 
     /* Target chips (appear next to username only after attacks) */
     .war-targetchips{
       display:inline-flex;
-      gap:6px;
+      gap:4px;
       flex: 0 0 auto;
     }
     .war-chip{
       font-family: monospace;
-      font-size: 11px;
-      padding: 2px 6px;
+      font-size: 10px;
+      padding: 1px 5px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
@@ -372,28 +380,39 @@
     .atk2{
       display:flex;
       flex-direction:column;
-      gap: 6px;
+      gap: 4px;
       width: 100%;
+      min-width: 0;
     }
     .atkline{
       display:flex;
       align-items:center;
-      justify-content:flex-start;
       width: 100%;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 11px;
       opacity:.95;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+
+    /* Defender cell: right aligned */
+    .war-cell.defender{
+      justify-content: flex-end;
+      text-align: right;
+    }
+    .war-cell.defender .atk2{ align-items: flex-end; }
+    .war-cell.defender .atkline{ justify-content: flex-end; text-align:right; }
 
     .stars{
       display:flex;
       align-items:center;
       justify-content:center;
-      gap: 6px;
+      gap: 4px;
       font-variant-numeric: tabular-nums;
     }
     .star{
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
       color: rgba(255,215,0,0.95);
       text-shadow: 0 1px 0 rgba(0,0,0,0.35);
@@ -1593,19 +1612,21 @@
 
         return `
           <div class="war-sheet-row">
-            <div class="war-cell right mono">${member.mapPosition ?? "—"}.</div>
+            <div class="war-cell right mono numcol">${member.mapPosition ?? "—"}.</div>
 
             <div class="war-cell">
               <div class="war-player">
                 <div class="name" title="${member.name || ""}">
-                  <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${member.name || "—"}</span>
+                  <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${member.name || "—"}
+                  </span>
                   ${targetChipsHTML(member)}
                 </div>
                 <div class="role">${roleText}</div>
               </div>
             </div>
 
-            <div class="war-cell">
+            <div class="war-cell defender">
               <div class="atk2">
                 <div class="atkline" title="${a1Target}">${a1 ? a1Target : "—"}</div>
                 <div class="atkline" title="${a2Target}">${a2 ? a2Target : "—"}</div>
@@ -1644,9 +1665,9 @@
 
             <div class="war-sheet">
               <div class="war-sheet-row head">
-                <div class="war-cell right mono">#</div>
+                <div class="war-cell right mono numcol">#</div>
                 <div class="war-cell">Player</div>
-                <div class="war-cell">Defender</div>
+                <div class="war-cell defender">Defender</div>
                 <div class="war-cell center mono">%</div>
                 <div class="war-cell center">Stars</div>
                 <div class="war-cell center mono">Total</div>
