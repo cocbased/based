@@ -8,7 +8,6 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Disable pinch-zoom (best-effort; iOS may still allow in some cases) -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -20,10 +19,8 @@
       --tabbar-h: 92px;
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
-
       --m-emoji-col: 30px;
       --m-name-col: 102px;
-
       --cards-max: 680px;
     }
 
@@ -156,7 +153,7 @@
       background: rgba(0,0,0,0.10);
       border-radius: 10px;
       overflow: hidden;
-      color:#fff;
+      color:#fff; /* safety */
     }
     .war-chart-block + .war-chart-block{ margin-top: 10px; }
 
@@ -202,14 +199,14 @@
       flex: 0 0 auto;
     }
 
-    .war-sheet{ width:100%; display:block; }
+    .war-sheet{ width:100%; display:block; } /* safety */
 
     .war-sheet-row{
       display:grid;
       grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 40px 64px 36px;
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      min-height: 38px;
+      min-height: 38px; /* safety so rows can’t collapse */
     }
     .war-sheet-row:last-child{ border-bottom:none; }
 
@@ -221,19 +218,17 @@
     .war-cell{
       padding: 8px 8px;
       font-size: 12.5px;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       display:flex;
       align-items:center;
       gap:6px;
       border-right: none !important;
-      color:#fff;
-      min-width: 0;
+      color:#fff; /* safety */
     }
 
-    /* Allow stacked lines in the 2-line cells */
-    .war-cell.stack { white-space: normal; }
-    .war-cell.mono{ font-family: monospace; white-space:nowrap; }
+    .war-cell.mono{ font-family: monospace; }
     .war-cell.center{ justify-content:center; text-align:center; }
     .war-cell.right{ justify-content:flex-end; text-align:right; }
     .war-cell.bold{ font-weight: 900; }
@@ -250,7 +245,18 @@
       gap:6px;
       min-width:0;
     }
-    .war-player .role{ font-size:11px; opacity:.70; white-space:nowrap; }
+    .war-player .role{ font-size:11px; opacity:.70; }
+
+    .war-targetchips{ display:inline-flex; gap:4px; flex:0 0 auto; }
+    .war-chip{
+      font-family: monospace;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      opacity: .95;
+    }
 
     .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
     .atkline{
@@ -263,7 +269,6 @@
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-      min-width:0;
     }
 
     .war-cell.defender{ justify-content:flex-end; text-align:right; }
@@ -279,7 +284,7 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
-    /* Members styles */
+    /* Members + more styles remain unchanged (kept) */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
@@ -551,18 +556,40 @@
 
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
-      <a href="#/home" data-route="home" data-img-key="home"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">Home</span></div></a>
-      <a href="#/cwl" data-route="cwl" data-img-key="cwl"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">CWL</span></div></a>
-      <a href="#/war" data-route="war" data-img-key="war"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">War</span></div></a>
-      <a href="#/my-stats" data-route="mystats" data-img-key="my-stats"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">My Stats</span></div></a>
-      <a href="#/more" data-route="more" data-img-key="more"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">More</span></div></a>
+      <a href="#/home" data-route="home" data-img-key="home">
+        <div class="tab-inner">
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
+          <span class="label">Home</span>
+        </div>
+      </a>
+      <a href="#/cwl" data-route="cwl" data-img-key="cwl">
+        <div class="tab-inner">
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
+          <span class="label">CWL</span>
+        </div>
+      </a>
+      <a href="#/war" data-route="war" data-img-key="war">
+        <div class="tab-inner">
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
+          <span class="label">War</span>
+        </div>
+      </a>
+      <a href="#/my-stats" data-route="mystats" data-img-key="my-stats">
+        <div class="tab-inner">
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
+          <span class="label">My Stats</span>
+        </div>
+      </a>
+      <a href="#/more" data-route="more" data-img-key="more">
+        <div class="tab-inner">
+          <span class="icon" aria-hidden="true"><img alt="" /></span>
+          <span class="label">More</span>
+        </div>
+      </a>
     </div>
   </nav>
 
   <script>
-    // =========================
-    // Core helpers
-    // =========================
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
@@ -617,184 +644,17 @@
       });
     }
 
-    function setupNavUI(){
-      const pwa = isPwaInstalled();
-      const topNav = document.getElementById("topNav");
-      const tabbar = document.getElementById("pwaTabbar");
-
-      if(pwa){
-        if(topNav) topNav.style.display = "none";
-        if(tabbar) tabbar.style.display = "block";
-        document.body.classList.add("has-pwa-tabs");
-      } else {
-        if(topNav) topNav.style.display = "flex";
-        if(tabbar) tabbar.style.display = "none";
-        document.body.classList.remove("has-pwa-tabs");
-      }
-    }
-
-    function escapeHtml(s){
-      return String(s || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#39;");
-    }
-    function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
-
-    // =========================
-    // Templates
-    // =========================
+    // ===== Templates =====
     const app = document.getElementById("app");
-
     function pageShellCards(title, subtitle){
       return `<div class="cards"><main class="page"><h1>${title}</h1><p>${subtitle}</p></main></div>`;
     }
 
-    function renderMore(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">In-Game Events</h2>
+    function renderMore(){ return `<div class="cards"><h2 class="cards-title">In-Game Events</h2><div class="row"><span class="row-label">Raid Weekend</span><span id="raid-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Clan Games</span><span id="clan-games-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Season End</span><span id="season-end-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">League Reset</span><span id="league-reset-timer" class="row-value">Loading…</span></div><div class="divider"></div><div class="links"><a class="link-btn" href="changelog.html" target="_blank" rel="noopener noreferrer">Changelog</a><a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a><a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a><a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a><a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a><a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a><a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a></div><div class="page-footer">EST DECEMBER 2023</div></div>`; }
 
-          <div class="row"><span class="row-label">Raid Weekend</span><span id="raid-timer" class="row-value">—</span></div>
-          <div class="row"><span class="row-label">Clan Games</span><span id="clan-games-timer" class="row-value">—</span></div>
-          <div class="row"><span class="row-label">Season End</span><span id="season-end-timer" class="row-value">—</span></div>
-          <div class="row"><span class="row-label">League Reset</span><span id="league-reset-timer" class="row-value">—</span></div>
+    function renderHome(){ return `<div class="cards"><h2 class="cards-title">Clan Overview</h2><div id="rankings-block"><div class="section-title">Rankings</div><div class="row"><span class="row-label">Global Trophies</span><span id="rank-global-trophies" class="row-value">Loading…</span></div><div class="row"><span class="row-label">USA Trophies</span><span id="rank-usa-trophies" class="row-value">Loading…</span></div><div class="divider"></div></div><div id="clan-desc" class="clan-desc-block">Loading…</div><div class="divider"></div><div class="row"><span class="row-label">CWL League</span><span id="cwl-league" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish" class="row-value">Loading…</span></div><div class="row"><span class="row-label">War Record</span><span id="home-war-record" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last 10 Wars</span><span id="home-war-last10" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Current Streak</span><span id="home-war-streak" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Longest Streak</span><span id="home-war-longest" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Capital Hall Level</span><span id="capital-hall-level" class="row-value">Loading…</span></div><div class="divider"></div><h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2><div class="members-headerbar" aria-label="Members header controls"><div class="members-leaderline"><div class="members-keyline"><span class="key-emoji">&nbsp;&nbsp;👑</span><span class="key-text"><span class="legend-underline">Leader</span> / Co</span></div></div><div></div><div></div><div class="members-elderline"><div class="members-keyline"><span class="key-emoji">&nbsp;&nbsp;🛡️</span><span class="key-text">Elder</span></div></div><div class="members-scroll-inline">← SCROLL →</div><div class="members-sortbtn-wrap"><div class="sort-btn">SORT<select id="membersSortSelect" aria-label="Sort members"><option value="role">Role</option><option value="th">TH</option><option value="trophies">Trophies</option><option value="warStars">War Stars</option><option value="xp">XP</option><option value="donated">Donated</option><option value="received">Received</option></select></div></div></div><div class="members-wrap" aria-label="Clan members list"><table class="members-table"><colgroup><col style="width: var(--m-emoji-col);"><col style="width: var(--m-name-col);"><col style="width: 44px;"><col style="width: 84px;"><col style="width: 98px;"><col style="width: 58px;"><col style="width: 86px;"><col style="width: 96px;"></colgroup><thead><tr><th class="m-emoji" style="text-align:right;"></th><th style="text-align:left;"></th><th class="m-num">TH</th><th class="m-num">Trophies</th><th class="m-num">War Stars</th><th class="m-num">XP</th><th class="m-num">Donated</th><th class="m-num">Received</th></tr></thead><tbody id="members-body"><tr><td colspan="8" style="opacity:.75;">Loading…</td></tr></tbody></table></div></div>`; }
 
-          <div class="divider"></div>
-
-          <div class="links">
-            <a class="link-btn" href="changelog.html" target="_blank" rel="noopener noreferrer">Changelog</a>
-            <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
-            <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
-            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
-            <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
-            <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
-            <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
-          </div>
-
-          <div class="page-footer">EST DECEMBER 2023</div>
-        </div>
-      `;
-    }
-
-    function renderHome(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">Clan Overview</h2>
-
-          <div id="rankings-block">
-            <div class="section-title">Rankings</div>
-            <div class="row"><span class="row-label">Global Trophies</span><span id="rank-global-trophies" class="row-value">Loading…</span></div>
-            <div class="row"><span class="row-label">USA Trophies</span><span id="rank-usa-trophies" class="row-value">Loading…</span></div>
-            <div class="divider"></div>
-          </div>
-
-          <div id="clan-desc" class="clan-desc-block">Loading…</div>
-          <div class="divider"></div>
-
-          <div class="row"><span class="row-label">CWL League</span><span id="cwl-league" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish" class="row-value">Loading…</span></div>
-
-          <div class="row"><span class="row-label">War Record</span><span id="home-war-record" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Last 10 Wars</span><span id="home-war-last10" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Current Streak</span><span id="home-war-streak" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Longest Streak</span><span id="home-war-longest" class="row-value">Loading…</span></div>
-
-          <div class="row"><span class="row-label">Capital Hall Level</span><span id="capital-hall-level" class="row-value">Loading…</span></div>
-
-          <div class="divider"></div>
-
-          <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
-
-          <div class="members-headerbar" aria-label="Members header controls">
-            <div class="members-leaderline">
-              <div class="members-keyline">
-                <span class="key-emoji">&nbsp;&nbsp;👑</span>
-                <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
-              </div>
-            </div>
-
-            <div></div>
-            <div></div>
-
-            <div class="members-elderline">
-              <div class="members-keyline">
-                <span class="key-emoji">&nbsp;&nbsp;🛡️</span>
-                <span class="key-text">Elder</span>
-              </div>
-            </div>
-
-            <div class="members-scroll-inline">← SCROLL →</div>
-
-            <div class="members-sortbtn-wrap">
-              <div class="sort-btn">
-                SORT
-                <select id="membersSortSelect" aria-label="Sort members">
-                  <option value="role">Role</option>
-                  <option value="th">TH</option>
-                  <option value="trophies">Trophies</option>
-                  <option value="warStars">War Stars</option>
-                  <option value="xp">XP</option>
-                  <option value="donated">Donated</option>
-                  <option value="received">Received</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="members-wrap" aria-label="Clan members list">
-            <table class="members-table">
-              <colgroup>
-                <col style="width: var(--m-emoji-col);">
-                <col style="width: var(--m-name-col);">
-                <col style="width: 44px;">
-                <col style="width: 84px;">
-                <col style="width: 98px;">
-                <col style="width: 58px;">
-                <col style="width: 86px;">
-                <col style="width: 96px;">
-              </colgroup>
-
-              <thead>
-                <tr>
-                  <th class="m-emoji" style="text-align:right;"></th>
-                  <th style="text-align:left;"></th>
-                  <th class="m-num">TH</th>
-                  <th class="m-num">Trophies</th>
-                  <th class="m-num">War Stars</th>
-                  <th class="m-num">XP</th>
-                  <th class="m-num">Donated</th>
-                  <th class="m-num">Received</th>
-                </tr>
-              </thead>
-
-              <tbody id="members-body">
-                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderCwlPage(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">CWL</h2>
-
-          <div class="row"><span class="row-label">CWL League</span><span id="cwl-league-cwlpage" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish-cwlpage" class="row-value">Loading…</span></div>
-
-          <div class="divider"></div>
-
-          <div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">
-            More CWL details coming soon.
-          </div>
-        </div>
-      `;
-    }
+    function renderCwlPage(){ return `<div class="cards"><h2 class="cards-title">CWL</h2><div class="row"><span class="row-label">CWL League</span><span id="cwl-league-cwlpage" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish-cwlpage" class="row-value">Loading…</span></div><div class="divider"></div><div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">More CWL details coming soon.</div></div>`; }
 
     function renderWarPage(){
       return `
@@ -849,17 +709,13 @@
       return renderHome();
     }
 
-    // =========================
-    // Data endpoints
-    // =========================
+    // ===== Data endpoints =====
     const RAW_WAR_URL_BASE        = "./war.json";
     const RAW_WAR_DETAIL_URL_BASE = "./war_detail.json";
     const RAW_CLAN_URL_BASE       = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE    = "./members.json";
 
-    // =========================
-    // State + intervals
-    // =========================
+    // ===== Interval buckets by route =====
     let homeIntervals = [];
     let warIntervals  = [];
     let moreIntervals = [];
@@ -879,20 +735,17 @@
     let membersData = null;
     let membersSortMode = "role";
 
-    // =========================
-    // Utilities
-    // =========================
-    function pad(n){ return String(n).padStart(2,"0"); }
-    function formatCountdown(ms){
-      if(ms<=0) return "Active now";
-      const totalSeconds = Math.floor(ms/1000);
-      const days = Math.floor(totalSeconds/86400);
-      const hours = Math.floor((totalSeconds%86400)/3600);
-      const minutes = Math.floor((totalSeconds%86400%3600)/60);
-      const seconds = totalSeconds%60;
-      return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
+    function escapeHtml(s){
+      return String(s || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
     }
-    function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
+
+    function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    function setClass(id, className, on){ const el = document.getElementById(id); if(el) el.classList.toggle(className, !!on); }
 
     function loadLastWarSnapshot(){
       try{
@@ -908,9 +761,6 @@
     }
     lastWarSnapshot = loadLastWarSnapshot();
 
-    // =========================
-    // Fetchers
-    // =========================
     async function fetchWarData(){
       try{
         const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
@@ -958,31 +808,6 @@
       renderWarChart();
     }
 
-    async function fetchMembersData(){
-      try{
-        const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        membersData = res.ok ? await res.json() : null;
-      } catch(e){
-        membersData = null;
-      }
-      renderMembers();
-    }
-
-    async function fetchClanStats(){
-      try{
-        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        clanStats = res.ok ? await res.json() : null;
-      } catch(e){
-        clanStats = null;
-      }
-      renderClanStats();
-    }
-
-    // =========================
-    // Render: War header section
-    // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
       if(!warFetched){ setText("war-timer","Loading…"); return; }
@@ -993,41 +818,31 @@
 
       if(display.state === "notInWar"){
         setText("war-timer","No war started");
-        setText("war-name-us","—"); setText("war-name-opp","—");
-        setText("war-stars-us","—"); setText("war-stars-opp","—");
-        setText("war-destr-us","—"); setText("war-destr-opp","—");
-        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
         return;
       }
 
       setText("war-name-us",(display.ourName || "US"));
       setText("war-name-opp",(display.oppName || "OPPONENT"));
-
       setText("war-stars-us", String(display.ourStars ?? "—"));
       setText("war-stars-opp", String(display.oppStars ?? "—"));
-
       setText("war-destr-us", String(display.ourDestructionPercentage ?? display.ourDestruction ?? "—"));
       setText("war-destr-opp", String(display.oppDestructionPercentage ?? display.oppDestruction ?? "—"));
-
       setText("war-attacks-us", String(display.ourAttacksUsed ?? "—"));
       setText("war-attacks-opp", String(display.oppAttacksUsed ?? "—"));
-
-      // timer (best effort)
-      if(display.endTimeIso){
-        const end = new Date(display.endTimeIso);
-        const now = new Date();
-        setText("war-timer", isNaN(end.getTime()) ? "Active" : (now >= end ? "War ended" : formatCountdown(end - now)));
-      } else {
-        setText("war-timer","Active");
-      }
     }
 
-    // =========================
-    // Render: War chart (FIXED)
-    // - No “test block”
-    // - Uses 2-line layout properly (no nowrap in stack cells)
-    // - Shows 20+20 rows immediately (no “hidden below” confusion)
-    // =========================
+    function pickSides(detail){
+      const our = detail?.our || {};
+      const opp = detail?.opponent || {};
+      const ourMembers = Array.isArray(our?.members) ? our.members : [];
+      const oppMembers = Array.isArray(opp?.members) ? opp.members : [];
+      return {
+        our: { name: our.name || "Our Clan", tag: our.tag || "", members: ourMembers },
+        opp: { name: opp.name || "Opponent", tag: opp.tag || "", members: oppMembers },
+        debug: `our:our (${ourMembers.length}) | opp:opponent (${oppMembers.length})`
+      };
+    }
+
     function starsHTML(n){
       const s = Number(n || 0);
       return `
@@ -1035,10 +850,6 @@
         <span class="star ${s>=2 ? "" : "dim"}">★</span>
         <span class="star ${s>=3 ? "" : "dim"}">★</span>
       `;
-    }
-    function totalStars(member){
-      const atks = Array.isArray(member?.attacks) ? member.attacks : [];
-      return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
     }
 
     function renderWarChart(){
@@ -1049,10 +860,9 @@
       const keys = warDetail && typeof warDetail === "object" ? Object.keys(warDetail) : [];
 
       const debugTop = `
-        <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 10px;">
+        <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 8px;">
           war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}<br/>
-          keys: ${escapeHtml(keys.join(", "))}
-          ${warDetailMeta.err ? `<div style="opacity:.9;margin-top:6px;">${escapeHtml(warDetailMeta.err)}</div>` : ""}
+          keys: ${escapeHtml(keys.join(", "))}<br/>
         </div>
       `;
 
@@ -1060,77 +870,70 @@
         mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
         return;
       }
-      if(!warDetail || typeof warDetail !== "object"){
+
+      if(!warDetail){
         mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         return;
       }
 
-      const our = warDetail.our || {};
-      const opp = warDetail.opponent || {};
+      const { our, opp, debug } = pickSides(warDetail);
+      const ourMembers = Array.isArray(our.members) ? our.members.slice() : [];
+      const oppMembers = Array.isArray(opp.members) ? opp.members.slice() : [];
 
-      const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
-      const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
-
-      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      // EXTRA debug: first member keys
+      const first = ourMembers[0] || {};
+      const firstKeys = first && typeof first === "object" ? Object.keys(first).slice(0,18).join(", ") : "—";
 
       const debugMid = `
-        <div style="font-family:monospace;font-size:11px;opacity:.85;text-align:center;margin:-6px 0 12px;">
-          shape: our:${ourMembers.length} | opp:${oppMembers.length}
+        <div style="font-family:monospace;font-size:11px;opacity:.85;text-align:center;margin:-4px 0 10px;">
+          shape: ${escapeHtml(debug)}<br/>
+          ROWS BUILT (our): ${ourMembers.length} | first member keys: ${escapeHtml(firstKeys)}
+        </div>
+      `;
+
+      // A forced test row to prove visibility/layout
+      const testRow = `
+        <div class="war-chart-block">
+          <div class="war-chart-head">
+            <div class="war-chart-clan"><span class="war-dot"></span><span>VISIBILITY TEST</span></div>
+            <div class="war-chart-sub">should show 1 row</div>
+          </div>
+          <div class="war-sheet">
+            <div class="war-sheet-row head">
+              <div class="war-cell right mono numcol">#</div>
+              <div class="war-cell">Player</div>
+              <div class="war-cell defender">Defender</div>
+              <div class="war-cell center mono">%</div>
+              <div class="war-cell center">Stars</div>
+              <div class="war-cell center mono">Total</div>
+            </div>
+            <div class="war-sheet-row">
+              <div class="war-cell right mono numcol">1.</div>
+              <div class="war-cell">TEST PLAYER</div>
+              <div class="war-cell defender">TEST DEF</div>
+              <div class="war-cell center mono">99%</div>
+              <div class="war-cell center"><span class="stars">${starsHTML(3)}</span></div>
+              <div class="war-cell center mono bold">3★</div>
+            </div>
+          </div>
         </div>
       `;
 
       function rowHTML(member){
         const name = member?.name || "—";
-        const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
+        const mp = member?.mapPosition ?? "—";
         const atks = Array.isArray(member?.attacks) ? member.attacks : [];
         const a1 = atks[0] || null;
         const a2 = atks[1] || null;
 
-        const a1Pct = (a1 && a1.destructionPercentage != null) ? `${a1.destructionPercentage}%` : "—";
-        const a2Pct = (a2 && a2.destructionPercentage != null) ? `${a2.destructionPercentage}%` : "—";
-
-        const a1Stars = a1 ? Number(a1.stars||0) : 0;
-        const a2Stars = a2 ? Number(a2.stars||0) : 0;
-
-        // Defender fields vary by generator; keep placeholders but not blank.
-        // If your JSON has defenderMapPosition / defenderTag / defenderName, we can wire it exactly.
-        const a1Def = a1 ? (a1.defenderName || (a1.defenderMapPosition != null ? ("#" + a1.defenderMapPosition) : "Attack 1")) : "—";
-        const a2Def = a2 ? (a2.defenderName || (a2.defenderMapPosition != null ? ("#" + a2.defenderMapPosition) : "Attack 2")) : "—";
-
         return `
           <div class="war-sheet-row">
             <div class="war-cell right mono numcol">${escapeHtml(mp)}.</div>
-
-            <div class="war-cell">
-              <div class="war-player">
-                <div class="name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-                <div class="role">TH${member?.townhallLevel ?? "—"}</div>
-              </div>
-            </div>
-
-            <div class="war-cell defender stack">
-              <div class="atk2">
-                <div class="atkline" title="${escapeHtml(a1Def)}">${escapeHtml(a1Def)}</div>
-                <div class="atkline" title="${escapeHtml(a2Def)}">${escapeHtml(a2Def)}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center mono stack">
-              <div class="atk2">
-                <div class="atkline" style="justify-content:center;">${a1 ? escapeHtml(a1Pct) : "—"}</div>
-                <div class="atkline" style="justify-content:center;">${a2 ? escapeHtml(a2Pct) : "—"}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center stack">
-              <div class="atk2">
-                <div class="stars">${a1 ? starsHTML(a1Stars) : `<span class="muted">—</span>`}</div>
-                <div class="stars">${a2 ? starsHTML(a2Stars) : `<span class="muted">—</span>`}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center mono bold">${totalStars(member)}★</div>
+            <div class="war-cell">${escapeHtml(name)}</div>
+            <div class="war-cell defender">${a1 ? "…" : "—"}<br/>${a2 ? "…" : "—"}</div>
+            <div class="war-cell center mono">${a1 ? (a1.destructionPercentage + "%") : "—"}<br/>${a2 ? (a2.destructionPercentage + "%") : "—"}</div>
+            <div class="war-cell center"><div class="atk2"><div class="stars">${a1 ? starsHTML(a1.stars) : `<span class="muted">—</span>`}</div><div class="stars">${a2 ? starsHTML(a2.stars) : `<span class="muted">—</span>`}</div></div></div>
+            <div class="war-cell center mono bold">${atks.reduce((s,a)=>s+(Number(a?.stars)||0),0)}★</div>
           </div>
         `;
       }
@@ -1166,306 +969,53 @@
         debugTop +
         debugMid +
         `<div class="war-chart-title">War Chart</div>` +
+        testRow +
         blockHTML(our.name, our.tag, false, ourMembers) +
         blockHTML(opp.name, opp.tag, true,  oppMembers);
     }
 
-    // =========================
-    // Render: Members + ClanStats (basic, so home doesn’t stay “Loading…”)
-    // =========================
-    function roleEmoji(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return "👑";
-      if(r === "elder") return "🛡️";
-      return "";
-    }
-    function isLeaderOnly(role){
-      return String(role || "").trim().toLowerCase() === "leader";
-    }
-    function readIntAny(obj, keys){
-      for(const k of keys){
-        const v = obj?.[k];
-        if(v !== null && v !== undefined && v !== "") return (v|0);
+    // ===== Members fetching (kept minimal) =====
+    async function fetchMembersData(){
+      try{
+        const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        membersData = res.ok ? await res.json() : null;
+      } catch(e){
+        membersData = null;
       }
-      return 0;
-    }
-    function getThLevel(m){
-      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      return n > 0 ? n : 0;
-    }
-    function getWarStars(m){
-      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      return n >= 0 ? n : 0;
-    }
-    function getXP(m){
-      let n = readIntAny(m, ["expLevel","xp","level"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["expLevel","xp","level"]);
-      return n > 0 ? n : 0;
-    }
-    function getTrophies(m){
-      let n = readIntAny(m, ["trophies"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["trophies"]);
-      return n > 0 ? n : 0;
-    }
-    function getDonations(m){
-      let n = readIntAny(m, ["donations","troopsDonated","donated"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["donations","troopsDonated","donated"]);
-      return n >= 0 ? n : 0;
-    }
-    function getDonationsReceived(m){
-      let n = readIntAny(m, ["donationsReceived","troopsReceived","received"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["donationsReceived","troopsReceived","received"]);
-      return n >= 0 ? n : 0;
-    }
-    function roleRank(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return 1;
-      if(r === "elder" || r === "admin") return 2;
-      return 3;
-    }
-    function compareName(a,b){
-      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
     }
 
-    function ensureSortDropdownBound(){
-      const sel = document.getElementById("membersSortSelect");
-      if(!sel) return;
-
-      sel.value = membersSortMode;
-
-      if(sel.dataset.bound === "1") return;
-      sel.addEventListener("change", () => {
-        membersSortMode = sel.value || "role";
-        renderMembers();
-      });
-      sel.dataset.bound = "1";
-    }
-
-    function renderMembers(){
-      const tbody = document.getElementById("members-body");
-      if(!tbody) return;
-
-      ensureSortDropdownBound();
-
-      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
-      if(!list){
-        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
-        return;
+    // ===== Clan stats fetching (kept minimal) =====
+    async function fetchClanStats(){
+      try{
+        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        clanStats = res.ok ? await res.json() : null;
+      } catch(e){
+        clanStats = null;
       }
-      if(list.length === 0){
-        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
-        return;
-      }
-
-      const sorted = list.slice().sort((a,b) => {
-        const ta = getTrophies(a), tb = getTrophies(b);
-        const xa = getXP(a), xb = getXP(b);
-        const wa = getWarStars(a), wb = getWarStars(b);
-        const ha = getThLevel(a), hb = getThLevel(b);
-        const ra = roleRank(a.role), rb = roleRank(b.role);
-        const da = getDonations(a), db = getDonations(b);
-        const rxa = getDonationsReceived(a), rxb = getDonationsReceived(b);
-
-        if(membersSortMode === "role"){
-          if(ra !== rb) return ra - rb;
-          if(tb !== ta) return tb - ta;
-          if(xb !== xa) return xb - xa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "th"){
-          if(hb !== ha) return hb - ha;
-          if(xb !== xa) return xb - xa;
-          if(wb !== wa) return wb - wa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "trophies"){
-          if(tb !== ta) return tb - ta;
-          if(xb !== xa) return xb - xa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "warStars"){
-          if(wb !== wa) return wb - wa;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "xp"){
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          if(hb !== ha) return hb - ha;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "donated"){
-          if(db !== da) return db - da;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "received"){
-          if(rxb !== rxa) return rxb - rxa;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-
-        if(tb !== ta) return tb - ta;
-        if(xb !== xa) return xb - xa;
-        return compareName(a,b);
-      });
-
-      tbody.innerHTML = sorted.map(m => {
-        const badge = roleEmoji(m.role);
-        const name = escapeHtml(m.name);
-        const th = getThLevel(m);
-        const trophies = getTrophies(m);
-        const warStars = getWarStars(m);
-        const xp = getXP(m);
-        const donated = getDonations(m);
-        const received = getDonationsReceived(m);
-        const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
-
-        return `
-          <tr>
-            <td class="m-emoji">${badge || ""}</td>
-            <td><span class="m-user-name ${leaderClass}">${name}</span></td>
-            <td class="m-num">${th ? th : "—"}</td>
-            <td class="m-num">${trophies ? trophies : 0}</td>
-            <td class="m-num">${warStars ? warStars : 0}</td>
-            <td class="m-num">${xp ? xp : 0}</td>
-            <td class="m-num">${donated}</td>
-            <td class="m-num">${received}</td>
-          </tr>
-        `;
-      }).join("");
     }
 
-    function renderClanStats(){
-      // Keep this lightweight: only fill fields that exist in your clan_stats.json
-      if(!clanStats) return;
-
-      const descEl = document.getElementById("clan-desc");
-      if(descEl){
-        const desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
-        descEl.textContent = desc || "—";
-      }
-
-      const cwlLeague = clanStats?.cwl?.currentLeague || "—";
-      const cwlFinish = clanStats?.cwl?.lastFinish || "—";
-      setText("cwl-league", cwlLeague);
-      setText("cwl-finish", cwlFinish);
-      setText("cwl-league-cwlpage", cwlLeague);
-      setText("cwl-finish-cwlpage", cwlFinish);
-
-      const hall = clanStats?.clanCapital?.capitalHallLevel;
-      setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
-    }
-
-    // =========================
-    // More page timers (same logic you had before, compact)
-    // =========================
-    function getNextRaidWeekendEnd(now){
-      const day = now.getUTCDay();
-      const diffToFriday = (5 - day + 7) % 7;
-      let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
-      let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
-      if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
-      if(now > mondayEnd){
-        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
-        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
-      }
-      return mondayEnd;
-    }
-    function getNextClanGamesEnd(now){
-      const y=now.getUTCFullYear(), m=now.getUTCMonth();
-      const start = makeUTC(y,m,22,8);
-      const end   = makeUTC(y,m,28,8);
-      if(now < start) return end;
-      if(now <= end) return end;
-      const nextMonth = new Date(Date.UTC(y, m+1, 1));
-      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
-    }
-    function getNextSeasonEnd(now){ return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8); }
-    function getNextLeagueReset(now){
-      const y=now.getUTCFullYear(), m=now.getUTCMonth();
-      let first = makeUTC(y,m,1,5);
-      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
-      let reset = makeUTC(y,m,1+diffToMonday,5);
-      if(now > reset){
-        const nm = new Date(Date.UTC(y, m+1, 1));
-        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
-        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
-        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
-      }
-      return reset;
-    }
-    function updateRecurringTimers(){
-      if(!document.getElementById("raid-timer")) return;
-      const now = new Date();
-      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
-      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
-      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
-      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
-    }
-
-    // =========================
-    // Loops per route
-    // =========================
-    function startHomeLoop(){
-      clearIntervals(homeIntervals);
-      membersSortMode = "role";
-
-      fetchClanStats();
-      fetchMembersData();
-
-      homeIntervals.push(setInterval(fetchClanStats, 5000));
-      homeIntervals.push(setInterval(fetchMembersData, 10000));
-    }
-
-    function startWarLoop(){
-      clearIntervals(warIntervals);
-      warFetched = false;
-      warDetailFetched = false;
-
-      fetchWarData();
-      fetchWarDetail();
-
-      warIntervals.push(setInterval(fetchWarData, 5000));
-      warIntervals.push(setInterval(fetchWarDetail, 5000));
-      warIntervals.push(setInterval(renderWarSection, 1000)); // timer refresh
-    }
-
-    function startMoreLoop(){
-      clearIntervals(moreIntervals);
-      updateRecurringTimers();
-      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
-    }
-
-    // =========================
-    // Router
-    // =========================
+    // ===== Router =====
     function setDocTitle(route){
-      const map = {
-        home:"B•A•S•E•D — Home",
-        cwl:"B•A•S•E•D — CWL",
-        war:"B•A•S•E•D — War",
-        mystats:"B•A•S•E•D — My Stats",
-        more:"B•A•S•E•D — More"
-      };
+      const map = { home:"B•A•S•E•D — Home", cwl:"B•A•S•E•D — CWL", war:"B•A•S•E•D — War", mystats:"B•A•S•E•D — My Stats", more:"B•A•S•E•D — More" };
       document.title = map[route] || "B•A•S•E•D";
+    }
+
+    function setupNavUI(){
+      const pwa = isPwaInstalled();
+      const topNav = document.getElementById("topNav");
+      const tabbar = document.getElementById("pwaTabbar");
+
+      if(pwa){
+        if(topNav) topNav.style.display = "none";
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(topNav) topNav.style.display = "flex";
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
     }
 
     function renderRoute(){
@@ -1482,12 +1032,17 @@
 
       app.innerHTML = renderRouteContent(route);
 
-      if(route === "home") startHomeLoop();
-      if(route === "war")  startWarLoop();
-      if(route === "more") startMoreLoop();
-      if(route === "cwl"){
+      if(route === "war"){
         fetchClanStats();
-        homeIntervals.push(setInterval(fetchClanStats, 5000));
+        fetchMembersData();
+        fetchWarData();
+        fetchWarDetail();
+
+        warIntervals.push(setInterval(fetchWarData, 5000));
+        warIntervals.push(setInterval(fetchWarDetail, 5000));
+      } else if(route === "home"){
+        fetchClanStats();
+        fetchMembersData();
       }
     }
 
@@ -1499,24 +1054,6 @@
     window.addEventListener("pageshow", renderRoute);
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible") renderRoute();
-    });
-
-    // Surface errors into the war chart mount so nothing is “silent”
-    window.addEventListener("error", (e) => {
-      const mount = document.getElementById("war-chart-mount");
-      if(mount){
-        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
-          JS Error: ${escapeHtml(e.message || "unknown")}
-        </div>`;
-      }
-    });
-    window.addEventListener("unhandledrejection", (e) => {
-      const mount = document.getElementById("war-chart-mount");
-      if(mount){
-        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
-          Promise Error: ${escapeHtml(String(e.reason || "unknown"))}
-        </div>`;
-      }
     });
   </script>
 </body>
