@@ -141,8 +141,8 @@
 
     /* ===== WAR CHART ===== */
     .war-chart-wrap{ margin-top: 12px; }
-    .war-chart-title{
-      margin: 10px 0 6px;
+    .war-mode-title{
+      margin: 10px 0 10px;
       font-size:13px;
       letter-spacing:.08em;
       text-transform:uppercase;
@@ -206,7 +206,6 @@
       min-width: 0;
     }
 
-    /* Allow stacked lines in the 2-line cells */
     .war-cell.stack { white-space: normal; }
     .war-cell.mono{ font-family: monospace; white-space:nowrap; }
     .war-cell.center{ justify-content:center; text-align:center; }
@@ -225,19 +224,33 @@
       gap:6px;
       min-width:0;
     }
-    /* TH line styling */
     .war-player .role{
       font-size:11px;
       opacity:.70;
       white-space:nowrap;
     }
-    /* Role-in-parens beside name should look like the TH line */
     .war-name-role{
       font-size:11px;
       opacity:.70;
       font-weight:600;
       white-space:nowrap;
       flex:0 0 auto;
+    }
+
+    /* Leader underline (same idea as members table) */
+    .war-leader-underline{
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-weight: 900;
+    }
+
+    /* Role emoji appended to the right of username */
+    .war-role-emoji{
+      font-size:14px;
+      line-height:1;
+      transform: translateY(1px);
+      flex: 0 0 auto;
+      opacity: .95;
     }
 
     .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
@@ -279,7 +292,6 @@
       .war-cell.defender .atkline{
         justify-content: flex-start;
         text-align: left;
-
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -840,8 +852,7 @@
             </div>
           </div>
 
-          <div class="divider"></div>
-
+          <!-- ✅ Removed divider line between Current War and War Chart -->
           <div id="war-chart-mount" class="war-chart-wrap"></div>
         </div>
       `;
@@ -947,6 +958,16 @@
       el.classList.toggle(className, !!on);
     }
 
+    function roleEmoji(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return "👑";
+      if(r === "elder") return "🛡️";
+      return "";
+    }
+    function isLeaderOnly(role){
+      return String(role || "").trim().toLowerCase() === "leader";
+    }
+
     // =========================
     // Fetchers
     // =========================
@@ -1020,7 +1041,7 @@
     }
 
     // =========================
-    // Render: War header section
+    // Render: Current War section
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
@@ -1039,17 +1060,27 @@
         return;
       }
 
+      const teamSize = Number(display.teamSize || display.size || display.members || 0) || null;
+      const maxStars = teamSize ? (3 * teamSize) : null;
+      const maxAttacks = teamSize ? (2 * teamSize) : null;
+
       setText("war-name-us",(display.ourName || "US"));
       setText("war-name-opp",(display.oppName || "OPPONENT"));
 
-      setText("war-stars-us", String(display.ourStars ?? "—"));
-      setText("war-stars-opp", String(display.oppStars ?? "—"));
+      const ourStars = (display.ourStars ?? null);
+      const oppStars = (display.oppStars ?? null);
+
+      setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
+      setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
 
       setText("war-destr-us", String(display.ourDestructionPercentage ?? display.ourDestruction ?? "—"));
       setText("war-destr-opp", String(display.oppDestructionPercentage ?? display.oppDestruction ?? "—"));
 
-      setText("war-attacks-us", String(display.ourAttacksUsed ?? "—"));
-      setText("war-attacks-opp", String(display.oppAttacksUsed ?? "—"));
+      const ourAtkUsed = (display.ourAttacksUsed ?? null);
+      const oppAtkUsed = (display.oppAttacksUsed ?? null);
+
+      setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
+      setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
 
       if(display.endTimeIso){
         const end = new Date(display.endTimeIso);
@@ -1061,7 +1092,7 @@
     }
 
     // =========================
-    // Render: War chart (UPDATED per your 5 requests)
+    // Render: War chart (no debug text; show mode instead)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1098,25 +1129,19 @@
       const mount = document.getElementById("war-chart-mount");
       if(!mount) return;
 
-      const stamp = new Date(warDetailMeta.ts || Date.now()).toLocaleTimeString();
-      const keys = warDetail && typeof warDetail === "object" ? Object.keys(warDetail) : [];
-
-      const debugTop = `
-        <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 10px;">
-          war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}<br/>
-          keys: ${escapeHtml(keys.join(", "))}
-          ${warDetailMeta.err ? `<div style="opacity:.9;margin-top:6px;">${escapeHtml(warDetailMeta.err)}</div>` : ""}
-        </div>
-      `;
-
       if(!warDetailFetched){
-        mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        mount.innerHTML = `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
         return;
       }
       if(!warDetail || typeof warDetail !== "object"){
-        mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         return;
       }
+
+      // ✅ If there is no current war, don't show the mode/title
+      const state = String(warDetail.state || "").toLowerCase();
+      const teamSize = Number(warDetail.teamSize || 0) || null;
+      const showMode = (state && state !== "notinwar") && teamSize;
 
       const our = warDetail.our || {};
       const opp = warDetail.opponent || {};
@@ -1127,7 +1152,6 @@
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
       oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
-      // Build lookup tables so we can render defender as "3. maro"
       function buildLookup(members){
         const byTag = new Map();
         const byPos = new Map();
@@ -1144,7 +1168,6 @@
 
       function formatDefenderFromAttack(a, defenderSideLU){
         if(!a) return "—";
-
         const dName = readFirst(a, ["defenderName","defender","targetName","defenderPlayerName","defender_name"]);
         const dTag  = readFirst(a, ["defenderTag","defender_tag","targetTag","defenderPlayerTag"]);
         const dPos  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
@@ -1167,6 +1190,14 @@
         return "—";
       }
 
+      function roleEmojiForWar(role){
+        // Leader / Co Leader = crown; Elder = shield
+        const r = String(role || "").toLowerCase();
+        if(r.includes("leader")) return "👑";
+        if(r === "elder") return "🛡️";
+        return "";
+      }
+
       function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
         const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
@@ -1186,6 +1217,11 @@
         const roleLabel = niceRole(member?.role);
         const roleInline = roleLabel ? ` <span class="war-name-role">(${escapeHtml(roleLabel)})</span>` : "";
 
+        const em = roleEmojiForWar(member?.role);
+        const emHTML = em ? `<span class="war-role-emoji" aria-hidden="true">${em}</span>` : "";
+
+        const nameClass = isLeaderOnly(member?.role) ? "war-leader-underline" : "";
+
         return `
           <div class="war-sheet-row">
             <div class="war-cell right mono numcol">${escapeHtml(mp)}.</div>
@@ -1193,7 +1229,8 @@
             <div class="war-cell">
               <div class="war-player">
                 <div class="name" title="${escapeHtml(name)}">
-                  <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                  <span class="${nameClass}" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                  ${emHTML}
                   ${roleInline}
                 </div>
                 <div class="role">TH${member?.townhallLevel ?? "—"}</div>
@@ -1245,24 +1282,14 @@
       }
 
       mount.innerHTML =
-        debugTop +
-        `<div class="war-chart-title">War Chart</div>` +
+        (showMode ? `<div class="war-mode-title">${teamSize} v ${teamSize}</div>` : ``) +
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
     }
 
     // =========================
-    // Render: Members + ClanStats (unchanged from your working version)
+    // Members + ClanStats (unchanged)
     // =========================
-    function roleEmoji(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return "👑";
-      if(r === "elder") return "🛡️";
-      return "";
-    }
-    function isLeaderOnly(role){
-      return String(role || "").trim().toLowerCase() === "leader";
-    }
     function readIntAny(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
