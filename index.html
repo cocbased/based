@@ -162,7 +162,7 @@
     .war-chart-head{
       display:flex;
       align-items:center;
-      justify-content:center; /* centered since tags + bullets are removed */
+      justify-content:center;
       gap: 10px;
       padding: 10px 10px;
       background: rgba(255,255,255,0.04);
@@ -237,14 +237,12 @@
       flex:0 0 auto;
     }
 
-    /* Leader underline (same idea as members table) */
     .war-leader-underline{
       text-decoration: underline;
       text-underline-offset: 2px;
       font-weight: 900;
     }
 
-    /* Role emoji appended to the right of username */
     .war-role-emoji{
       font-size:14px;
       line-height:1;
@@ -280,15 +278,9 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
-    /* Small screens: keep rank + beginning of defender visible (not the end) */
     @media (max-width: 420px){
-      .war-cell.defender{
-        justify-content: flex-start;
-        text-align: left;
-      }
-      .war-cell.defender .atk2{
-        align-items: flex-start;
-      }
+      .war-cell.defender{ justify-content: flex-start; text-align: left; }
+      .war-cell.defender .atk2{ align-items: flex-start; }
       .war-cell.defender .atkline{
         justify-content: flex-start;
         text-align: left;
@@ -636,6 +628,85 @@
       });
     }
 
+    // =========================
+    // PWA tabbar hide-on-scroll (FIX)
+    // =========================
+    let _pwaScrollBound = false;
+    let _lastScrollY = 0;
+    let _rafPending = false;
+
+    function getScrollTop(){
+      const se = document.scrollingElement || document.documentElement;
+      return (typeof window.scrollY === "number") ? window.scrollY : (se ? se.scrollTop : 0);
+    }
+
+    function showPwaTabbar(){
+      const tabbar = document.getElementById("pwaTabbar");
+      if(tabbar) tabbar.classList.remove("is-hidden");
+    }
+
+    function hidePwaTabbar(){
+      const tabbar = document.getElementById("pwaTabbar");
+      if(tabbar) tabbar.classList.add("is-hidden");
+    }
+
+    function bindPwaTabbarAutoHide(){
+      if(_pwaScrollBound) return;
+      if(!isPwaInstalled()) return;
+
+      const tabbar = document.getElementById("pwaTabbar");
+      if(!tabbar || getComputedStyle(tabbar).display === "none") return;
+
+      _pwaScrollBound = true;
+      _lastScrollY = getScrollTop();
+      showPwaTabbar();
+
+      const onScroll = () => {
+        if(_rafPending) return;
+        _rafPending = true;
+
+        requestAnimationFrame(() => {
+          _rafPending = false;
+
+          const y = getScrollTop();
+          const dy = y - _lastScrollY;
+
+          // ignore tiny jitter
+          if(Math.abs(dy) < 6){
+            _lastScrollY = y;
+            return;
+          }
+
+          // if at/near top, always show
+          if(y <= 8){
+            showPwaTabbar();
+            _lastScrollY = y;
+            return;
+          }
+
+          // hide on scroll down, show on scroll up
+          if(dy > 0) hidePwaTabbar();
+          else showPwaTabbar();
+
+          _lastScrollY = y;
+        });
+      };
+
+      // store for cleanup (in case browsers keep handlers around)
+      window.__pwaTabbarScrollHandler = onScroll;
+      window.addEventListener("scroll", onScroll, { passive:true });
+    }
+
+    function unbindPwaTabbarAutoHide(){
+      const fn = window.__pwaTabbarScrollHandler;
+      if(fn){
+        window.removeEventListener("scroll", fn);
+        window.__pwaTabbarScrollHandler = null;
+      }
+      _pwaScrollBound = false;
+      _rafPending = false;
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -645,10 +716,15 @@
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
+
+        // ✅ make sure scroll auto-hide is active in PWA
+        unbindPwaTabbarAutoHide();
+        bindPwaTabbarAutoHide();
       } else {
         if(topNav) topNav.style.display = "flex";
         if(tabbar) tabbar.style.display = "none";
         document.body.classList.remove("has-pwa-tabs");
+        unbindPwaTabbarAutoHide();
       }
     }
 
@@ -852,7 +928,6 @@
             </div>
           </div>
 
-          <!-- ✅ Removed divider line between Current War and War Chart -->
           <div id="war-chart-mount" class="war-chart-wrap"></div>
         </div>
       `;
@@ -1092,7 +1167,7 @@
     }
 
     // =========================
-    // Render: War chart (no debug text; show mode instead)
+    // Render: War chart
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1138,7 +1213,6 @@
         return;
       }
 
-      // ✅ If there is no current war, don't show the mode/title
       const state = String(warDetail.state || "").toLowerCase();
       const teamSize = Number(warDetail.teamSize || 0) || null;
       const showMode = (state && state !== "notinwar") && teamSize;
@@ -1191,7 +1265,6 @@
       }
 
       function roleEmojiForWar(role){
-        // Leader / Co Leader = crown; Elder = shield
         const r = String(role || "").toLowerCase();
         if(r.includes("leader")) return "👑";
         if(r === "elder") return "🛡️";
@@ -1545,7 +1618,7 @@
     }
 
     // =========================
-    // More page timers (unchanged)
+    // More page timers
     // =========================
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
@@ -1597,10 +1670,8 @@
     function startHomeLoop(){
       clearIntervals(homeIntervals);
       membersSortMode = "role";
-
       fetchClanStats();
       fetchMembersData();
-
       homeIntervals.push(setInterval(fetchClanStats, 5000));
       homeIntervals.push(setInterval(fetchMembersData, 10000));
     }
@@ -1661,6 +1732,9 @@
         fetchClanStats();
         homeIntervals.push(setInterval(fetchClanStats, 5000));
       }
+
+      // ✅ ensure tabbar hide/show still works after route render
+      if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
     if(!location.hash) location.hash = "#/home";
@@ -1673,7 +1747,6 @@
       if(document.visibilityState === "visible") renderRoute();
     });
 
-    // Surface errors into the war chart mount so nothing is “silent”
     window.addEventListener("error", (e) => {
       const mount = document.getElementById("war-chart-mount");
       if(mount){
