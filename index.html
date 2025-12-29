@@ -8,7 +8,6 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Disable pinch-zoom (best-effort; iOS may still allow in some cases) -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -20,9 +19,6 @@
       --tabbar-h: 92px;
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
-
-      /* ✅ iOS PWA visualViewport “floating bar” fix (default = 0) */
-      --vv-bottom: 0px;
 
       --m-emoji-col: 30px;
       --m-name-col: 102px;
@@ -166,7 +162,7 @@
     .war-chart-head{
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:center; /* centered since tags + bullets are removed */
       gap: 10px;
       padding: 10px 10px;
       background: rgba(255,255,255,0.04);
@@ -183,26 +179,7 @@
       overflow:hidden;
       text-overflow:ellipsis;
       min-width: 0;
-    }
-
-    .war-dot{
-      width:10px; height:10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.85);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.10);
-      flex: 0 0 auto;
-    }
-    .war-dot.opp{
-      background: rgba(255,215,0,0.9);
-      box-shadow: 0 0 0 3px rgba(255,215,0,0.14);
-    }
-
-    .war-chart-sub{
-      font-family: monospace;
-      font-size: 12px;
-      opacity: .75;
-      white-space: nowrap;
-      flex: 0 0 auto;
+      justify-content:center;
     }
 
     .war-sheet{ width:100%; display:block; }
@@ -215,11 +192,6 @@
       min-height: 38px;
     }
     .war-sheet-row:last-child{ border-bottom:none; }
-
-    .war-sheet-row.head{
-      background: rgba(0,0,0,0.18);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-    }
 
     .war-cell{
       padding: 8px 8px;
@@ -253,7 +225,20 @@
       gap:6px;
       min-width:0;
     }
-    .war-player .role{ font-size:11px; opacity:.70; white-space:nowrap; }
+    /* TH line styling */
+    .war-player .role{
+      font-size:11px;
+      opacity:.70;
+      white-space:nowrap;
+    }
+    /* Role-in-parens beside name should look like the TH line */
+    .war-name-role{
+      font-size:11px;
+      opacity:.70;
+      font-weight:600;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
 
     .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
     .atkline{
@@ -282,7 +267,7 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
-    /* Members styles */
+    /* Members styles (unchanged) */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
@@ -459,15 +444,11 @@
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
-
     .pwa-tabbar{
       position: fixed;
       left: 0;
       right: 0;
-      top: auto !important;
-      /* ✅ prevents “floating” in iOS PWA when visualViewport changes */
-      bottom: calc(var(--vv-bottom, 0px) + 0px) !important;
-
+      bottom: 0;
       height: var(--tabbar-h);
       padding-bottom: var(--safe-bottom);
       background: var(--tabbar-bg);
@@ -479,14 +460,11 @@
       will-change: transform;
       transform: translate3d(0,0,0);
       transition: transform 180ms cubic-bezier(.2,.8,.2,1);
-      /* ✅ reduces weird compositor jumps */
-      contain: layout paint;
     }
     .pwa-tabbar.is-hidden{
       transform: translate3d(0, calc(var(--tabbar-h) + var(--safe-bottom) + 6px), 0);
       pointer-events: none;
     }
-
     .pwa-tabbar .tabs{
       height: 100%;
       max-width: 560px;
@@ -627,87 +605,6 @@
       });
     }
 
-    // =========================
-    // ✅ PWA TAB BAR: hide on scroll down, show on scroll up
-    // + iOS visualViewport pin fix (prevents “floating mid-screen”)
-    // =========================
-    let _pwaScrollBound = false;
-    let _lastScrollY = 0;
-    let _lastDir = 0; // -1 up, +1 down
-    let _ticking = false;
-
-    function setTabbarHidden(hidden){
-      const tabbar = document.getElementById("pwaTabbar");
-      if(!tabbar) return;
-      tabbar.classList.toggle("is-hidden", !!hidden);
-    }
-
-    function syncTabbarToViewport(){
-      if(!isPwaInstalled()) return;
-      const vv = window.visualViewport;
-      if(!vv) {
-        document.documentElement.style.setProperty("--vv-bottom", "0px");
-        return;
-      }
-      // Bottom gap between layout viewport and visual viewport (iOS chrome/animations)
-      const bottomGap = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
-      document.documentElement.style.setProperty("--vv-bottom", bottomGap + "px");
-    }
-
-    function bindPwaAutoHideOnce(){
-      if(_pwaScrollBound) return;
-      _pwaScrollBound = true;
-
-      _lastScrollY = window.scrollY || 0;
-      setTabbarHidden(false);
-
-      const onScroll = () => {
-        if(_ticking) return;
-        _ticking = true;
-
-        requestAnimationFrame(() => {
-          _ticking = false;
-
-          const y = window.scrollY || 0;
-          const dy = y - _lastScrollY;
-
-          // ignore tiny jitter
-          if(Math.abs(dy) < 6) return;
-
-          // if near top, always show
-          if(y < 12){
-            setTabbarHidden(false);
-            _lastDir = 0;
-            _lastScrollY = y;
-            return;
-          }
-
-          const dir = dy > 0 ? 1 : -1; // down/up
-
-          // only act when direction changes or keeps going
-          if(dir === 1){
-            setTabbarHidden(true);
-          } else {
-            setTabbarHidden(false);
-          }
-
-          _lastDir = dir;
-          _lastScrollY = y;
-        });
-      };
-
-      window.addEventListener("scroll", onScroll, { passive:true });
-
-      // iOS viewport changes (address bar / toolbar / animations)
-      window.addEventListener("resize", syncTabbarToViewport, { passive:true });
-      if(window.visualViewport){
-        window.visualViewport.addEventListener("resize", syncTabbarToViewport, { passive:true });
-        window.visualViewport.addEventListener("scroll", syncTabbarToViewport, { passive:true });
-      }
-      // initial
-      syncTabbarToViewport();
-    }
-
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -717,10 +614,6 @@
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
-
-        bindPwaAutoHideOnce();
-        syncTabbarToViewport();
-        setTabbarHidden(false); // always show on route change
       } else {
         if(topNav) topNav.style.display = "flex";
         if(tabbar) tabbar.style.display = "none";
@@ -1149,7 +1042,7 @@
     }
 
     // =========================
-    // Render: War chart
+    // Render: War chart (UPDATED per your 5 requests)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1162,6 +1055,25 @@
     function totalStars(member){
       const atks = Array.isArray(member?.attacks) ? member.attacks : [];
       return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
+    }
+
+    function niceRole(role){
+      const r = String(role || "").trim();
+      if(!r) return "";
+      const low = r.toLowerCase();
+      if(low === "coLeader" || low === "co-leader" || low === "coleader") return "Co Leader";
+      if(low === "leader") return "Leader";
+      if(low === "elder") return "Elder";
+      // If your generator already outputs "Co Leader", keep it:
+      return r;
+    }
+
+    function readFirst(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== undefined && v !== null && v !== "") return v;
+      }
+      return null;
     }
 
     function renderWarChart(){
@@ -1197,13 +1109,54 @@
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
       oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
-      const debugMid = `
-        <div style="font-family:monospace;font-size:11px;opacity:.85;text-align:center;margin:-6px 0 12px;">
-          shape: our:${ourMembers.length} | opp:${oppMembers.length}
-        </div>
-      `;
+      // Build lookup tables so we can render defender as "3. maro"
+      function buildLookup(members){
+        const byTag = new Map();
+        const byPos = new Map();
+        for(const m of (members||[])){
+          const tag = m?.tag ? String(m.tag) : "";
+          const pos = (m?.mapPosition != null) ? Number(m.mapPosition) : null;
+          const name = m?.name ? String(m.name) : "";
+          if(tag) byTag.set(tag, m);
+          if(pos != null && isFinite(pos)) byPos.set(pos, m);
+        }
+        return { byTag, byPos };
+      }
+      const ourLU = buildLookup(ourMembers);
+      const oppLU = buildLookup(oppMembers);
 
-      function rowHTML(member){
+      function formatDefenderFromAttack(a, defenderSideLU){
+        if(!a) return "—";
+
+        // Common possible fields (we accept many to be resilient)
+        const dName = readFirst(a, ["defenderName","defender","targetName","defenderPlayerName","defender_name"]);
+        const dTag  = readFirst(a, ["defenderTag","defender_tag","targetTag","defenderPlayerTag"]);
+        const dPos  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
+
+        // Try tag lookup
+        if(dTag && defenderSideLU?.byTag?.has(String(dTag))){
+          const m = defenderSideLU.byTag.get(String(dTag));
+          const pos = (m?.mapPosition != null) ? m.mapPosition : (dPos != null ? dPos : "—");
+          const nm  = m?.name || dName || "—";
+          return `${pos}. ${nm}`;
+        }
+
+        // Try pos lookup
+        const posNum = (dPos != null && dPos !== "") ? Number(dPos) : null;
+        if(posNum != null && isFinite(posNum) && defenderSideLU?.byPos?.has(posNum)){
+          const m = defenderSideLU.byPos.get(posNum);
+          const nm = m?.name || dName || "—";
+          return `${posNum}. ${nm}`;
+        }
+
+        // If we have at least name, show it (no rank)
+        if(dName) return String(dName);
+
+        // Nothing usable
+        return "—";
+      }
+
+      function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
         const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
         const atks = Array.isArray(member?.attacks) ? member.attacks : [];
@@ -1216,8 +1169,13 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
-        const a1Def = a1 ? (a1.defenderName || (a1.defenderMapPosition != null ? ("#" + a1.defenderMapPosition) : "Attack 1")) : "—";
-        const a2Def = a2 ? (a2.defenderName || (a2.defenderMapPosition != null ? ("#" + a2.defenderMapPosition) : "Attack 2")) : "—";
+        // ✅ Defender now “rank. name”
+        const a1Def = formatDefenderFromAttack(a1, defenderSideLU);
+        const a2Def = formatDefenderFromAttack(a2, defenderSideLU);
+
+        // ✅ Role next to username in parentheses if present
+        const roleLabel = niceRole(member?.role);
+        const roleInline = roleLabel ? ` <span class="war-name-role">(${escapeHtml(roleLabel)})</span>` : "";
 
         return `
           <div class="war-sheet-row">
@@ -1225,7 +1183,10 @@
 
             <div class="war-cell">
               <div class="war-player">
-                <div class="name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                <div class="name" title="${escapeHtml(name)}">
+                  <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                  ${roleInline}
+                </div>
                 <div class="role">TH${member?.townhallLevel ?? "—"}</div>
               </div>
             </div>
@@ -1256,28 +1217,21 @@
         `;
       }
 
-      function blockHTML(title, tag, isOpp, members){
+      function blockHTML(title, isOpp, members){
+        // ✅ Removed bullet/dot and ✅ removed clan tags completely
+        // ✅ Removed header row completely (# Player Defender % Stars Total)
+        const defenderLU = isOpp ? ourLU : oppLU; // opponent attacks target our, our attacks target opponent
+
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
               <div class="war-chart-clan" title="${escapeHtml(title || "")}">
-                <span class="war-dot ${isOpp ? "opp" : ""}"></span>
                 <span>${escapeHtml(title || (isOpp ? "Opponent" : "Our Clan"))}</span>
               </div>
-              <div class="war-chart-sub">${escapeHtml(tag || "")}</div>
             </div>
 
             <div class="war-sheet">
-              <div class="war-sheet-row head">
-                <div class="war-cell right mono numcol">#</div>
-                <div class="war-cell">Player</div>
-                <div class="war-cell defender">Defender</div>
-                <div class="war-cell center mono">%</div>
-                <div class="war-cell center">Stars</div>
-                <div class="war-cell center mono">Total</div>
-              </div>
-
-              ${(members || []).map(m => rowHTML(m)).join("")}
+              ${(members || []).map(m => rowHTML(m, defenderLU)).join("")}
             </div>
           </div>
         `;
@@ -1285,14 +1239,13 @@
 
       mount.innerHTML =
         debugTop +
-        debugMid +
         `<div class="war-chart-title">War Chart</div>` +
-        blockHTML(our.name, our.tag, false, ourMembers) +
-        blockHTML(opp.name, opp.tag, true,  oppMembers);
+        blockHTML(our.name, false, ourMembers) +
+        blockHTML(opp.name, true,  oppMembers);
     }
 
     // =========================
-    // Members + ClanStats (unchanged from your latest)
+    // Render: Members + ClanStats (unchanged from your working version)
     // =========================
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
@@ -1558,7 +1511,7 @@
     }
 
     // =========================
-    // More page timers
+    // More page timers (unchanged)
     // =========================
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
@@ -1667,9 +1620,6 @@
 
       app.innerHTML = renderRouteContent(route);
 
-      // ✅ ensure tabbar is visible when navigating pages
-      if(isPwaInstalled()) setTabbarHidden(false);
-
       if(route === "home") startHomeLoop();
       if(route === "war")  startWarLoop();
       if(route === "more") startMoreLoop();
@@ -1684,9 +1634,9 @@
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
-    window.addEventListener("pageshow", () => { syncTabbarToViewport(); renderRoute(); });
+    window.addEventListener("pageshow", renderRoute);
     document.addEventListener("visibilitychange", () => {
-      if(document.visibilityState === "visible") { syncTabbarToViewport(); renderRoute(); }
+      if(document.visibilityState === "visible") renderRoute();
     });
 
     // Surface errors into the war chart mount so nothing is “silent”
