@@ -237,25 +237,11 @@
       flex:0 0 auto;
     }
 
-    /* Leader underline */
+    /* Leader underline (same idea as members table) */
     .war-leader-underline{
-      text-decoration-line: underline;
-      text-decoration-thickness: from-font;
+      text-decoration: underline;
       text-underline-offset: 2px;
       font-weight: 900;
-    }
-
-    /* Strike name when the base is tripled */
-    .war-tripled{
-      text-decoration-line: line-through;
-      text-decoration-thickness: from-font;
-      text-decoration-color: rgba(255,255,255,0.75);
-    }
-
-    /* If they're Leader AND tripled, show BOTH underline + strike */
-    .war-leader-underline.war-tripled{
-      text-decoration-line: underline line-through;
-      text-underline-offset: 2px;
     }
 
     /* Role emoji appended to the right of username */
@@ -1212,23 +1198,6 @@
         return "";
       }
 
-      // ✅ Determine if THIS member's base has been tripled by the opponent
-      function wasTripled(m){
-        const best = m?.bestOpponentAttack;
-        if(best && Number(best.stars) === 3) return true;
-
-        const flat = readFirst(m, ["bestOpponentAttackStars","bestDefenseStars","defenseStars"]);
-        if(Number(flat) === 3) return true;
-
-        const oppAtks = Array.isArray(m?.opponentAttacks) ? m.opponentAttacks : [];
-        if(oppAtks.some(a => Number(a?.stars) === 3)) return true;
-
-        const defs = Array.isArray(m?.defenses) ? m.defenses : [];
-        if(defs.some(a => Number(a?.stars) === 3)) return true;
-
-        return false;
-      }
-
       function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
         const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
@@ -1251,11 +1220,7 @@
         const em = roleEmojiForWar(member?.role);
         const emHTML = em ? `<span class="war-role-emoji" aria-hidden="true">${em}</span>` : "";
 
-        const tripled = wasTripled(member);
-        const nameClass = [
-          isLeaderOnly(member?.role) ? "war-leader-underline" : "",
-          tripled ? "war-tripled" : ""
-        ].filter(Boolean).join(" ");
+        const nameClass = isLeaderOnly(member?.role) ? "war-leader-underline" : "";
 
         return `
           <div class="war-sheet-row">
