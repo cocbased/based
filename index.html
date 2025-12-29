@@ -21,6 +21,9 @@
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
 
+      /* ✅ iOS PWA visualViewport “floating bar” fix (default = 0) */
+      --vv-bottom: 0px;
+
       --m-emoji-col: 30px;
       --m-name-col: 102px;
 
@@ -456,11 +459,15 @@
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
+
     .pwa-tabbar{
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 0;
+      top: auto !important;
+      /* ✅ prevents “floating” in iOS PWA when visualViewport changes */
+      bottom: calc(var(--vv-bottom, 0px) + 0px) !important;
+
       height: var(--tabbar-h);
       padding-bottom: var(--safe-bottom);
       background: var(--tabbar-bg);
@@ -472,11 +479,14 @@
       will-change: transform;
       transform: translate3d(0,0,0);
       transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+      /* ✅ reduces weird compositor jumps */
+      contain: layout paint;
     }
     .pwa-tabbar.is-hidden{
       transform: translate3d(0, calc(var(--tabbar-h) + var(--safe-bottom) + 6px), 0);
       pointer-events: none;
     }
+
     .pwa-tabbar .tabs{
       height: 100%;
       max-width: 560px;
@@ -617,6 +627,87 @@
       });
     }
 
+    // =========================
+    // ✅ PWA TAB BAR: hide on scroll down, show on scroll up
+    // + iOS visualViewport pin fix (prevents “floating mid-screen”)
+    // =========================
+    let _pwaScrollBound = false;
+    let _lastScrollY = 0;
+    let _lastDir = 0; // -1 up, +1 down
+    let _ticking = false;
+
+    function setTabbarHidden(hidden){
+      const tabbar = document.getElementById("pwaTabbar");
+      if(!tabbar) return;
+      tabbar.classList.toggle("is-hidden", !!hidden);
+    }
+
+    function syncTabbarToViewport(){
+      if(!isPwaInstalled()) return;
+      const vv = window.visualViewport;
+      if(!vv) {
+        document.documentElement.style.setProperty("--vv-bottom", "0px");
+        return;
+      }
+      // Bottom gap between layout viewport and visual viewport (iOS chrome/animations)
+      const bottomGap = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+      document.documentElement.style.setProperty("--vv-bottom", bottomGap + "px");
+    }
+
+    function bindPwaAutoHideOnce(){
+      if(_pwaScrollBound) return;
+      _pwaScrollBound = true;
+
+      _lastScrollY = window.scrollY || 0;
+      setTabbarHidden(false);
+
+      const onScroll = () => {
+        if(_ticking) return;
+        _ticking = true;
+
+        requestAnimationFrame(() => {
+          _ticking = false;
+
+          const y = window.scrollY || 0;
+          const dy = y - _lastScrollY;
+
+          // ignore tiny jitter
+          if(Math.abs(dy) < 6) return;
+
+          // if near top, always show
+          if(y < 12){
+            setTabbarHidden(false);
+            _lastDir = 0;
+            _lastScrollY = y;
+            return;
+          }
+
+          const dir = dy > 0 ? 1 : -1; // down/up
+
+          // only act when direction changes or keeps going
+          if(dir === 1){
+            setTabbarHidden(true);
+          } else {
+            setTabbarHidden(false);
+          }
+
+          _lastDir = dir;
+          _lastScrollY = y;
+        });
+      };
+
+      window.addEventListener("scroll", onScroll, { passive:true });
+
+      // iOS viewport changes (address bar / toolbar / animations)
+      window.addEventListener("resize", syncTabbarToViewport, { passive:true });
+      if(window.visualViewport){
+        window.visualViewport.addEventListener("resize", syncTabbarToViewport, { passive:true });
+        window.visualViewport.addEventListener("scroll", syncTabbarToViewport, { passive:true });
+      }
+      // initial
+      syncTabbarToViewport();
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -626,6 +717,10 @@
         if(topNav) topNav.style.display = "none";
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
+
+        bindPwaAutoHideOnce();
+        syncTabbarToViewport();
+        setTabbarHidden(false); // always show on route change
       } else {
         if(topNav) topNav.style.display = "flex";
         if(tabbar) tabbar.style.display = "none";
@@ -908,10 +1003,6 @@
     }
     lastWarSnapshot = loadLastWarSnapshot();
 
-    function safeNum(v, fallback=null){
-      return (typeof v === "number" && isFinite(v)) ? v : fallback;
-    }
-
     function winPctFromWLT(w,l,t){
       const W=(w|0), L=(l|0), T=(t|0);
       const total=W+L+T;
@@ -1013,7 +1104,7 @@
       } catch(e){
         clanStats = null;
       }
-      renderClanStats(); // ✅ FIX: this is what updates the “Loading…” fields
+      renderClanStats();
     }
 
     // =========================
@@ -1058,7 +1149,7 @@
     }
 
     // =========================
-    // Render: War chart (works w/ your war_detail schema)
+    // Render: War chart
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1125,8 +1216,6 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
-        // Your current war_detail.json doesn’t include defender info, so we show “—”
-        // If your generator later adds defenderMapPosition, we’ll show “#”.
         const a1Def = a1 ? (a1.defenderName || (a1.defenderMapPosition != null ? ("#" + a1.defenderMapPosition) : "Attack 1")) : "—";
         const a2Def = a2 ? (a2.defenderName || (a2.defenderMapPosition != null ? ("#" + a2.defenderMapPosition) : "Attack 2")) : "—";
 
@@ -1203,8 +1292,7 @@
     }
 
     // =========================
-    // Render: Members + ClanStats
-    // ✅ FIX: This now fills war record fields so they don’t stay “Loading…”
+    // Members + ClanStats (unchanged from your latest)
     // =========================
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
@@ -1387,18 +1475,14 @@
     }
 
     function renderClanStats(){
-      // Always clear “Loading…” even if the JSON is missing pieces
-      // so you never get stuck.
       const warObj = clanStats?.war || null;
 
-      // Description
       const descEl = document.getElementById("clan-desc");
       if(descEl){
         const desc = (typeof clanStats?.description === "string") ? clanStats.description.trim() : "";
         descEl.textContent = desc || "—";
       }
 
-      // CWL fields
       const cwlLeague = clanStats?.cwl?.currentLeague || "—";
       const cwlFinish = clanStats?.cwl?.lastFinish || "—";
       setText("cwl-league", cwlLeague);
@@ -1406,11 +1490,9 @@
       setText("cwl-league-cwlpage", cwlLeague);
       setText("cwl-finish-cwlpage", cwlFinish);
 
-      // Capital
       const hall = clanStats?.clanCapital?.capitalHallLevel;
       setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
 
-      // ✅ WAR RECORDS (WAR PAGE)
       if(document.getElementById("war-record")){
         ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
 
@@ -1447,7 +1529,6 @@
         }
       }
 
-      // ✅ WAR RECORDS (HOME PAGE)
       if(document.getElementById("home-war-record")){
         setClass("home-war-record","record-green", false);
         setClass("home-war-last10","record-green", false);
@@ -1542,7 +1623,6 @@
       warFetched = false;
       warDetailFetched = false;
 
-      // ✅ FIX: war page needs clan stats too, otherwise the record rows never change
       fetchClanStats();
       fetchWarData();
       fetchWarDetail();
@@ -1587,6 +1667,9 @@
 
       app.innerHTML = renderRouteContent(route);
 
+      // ✅ ensure tabbar is visible when navigating pages
+      if(isPwaInstalled()) setTabbarHidden(false);
+
       if(route === "home") startHomeLoop();
       if(route === "war")  startWarLoop();
       if(route === "more") startMoreLoop();
@@ -1601,9 +1684,9 @@
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
-    window.addEventListener("pageshow", renderRoute);
+    window.addEventListener("pageshow", () => { syncTabbarToViewport(); renderRoute(); });
     document.addEventListener("visibilitychange", () => {
-      if(document.visibilityState === "visible") renderRoute();
+      if(document.visibilityState === "visible") { syncTabbarToViewport(); renderRoute(); }
     });
 
     // Surface errors into the war chart mount so nothing is “silent”
