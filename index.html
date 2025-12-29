@@ -267,6 +267,25 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
+    /* Small screens: keep rank + beginning of defender visible (not the end) */
+    @media (max-width: 420px){
+      .war-cell.defender{
+        justify-content: flex-start;
+        text-align: left;
+      }
+      .war-cell.defender .atk2{
+        align-items: flex-start;
+      }
+      .war-cell.defender .atkline{
+        justify-content: flex-start;
+        text-align: left;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
     /* Members styles (unchanged) */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
@@ -1064,7 +1083,6 @@
       if(low === "coLeader" || low === "co-leader" || low === "coleader") return "Co Leader";
       if(low === "leader") return "Leader";
       if(low === "elder") return "Elder";
-      // If your generator already outputs "Co Leader", keep it:
       return r;
     }
 
@@ -1116,7 +1134,6 @@
         for(const m of (members||[])){
           const tag = m?.tag ? String(m.tag) : "";
           const pos = (m?.mapPosition != null) ? Number(m.mapPosition) : null;
-          const name = m?.name ? String(m.name) : "";
           if(tag) byTag.set(tag, m);
           if(pos != null && isFinite(pos)) byPos.set(pos, m);
         }
@@ -1128,12 +1145,10 @@
       function formatDefenderFromAttack(a, defenderSideLU){
         if(!a) return "—";
 
-        // Common possible fields (we accept many to be resilient)
         const dName = readFirst(a, ["defenderName","defender","targetName","defenderPlayerName","defender_name"]);
         const dTag  = readFirst(a, ["defenderTag","defender_tag","targetTag","defenderPlayerTag"]);
         const dPos  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
 
-        // Try tag lookup
         if(dTag && defenderSideLU?.byTag?.has(String(dTag))){
           const m = defenderSideLU.byTag.get(String(dTag));
           const pos = (m?.mapPosition != null) ? m.mapPosition : (dPos != null ? dPos : "—");
@@ -1141,7 +1156,6 @@
           return `${pos}. ${nm}`;
         }
 
-        // Try pos lookup
         const posNum = (dPos != null && dPos !== "") ? Number(dPos) : null;
         if(posNum != null && isFinite(posNum) && defenderSideLU?.byPos?.has(posNum)){
           const m = defenderSideLU.byPos.get(posNum);
@@ -1149,10 +1163,7 @@
           return `${posNum}. ${nm}`;
         }
 
-        // If we have at least name, show it (no rank)
         if(dName) return String(dName);
-
-        // Nothing usable
         return "—";
       }
 
@@ -1169,11 +1180,9 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
-        // ✅ Defender now “rank. name”
         const a1Def = formatDefenderFromAttack(a1, defenderSideLU);
         const a2Def = formatDefenderFromAttack(a2, defenderSideLU);
 
-        // ✅ Role next to username in parentheses if present
         const roleLabel = niceRole(member?.role);
         const roleInline = roleLabel ? ` <span class="war-name-role">(${escapeHtml(roleLabel)})</span>` : "";
 
@@ -1218,9 +1227,7 @@
       }
 
       function blockHTML(title, isOpp, members){
-        // ✅ Removed bullet/dot and ✅ removed clan tags completely
-        // ✅ Removed header row completely (# Player Defender % Stars Total)
-        const defenderLU = isOpp ? ourLU : oppLU; // opponent attacks target our, our attacks target opponent
+        const defenderLU = isOpp ? ourLU : oppLU;
 
         return `
           <div class="war-chart-block">
