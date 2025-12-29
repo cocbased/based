@@ -8,7 +8,6 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Disable pinch-zoom (best-effort; iOS may still allow in some cases) -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -17,32 +16,16 @@
   <style>
     :root{
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-
-      /* Reddit-ish PWA tab bar */
       --tabbar-h: 92px;
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
-
-      /* Members column sizing */
       --m-emoji-col: 30px;
       --m-name-col: 102px;
-
-      /* Card width cap = 200% of old 340px */
       --cards-max: 680px;
     }
 
-    /* ============================================================
-       Desktop/Web stability fixes (NO impact to PWA behavior)
-       ============================================================ */
-    html{
-      overflow-y: scroll;
-      scrollbar-gutter: stable both-edges;
-    }
-    .topnav{
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+    html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
+    .topnav{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .topnav::-webkit-scrollbar{ display:none; }
     .topnav a{ flex: 0 0 auto; }
     .stage, #app{ min-height: 0; }
@@ -63,23 +46,9 @@
       overscroll-behavior-x: none;
     }
 
-    /* Header */
-    .app-icon{
-      width:90px;
-      height:90px;
-      margin-bottom:12px;
-      border-radius:20px;
-      object-fit:contain;
-    }
-    .logo{
-      width:100%;
-      max-width:225px;
-      height:auto;
-      margin-bottom:16px;
-      object-fit:contain;
-    }
+    .app-icon{ width:90px; height:90px; margin-bottom:12px; border-radius:20px; object-fit:contain; }
+    .logo{ width:100%; max-width:225px; height:auto; margin-bottom:16px; object-fit:contain; }
 
-    /* Clan tag */
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
@@ -90,7 +59,6 @@
     }
     .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
 
-    /* Top nav (non-PWA only) */
     .topnav{
       width:100%;
       max-width:560px;
@@ -118,27 +86,9 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* Stage + app mount */
-    .stage{
-      width:100%;
-      max-width:560px;
-      position:relative;
-      flex:1;
-      display:flex;
-      justify-content:center;
-    }
+    .stage{ width:100%; max-width:560px; position:relative; flex:1; display:flex; justify-content:center; }
+    #app{ width:100%; max-width:560px; display:flex; flex-direction:column; align-items:center; flex:1; touch-action:auto; }
 
-    #app{
-      width:100%;
-      max-width:560px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      flex:1;
-      touch-action: auto;
-    }
-
-    /* Card + rows */
     .cards{
       width:100%;
       max-width: min(var(--cards-max), 100%);
@@ -162,72 +112,33 @@
       text-align:center;
     }
     .divider{ height:1px; background:rgba(255,255,255,.12); margin:10px 0; }
-    .row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      font-size:14px;
-      padding:2px 0;
-      gap:12px;
-    }
+    .row{ display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:2px 0; gap:12px; }
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
 
-    /* Centered clan description block */
-    .clan-desc-block{
-      text-align:center;
-      white-space: pre-line;
-      line-height: 1.25;
-      opacity: .95;
-      padding: 2px 0 6px;
-    }
-
+    .clan-desc-block{ text-align:center; white-space: pre-line; line-height: 1.25; opacity: .95; padding: 2px 0 6px; }
     #rankings-block{ display:none; }
 
-    /* Current War */
     .war-board{ text-align:center; margin-top:6px; }
-    .war-timer{
-      font-family:monospace;
-      font-weight:900;
-      font-size:14px;
-      margin:6px 0 10px;
-    }
-    .war-grid-3{
-      display:grid;
-      grid-template-columns:1fr auto 1fr;
-      gap:10px;
-      align-items:center;
-    }
+    .war-timer{ font-family:monospace; font-weight:900; font-size:14px; margin:6px 0 10px; }
+    .war-grid-3{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; }
     .war-vs{ font-weight:900; font-size:14px; opacity:.7; }
     .war-name{
-      font-weight:800;
-      font-size:13px;
-      letter-spacing:.05em;
-      text-transform:uppercase;
-      margin-bottom:6px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      font-weight:800; font-size:13px; letter-spacing:.05em;
+      text-transform:uppercase; margin-bottom:6px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .war-stat, .war-substat{
-      font-family:monospace;
-      font-weight:900;
-      font-size:14px;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:6px;
+      font-family:monospace; font-weight:900; font-size:14px;
+      display:flex; justify-content:center; align-items:center; gap:6px;
     }
     .war-stat{ margin-top:6px; }
     .war-substat{ margin-top:8px; opacity:.95; }
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
-    /* =========================
-       WAR CHART (iPhone-fit, no horizontal scroll)
-       ========================= */
+    /* ===== WAR CHART ===== */
     .war-chart-wrap{ margin-top: 12px; }
-
     .war-chart-title{
       margin: 10px 0 6px;
       font-size:13px;
@@ -242,6 +153,7 @@
       background: rgba(0,0,0,0.10);
       border-radius: 10px;
       overflow: hidden;
+      color:#fff; /* safety */
     }
     .war-chart-block + .war-chart-block{ margin-top: 10px; }
 
@@ -287,19 +199,14 @@
       flex: 0 0 auto;
     }
 
-    .war-sheet{ width: 100%; }
+    .war-sheet{ width:100%; display:block; } /* safety */
 
     .war-sheet-row{
       display:grid;
-      grid-template-columns:
-        26px
-        minmax(0, 1fr)
-        minmax(0, 1fr)
-        40px
-        64px
-        36px;
+      grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 40px 64px 36px;
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
+      min-height: 38px; /* safety so rows can’t collapse */
     }
     .war-sheet-row:last-child{ border-bottom:none; }
 
@@ -318,44 +225,29 @@
       align-items:center;
       gap:6px;
       border-right: none !important;
+      color:#fff; /* safety */
     }
 
     .war-cell.mono{ font-family: monospace; }
     .war-cell.center{ justify-content:center; text-align:center; }
     .war-cell.right{ justify-content:flex-end; text-align:right; }
     .war-cell.bold{ font-weight: 900; }
+    .war-cell.numcol{ padding-right: 6px; opacity: .95; }
 
-    .war-cell.numcol{
-      padding-right: 6px;
-      opacity: .95;
-    }
-
-    .war-player{
-      display:flex;
-      flex-direction:column;
-      gap: 2px;
-      min-width: 0;
-    }
+    .war-player{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .war-player .name{
-      font-weight: 900;
+      font-weight:900;
       overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      text-overflow:ellipsis;
+      white-space:nowrap;
       display:flex;
       align-items:center;
       gap:6px;
-      min-width: 0;
+      min-width:0;
     }
-    .war-player .role{
-      font-size: 11px;
-      opacity: .70;
-    }
+    .war-player .role{ font-size:11px; opacity:.70; }
 
-    .war-targetchips{
-      display:inline-flex;
-      gap:4px;
-      flex: 0 0 auto;
-    }
+    .war-targetchips{ display:inline-flex; gap:4px; flex:0 0 auto; }
     .war-chip{
       font-family: monospace;
       font-size: 10px;
@@ -366,61 +258,36 @@
       opacity: .95;
     }
 
-    .atk2{
-      display:flex;
-      flex-direction:column;
-      gap: 4px;
-      width: 100%;
-      min-width: 0;
-    }
+    .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
     .atkline{
       display:flex;
       align-items:center;
-      width: 100%;
-      font-family: monospace;
-      font-size: 11px;
+      width:100%;
+      font-family:monospace;
+      font-size:11px;
       opacity:.95;
       overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
-    .war-cell.defender{
-      justify-content: flex-end;
-      text-align: right;
-    }
-    .war-cell.defender .atk2{ align-items: flex-end; }
-    .war-cell.defender .atkline{ justify-content: flex-end; text-align:right; }
+    .war-cell.defender{ justify-content:flex-end; text-align:right; }
+    .war-cell.defender .atk2{ align-items:flex-end; }
+    .war-cell.defender .atkline{ justify-content:flex-end; text-align:right; }
 
-    .stars{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap: 4px;
-      font-variant-numeric: tabular-nums;
-    }
+    .stars{ display:flex; align-items:center; justify-content:center; gap:4px; font-variant-numeric: tabular-nums; }
     .star{
-      font-size: 13px;
-      line-height: 1;
+      font-size:13px; line-height:1;
       color: rgba(255,215,0,0.95);
       text-shadow: 0 1px 0 rgba(0,0,0,0.35);
     }
-    .star.dim{
-      color: rgba(255,255,255,0.18);
-      text-shadow: none;
-    }
-    .muted{ opacity: .65; }
+    .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
+    .muted{ opacity:.65; }
 
-    /* =========================
-       MEMBERS header (key left-justified)
-       ========================= */
+    /* Members + more styles remain unchanged (kept) */
     .members-headerbar{
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      padding: 0;
-      margin: 0 0 8px;
-
+      background: transparent; border:none; border-radius:0;
+      padding:0; margin:0 0 8px;
       display:grid;
       grid-template-columns: auto 1fr auto;
       grid-template-rows: auto auto;
@@ -428,41 +295,15 @@
       row-gap: 6px;
       align-items:center;
     }
-
-    .members-leaderline{
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
-      justify-self:start;
-    }
-    .members-elderline{
-      grid-column: 1 / 2;
-      grid-row: 2 / 3;
-      justify-self:start;
-    }
-
-    .members-keyline{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      white-space:nowrap;
-    }
-    .key-emoji{
-      font-size:14px;
-      line-height:1;
-    }
-    .key-text{
-      font-size:12px;
-      line-height:1.2;
-    }
-    .legend-underline{
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      font-weight: 400;
-    }
-
+    .members-leaderline{ grid-column:1/2; grid-row:1/2; justify-self:start; }
+    .members-elderline{ grid-column:1/2; grid-row:2/3; justify-self:start; }
+    .members-keyline{ display:flex; align-items:center; gap:10px; white-space:nowrap; }
+    .key-emoji{ font-size:14px; line-height:1; }
+    .key-text{ font-size:12px; line-height:1.2; }
+    .legend-underline{ text-decoration: underline; text-underline-offset: 2px; font-weight: 400; }
     .members-scroll-inline{
-      grid-column: 1 / -1;
-      grid-row: 2 / 3;
+      grid-column:1/-1;
+      grid-row:2/3;
       display:flex;
       justify-content:center;
       text-align:center;
@@ -471,42 +312,29 @@
       opacity:.78;
       white-space: nowrap;
       line-height: 1;
-      padding: 0;
-      margin: 0;
       pointer-events:none;
     }
-
-    .members-sortbtn-wrap{
-      grid-column: 3 / 4;
-      grid-row: 1 / 3;
-      justify-self:end;
-      align-self:center;
-    }
+    .members-sortbtn-wrap{ grid-column:3/4; grid-row:1/3; justify-self:end; align-self:center; }
 
     .sort-btn{
       position:relative;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-
       min-width: 58px;
       height: 36px;
       padding: 0 10px;
-
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.06);
       color:#fff;
-
       font-size: 11px;
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
-
       user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
-
     .sort-btn select{
       position:absolute;
       inset:0;
@@ -517,12 +345,8 @@
       appearance:none;
       -webkit-appearance:none;
     }
-    .sort-btn select option{
-      background:#0b1829;
-      color:#fff;
-    }
+    .sort-btn select option{ background:#0b1829; color:#fff; }
 
-    /* Members table wrapper */
     .members-wrap{
       width:100%;
       margin-top:2px;
@@ -533,7 +357,6 @@
       border:1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
     }
-
     .members-table{
       width:100%;
       min-width: 720px;
@@ -542,7 +365,6 @@
       font-size:13px;
       table-layout: fixed;
     }
-
     .members-table thead th{
       position: sticky;
       top: 0;
@@ -556,8 +378,6 @@
       opacity:.85;
       white-space: nowrap;
     }
-
-    /* Sticky left columns */
     .members-table th:nth-child(1),
     .members-table td:nth-child(1){
       position: sticky;
@@ -586,42 +406,17 @@
       text-overflow: ellipsis;
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
-
     .members-table td.m-emoji,
     .members-table th.m-emoji{
       overflow: visible !important;
       text-overflow: clip !important;
       white-space: nowrap !important;
     }
+    .m-emoji{ text-align:right; font-size:14px; padding: 10px 6px 10px 10px; letter-spacing:0; }
+    .m-user-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .m-user-name.m-leader{ font-weight:400; text-decoration: underline; text-underline-offset: 2px; }
+    .m-num{ font-family: monospace; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; }
 
-    .m-emoji{
-      text-align:right;
-      font-size:14px;
-      padding: 10px 6px 10px 10px;
-      letter-spacing: 0;
-    }
-
-    .m-user-name{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-
-    .m-user-name.m-leader{
-      font-weight:400;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
-    .m-num{
-      font-family: monospace;
-      text-align:center;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:clip;
-    }
-
-    /* More links */
     .links{
       width:100%;
       max-width:280px;
@@ -663,13 +458,9 @@
       text-align:center;
     }
 
-    /* =========================
-       PWA Bottom Tabs
-       ========================= */
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
-
     .pwa-tabbar{
       position: fixed;
       left: 0;
@@ -683,19 +474,14 @@
       display: none;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-
       will-change: transform;
       transform: translate3d(0,0,0);
       transition: transform 180ms cubic-bezier(.2,.8,.2,1);
     }
-
-    .pwa-tabbar.is-scrolling{ transition: none; }
-
     .pwa-tabbar.is-hidden{
       transform: translate3d(0, calc(var(--tabbar-h) + var(--safe-bottom) + 6px), 0);
       pointer-events: none;
     }
-
     .pwa-tabbar .tabs{
       height: 100%;
       max-width: 560px;
@@ -707,7 +493,6 @@
       box-sizing: border-box;
       gap: 8px;
     }
-
     .pwa-tabbar a{
       height: 100%;
       display:flex;
@@ -720,7 +505,6 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-
     .tab-inner{
       width: 100%;
       height: 100%;
@@ -733,14 +517,7 @@
       padding: 10px 6px;
       box-sizing: border-box;
     }
-
-    .pwa-tabbar a .icon{
-      width: 22px;
-      height: 22px;
-      display:block;
-      transform: translateY(-3px);
-    }
-
+    .pwa-tabbar a .icon{ width: 22px; height: 22px; display:block; transform: translateY(-3px); }
     .pwa-tabbar a .icon img{
       width: 22px;
       height: 22px;
@@ -750,20 +527,11 @@
       user-select:none;
       pointer-events:none;
     }
-
-    .pwa-tabbar a .label{
-      font-size: 11px;
-      line-height: 1;
-      opacity: 0.95;
-      transform: translateY(-2px);
-      font-weight: 500;
-    }
-
+    .pwa-tabbar a .label{ font-size: 11px; line-height: 1; opacity: 0.95; transform: translateY(-2px); font-weight: 500; }
     .pwa-tabbar a.active{ opacity: 1; }
   </style>
 
-  <script data-goatcounter="https://based.goatcounter.com/count"
-          async src="//gc.zgo.at/count.js"></script>
+  <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 
 <body>
@@ -774,7 +542,6 @@
      href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
      target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
 
-  <!-- Top nav (only when NOT PWA) -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
     <a href="#/home" data-route="home">Home</a>
     <a href="#/cwl" data-route="cwl">CWL</a>
@@ -787,7 +554,6 @@
     <div id="app" role="main" aria-live="polite"></div>
   </div>
 
-  <!-- PWA Bottom Nav -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="#/home" data-route="home" data-img-key="home">
@@ -847,7 +613,6 @@
       });
     }
 
-    // ===== Icon swapping (cached + preloaded) =====
     const ICON_VER = "v1";
     const ICON_FILES = [
       "home-active.png","home-inactive.png",
@@ -879,328 +644,29 @@
       });
     }
 
-    // ============================================================
-    // ✅ PWA Tabbar Auto-hide on scroll (down hides, up shows)
-    // ============================================================
-    let __pwaHideInit = false;
-    let __lastScrollY = 0;
-    let __tabHidden = false;
-    let __scrollTicking = false;
-
-    function setPwaTabHidden(hidden){
-      const tabbar = document.getElementById("pwaTabbar");
-      if(!tabbar) return;
-      __tabHidden = !!hidden;
-      tabbar.classList.toggle("is-hidden", __tabHidden);
-    }
-
-    function initPwaTabbarAutoHide(){
-      if(__pwaHideInit) return;
-      __pwaHideInit = true;
-
-      const tabbar = document.getElementById("pwaTabbar");
-      if(!tabbar) return;
-
-      __lastScrollY = window.scrollY || 0;
-      setPwaTabHidden(false);
-
-      const THRESH_PX = 10;
-      const TOP_SHOW_Y = 20;
-      const HIDE_AFTER_Y = 60;
-
-      function onScroll(){
-        if(__scrollTicking) return;
-        __scrollTicking = true;
-
-        requestAnimationFrame(() => {
-          const y = window.scrollY || document.documentElement.scrollTop || 0;
-          const dy = y - __lastScrollY;
-
-          if(y <= TOP_SHOW_Y){
-            setPwaTabHidden(false);
-            __lastScrollY = y;
-            __scrollTicking = false;
-            return;
-          }
-
-          if(Math.abs(dy) < THRESH_PX){
-            __scrollTicking = false;
-            return;
-          }
-
-          if(dy > 0 && y > HIDE_AFTER_Y){
-            setPwaTabHidden(true);
-          } else if(dy < 0){
-            setPwaTabHidden(false);
-          }
-
-          __lastScrollY = y;
-          __scrollTicking = false;
-        });
-      }
-
-      window.addEventListener("scroll", onScroll, { passive:true });
-
-      window.addEventListener("touchstart", () => {
-        const tabbarNow = document.getElementById("pwaTabbar");
-        if(!tabbarNow) return;
-        if(tabbarNow.classList.contains("is-hidden")) setPwaTabHidden(false);
-      }, { passive:true });
-    }
-
-    function setupNavUI(){
-      const pwa = isPwaInstalled();
-      const topNav = document.getElementById("topNav");
-      const tabbar = document.getElementById("pwaTabbar");
-
-      if(pwa){
-        if(topNav) topNav.style.display = "none";
-        if(tabbar) tabbar.style.display = "block";
-        document.body.classList.add("has-pwa-tabs");
-
-        initPwaTabbarAutoHide();
-        setPwaTabHidden(false);
-      } else {
-        if(topNav) topNav.style.display = "flex";
-        if(tabbar) tabbar.style.display = "none";
-        document.body.classList.remove("has-pwa-tabs");
-      }
-    }
-
     // ===== Templates =====
     const app = document.getElementById("app");
-
-    function wrapInCards(innerHtml){
-      return `<div class="cards">${innerHtml}</div>`;
-    }
-
     function pageShellCards(title, subtitle){
-      return wrapInCards(`
-        <main class="page">
-          <h1>${title}</h1>
-          <p>${subtitle}</p>
-        </main>
-      `);
+      return `<div class="cards"><main class="page"><h1>${title}</h1><p>${subtitle}</p></main></div>`;
     }
 
-    function renderMore(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">In-Game Events</h2>
+    function renderMore(){ return `<div class="cards"><h2 class="cards-title">In-Game Events</h2><div class="row"><span class="row-label">Raid Weekend</span><span id="raid-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Clan Games</span><span id="clan-games-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Season End</span><span id="season-end-timer" class="row-value">Loading…</span></div><div class="row"><span class="row-label">League Reset</span><span id="league-reset-timer" class="row-value">Loading…</span></div><div class="divider"></div><div class="links"><a class="link-btn" href="changelog.html" target="_blank" rel="noopener noreferrer">Changelog</a><a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a><a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a><a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a><a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a><a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a><a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a></div><div class="page-footer">EST DECEMBER 2023</div></div>`; }
 
-          <div class="row">
-            <span class="row-label">Raid Weekend</span>
-            <span id="raid-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Clan Games</span>
-            <span id="clan-games-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Season End</span>
-            <span id="season-end-timer" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">League Reset</span>
-            <span id="league-reset-timer" class="row-value">Loading…</span>
-          </div>
+    function renderHome(){ return `<div class="cards"><h2 class="cards-title">Clan Overview</h2><div id="rankings-block"><div class="section-title">Rankings</div><div class="row"><span class="row-label">Global Trophies</span><span id="rank-global-trophies" class="row-value">Loading…</span></div><div class="row"><span class="row-label">USA Trophies</span><span id="rank-usa-trophies" class="row-value">Loading…</span></div><div class="divider"></div></div><div id="clan-desc" class="clan-desc-block">Loading…</div><div class="divider"></div><div class="row"><span class="row-label">CWL League</span><span id="cwl-league" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish" class="row-value">Loading…</span></div><div class="row"><span class="row-label">War Record</span><span id="home-war-record" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last 10 Wars</span><span id="home-war-last10" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Current Streak</span><span id="home-war-streak" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Longest Streak</span><span id="home-war-longest" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Capital Hall Level</span><span id="capital-hall-level" class="row-value">Loading…</span></div><div class="divider"></div><h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2><div class="members-headerbar" aria-label="Members header controls"><div class="members-leaderline"><div class="members-keyline"><span class="key-emoji">&nbsp;&nbsp;👑</span><span class="key-text"><span class="legend-underline">Leader</span> / Co</span></div></div><div></div><div></div><div class="members-elderline"><div class="members-keyline"><span class="key-emoji">&nbsp;&nbsp;🛡️</span><span class="key-text">Elder</span></div></div><div class="members-scroll-inline">← SCROLL →</div><div class="members-sortbtn-wrap"><div class="sort-btn">SORT<select id="membersSortSelect" aria-label="Sort members"><option value="role">Role</option><option value="th">TH</option><option value="trophies">Trophies</option><option value="warStars">War Stars</option><option value="xp">XP</option><option value="donated">Donated</option><option value="received">Received</option></select></div></div></div><div class="members-wrap" aria-label="Clan members list"><table class="members-table"><colgroup><col style="width: var(--m-emoji-col);"><col style="width: var(--m-name-col);"><col style="width: 44px;"><col style="width: 84px;"><col style="width: 98px;"><col style="width: 58px;"><col style="width: 86px;"><col style="width: 96px;"></colgroup><thead><tr><th class="m-emoji" style="text-align:right;"></th><th style="text-align:left;"></th><th class="m-num">TH</th><th class="m-num">Trophies</th><th class="m-num">War Stars</th><th class="m-num">XP</th><th class="m-num">Donated</th><th class="m-num">Received</th></tr></thead><tbody id="members-body"><tr><td colspan="8" style="opacity:.75;">Loading…</td></tr></tbody></table></div></div>`; }
 
-          <div class="divider"></div>
-
-          <div class="links">
-            <a class="link-btn" href="changelog.html" target="_blank" rel="noopener noreferrer">Changelog</a>
-            <a class="link-btn" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQJyBeqDwShAcLD0GMnIvNehs8P9eG3ApO6pltrMHe01bZVJn0k3bIxLobnjBpvqEQNDe_sFcRkZPE8/pubhtml" target="_blank" rel="noopener noreferrer">CWL Leaderboards</a>
-            <a class="link-btn" href="https://discord.gg/8P96687dPr" target="_blank" rel="noopener noreferrer">Clan Discord</a>
-            <a class="link-btn" href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y" target="_blank" rel="noopener noreferrer">Visit B•A•S•E•D</a>
-            <a class="link-btn" href="https://www.clashofstats.com/clans/based-2QQYJC08Y/summary" target="_blank" rel="noopener noreferrer">Clan Stats</a>
-            <a class="link-btn" href="https://store.supercell.com/" target="_blank" rel="noopener noreferrer">SuperCell Store</a>
-            <a class="link-btn install-btn" href="https://www.youtube.com/watch?v=gIC30U39zpA" target="_blank" rel="noopener noreferrer">How to install B•A•S•E•D App</a>
-          </div>
-
-          <div class="page-footer">EST DECEMBER 2023</div>
-        </div>
-      `;
-    }
-
-    function renderHome(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">Clan Overview</h2>
-
-          <div id="rankings-block">
-            <div class="section-title">Rankings</div>
-            <div class="row">
-              <span class="row-label">Global Trophies</span>
-              <span id="rank-global-trophies" class="row-value">Loading…</span>
-            </div>
-            <div class="row">
-              <span class="row-label">USA Trophies</span>
-              <span id="rank-usa-trophies" class="row-value">Loading…</span>
-            </div>
-            <div class="divider"></div>
-          </div>
-
-          <div id="clan-desc" class="clan-desc-block">Loading…</div>
-          <div class="divider"></div>
-
-          <div class="row">
-            <span class="row-label">CWL League</span>
-            <span id="cwl-league" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last CWL Finish</span>
-            <span id="cwl-finish" class="row-value">Loading…</span>
-          </div>
-
-          <div class="row">
-            <span class="row-label">War Record</span>
-            <span id="home-war-record" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last 10 Wars</span>
-            <span id="home-war-last10" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Current Streak</span>
-            <span id="home-war-streak" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Longest Streak</span>
-            <span id="home-war-longest" class="row-value">Loading…</span>
-          </div>
-
-          <div class="row">
-            <span class="row-label">Capital Hall Level</span>
-            <span id="capital-hall-level" class="row-value">Loading…</span>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
-
-          <div class="members-headerbar" aria-label="Members header controls">
-            <div class="members-leaderline">
-              <div class="members-keyline">
-                <span class="key-emoji">&nbsp;&nbsp;👑</span>
-                <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
-              </div>
-            </div>
-
-            <div></div>
-            <div></div>
-
-            <div class="members-elderline">
-              <div class="members-keyline">
-                <span class="key-emoji">&nbsp;&nbsp;🛡️</span>
-                <span class="key-text">Elder</span>
-              </div>
-            </div>
-
-            <div class="members-scroll-inline">← SCROLL →</div>
-
-            <div class="members-sortbtn-wrap">
-              <div class="sort-btn">
-                SORT
-                <select id="membersSortSelect" aria-label="Sort members">
-                  <option value="role">Role</option>
-                  <option value="th">TH</option>
-                  <option value="trophies">Trophies</option>
-                  <option value="warStars">War Stars</option>
-                  <option value="xp">XP</option>
-                  <option value="donated">Donated</option>
-                  <option value="received">Received</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="members-wrap" aria-label="Clan members list">
-            <table class="members-table">
-              <colgroup>
-                <col style="width: var(--m-emoji-col);">
-                <col style="width: var(--m-name-col);">
-                <col style="width: 44px;">
-                <col style="width: 84px;">
-                <col style="width: 98px;">
-                <col style="width: 58px;">
-                <col style="width: 86px;">
-                <col style="width: 96px;">
-              </colgroup>
-
-              <thead>
-                <tr>
-                  <th class="m-emoji" style="text-align:right;"></th>
-                  <th style="text-align:left;"></th>
-                  <th class="m-num">TH</th>
-                  <th class="m-num">Trophies</th>
-                  <th class="m-num">War Stars</th>
-                  <th class="m-num">XP</th>
-                  <th class="m-num">Donated</th>
-                  <th class="m-num">Received</th>
-                </tr>
-              </thead>
-
-              <tbody id="members-body">
-                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderCwlPage(){
-      return `
-        <div class="cards">
-          <h2 class="cards-title">CWL</h2>
-
-          <div class="row">
-            <span class="row-label">CWL League</span>
-            <span id="cwl-league-cwlpage" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last CWL Finish</span>
-            <span id="cwl-finish-cwlpage" class="row-value">Loading…</span>
-          </div>
-
-          <div class="divider"></div>
-
-          <div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">
-            More CWL details coming soon.
-          </div>
-        </div>
-      `;
-    }
+    function renderCwlPage(){ return `<div class="cards"><h2 class="cards-title">CWL</h2><div class="row"><span class="row-label">CWL League</span><span id="cwl-league-cwlpage" class="row-value">Loading…</span></div><div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish-cwlpage" class="row-value">Loading…</span></div><div class="divider"></div><div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">More CWL details coming soon.</div></div>`; }
 
     function renderWarPage(){
       return `
         <div class="cards">
           <div class="section-title">War</div>
 
-          <div class="row">
-            <span class="row-label">War Record</span>
-            <span id="war-record" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last 10 Wars</span>
-            <span id="war-last10" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last 25 Wars</span>
-            <span id="war-last25" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Last 50 Wars</span>
-            <span id="war-last50" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Current Streak</span>
-            <span id="war-streak" class="row-value">Loading…</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Longest Streak</span>
-            <span id="war-longest" class="row-value">Loading…</span>
-          </div>
+          <div class="row"><span class="row-label">War Record</span><span id="war-record" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 10 Wars</span><span id="war-last10" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 25 Wars</span><span id="war-last25" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 50 Wars</span><span id="war-last50" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Current Streak</span><span id="war-streak" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Longest Streak</span><span id="war-longest" class="row-value">Loading…</span></div>
 
           <div class="divider"></div>
 
@@ -1211,37 +677,24 @@
             <div class="war-grid-3">
               <div>
                 <div id="war-name-us" class="war-name">—</div>
-                <div class="war-stat">
-                  <span id="war-stars-us">—</span> <span>⭐</span>
-                </div>
-                <div class="war-substat">
-                  <span id="war-destr-us">—</span> <span>🎯</span>
-                </div>
-                <div class="war-substat">
-                  <span id="war-attacks-us">—</span> <span>⚔️</span>
-                </div>
+                <div class="war-stat"><span id="war-stars-us">—</span> <span>⭐</span></div>
+                <div class="war-substat"><span id="war-destr-us">—</span> <span>🎯</span></div>
+                <div class="war-substat"><span id="war-attacks-us">—</span> <span>⚔️</span></div>
               </div>
 
               <div id="war-vs" class="war-vs">VS</div>
 
               <div>
                 <div id="war-name-opp" class="war-name">—</div>
-                <div class="war-stat">
-                  <span id="war-stars-opp">—</span> <span>⭐</span>
-                </div>
-                <div class="war-substat">
-                  <span id="war-destr-opp">—</span> <span>🎯</span>
-                </div>
-                <div class="war-substat">
-                  <span id="war-attacks-opp">—</span> <span>⚔️</span>
-                </div>
+                <div class="war-stat"><span id="war-stars-opp">—</span> <span>⭐</span></div>
+                <div class="war-substat"><span id="war-destr-opp">—</span> <span>🎯</span></div>
+                <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
               </div>
             </div>
           </div>
 
           <div class="divider"></div>
 
-          <!-- War Chart Mount -->
           <div id="war-chart-mount" class="war-chart-wrap"></div>
         </div>
       `;
@@ -1273,8 +726,6 @@
 
     let warDetail = null;
     let warDetailFetched = false;
-
-    // ✅ DEBUG META for war_detail.json
     let warDetailMeta = { ok:false, status:0, err:"", ts:0, url:"" };
 
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
@@ -1282,78 +733,19 @@
 
     let clanStats = null;
     let membersData = null;
-
-    // Members sort state
     let membersSortMode = "role";
 
-    function pad(n){ return n.toString().padStart(2,"0"); }
-    function formatCountdown(ms){
-      if(ms<=0) return "Active now";
-      const totalSeconds = Math.floor(ms/1000);
-      const days = Math.floor(totalSeconds/86400);
-      const hours = Math.floor((totalSeconds%86400)/3600);
-      const minutes = Math.floor((totalSeconds%86400%3600)/60);
-      const seconds = totalSeconds%60;
-      return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
+    function escapeHtml(s){
+      return String(s || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
     }
-    function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
+
     function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
-
-    function setRankingsVisibility(show){
-      const block = document.getElementById("rankings-block");
-      if(block) block.style.display = show ? "block" : "none";
-    }
-    function setWarVsVisibility(show){
-      const vs = document.getElementById("war-vs");
-      if(vs) vs.style.display = show ? "block" : "none";
-    }
-
-    function fmtTop200(v){ if(typeof v === "number") return "#" + v; return "Not in top 200"; }
-    function fmtPct(v){
-      if(typeof v !== "number" || !isFinite(v)) return "—";
-      const rounded = Math.round(v * 10) / 10;
-      return (rounded % 1 === 0) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
-    }
-    function isFullStars(stars, teamSize){
-      if(typeof stars !== "number" || typeof teamSize !== "number") return false;
-      return stars === teamSize * 3;
-    }
-    function isFullDestruction(pct){
-      if(typeof pct !== "number" || !isFinite(pct)) return false;
-      return pct === 100;
-    }
-
-    function winPctFromWLT(w, l, t){
-      const W=(w|0), L=(l|0), T=(t|0);
-      const total=W+L+T;
-      if(total<=0) return null;
-      return (W + 0.5*T)/total;
-    }
-    function fmtPctDecimal(p){ if(typeof p !== "number" || !isFinite(p)) return ""; return ` (${p.toFixed(3)})`; }
-    function fmtWLTWithPctObj(obj){
-      if(!obj || typeof obj !== "object") return { text:"—", losses:null };
-      const w=(typeof obj.wins==="number")?obj.wins:null;
-      const l=(typeof obj.losses==="number")?obj.losses:null;
-      const t=(typeof obj.ties==="number")?obj.ties:null;
-      if(w===null||l===null||t===null) return { text:"—", losses:null };
-      const pct=winPctFromWLT(w,l,t);
-      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
-    }
-    function fmtWLTWithPctNums(w,l,t){
-      const pct=winPctFromWLT(w,l,t);
-      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
-    }
-    function hasNoLosses(losses){ return typeof losses==="number" && isFinite(losses) && losses===0; }
-
-    function setClass(id, className, on){
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.classList.toggle(className, !!on);
-    }
-
-    function resetWarHighlights(){
-      ["war-stars-us","war-stars-opp","war-destr-us","war-destr-opp"].forEach(id => setClass(id,"war-green",false));
-    }
+    function setClass(id, className, on){ const el = document.getElementById(id); if(el) el.classList.toggle(className, !!on); }
 
     function loadLastWarSnapshot(){
       try{
@@ -1386,7 +778,6 @@
       renderWarSection();
     }
 
-    // ✅ fetchWarDetail() with debug + text-first parsing
     async function fetchWarDetail(){
       const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
       warDetailMeta = { ok:false, status:0, err:"", ts:Date.now(), url };
@@ -1417,205 +808,39 @@
       renderWarChart();
     }
 
-    function updateWarTimerOnly(isPrevious, displayOverride){
-      const warElem = document.getElementById("war-timer");
-      if(!warElem) return;
-
-      const src = displayOverride || warData;
-      if(!src || !src.state){ warElem.textContent="Waiting…"; return; }
-      if(isPrevious){ warElem.textContent="Previous war ended"; return; }
-      if(src.state==="notInWar" || !src.warEndIso){ warElem.textContent="No war started"; return; }
-
-      const end = new Date(src.warEndIso);
-      const now = new Date();
-      if(isNaN(end.getTime())) warElem.textContent="No war started";
-      else if(now >= end) warElem.textContent="War ended";
-      else warElem.textContent = formatCountdown(end - now);
-    }
-
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
-
-      resetWarHighlights();
-      setWarVsVisibility(false);
-
       if(!warFetched){ setText("war-timer","Loading…"); return; }
 
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
-
       if(!display || !display.state){ setText("war-timer","Waiting…"); return; }
 
       if(display.state === "notInWar"){
         setText("war-timer","No war started");
-        setText("war-name-us","—"); setText("war-name-opp","—");
-        setText("war-stars-us","—"); setText("war-stars-opp","—");
-        setText("war-destr-us","—"); setText("war-destr-opp","—");
-        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
         return;
       }
 
-      const showingPrevious = (warData && warData.state === "notInWar" && lastWarSnapshot);
-      setWarVsVisibility(true);
-
       setText("war-name-us",(display.ourName || "US"));
       setText("war-name-opp",(display.oppName || "OPPONENT"));
-
-      const teamSize = (typeof display.teamSize === "number") ? display.teamSize : null;
-      const maxStars = teamSize ? teamSize * 3 : null;
-
-      const ourStars = (typeof display.ourStars === "number") ? display.ourStars : 0;
-      const oppStars = (typeof display.oppStars === "number") ? display.oppStars : 0;
-
-      setText("war-stars-us", maxStars ? `${ourStars}/${maxStars}` : `${ourStars}`);
-      setText("war-stars-opp", maxStars ? `${oppStars}/${maxStars}` : `${oppStars}`);
-
-      const ourDestr =
-        (typeof display.ourDestructionPercentage === "number") ? display.ourDestructionPercentage :
-        (typeof display.ourDestruction === "number") ? display.ourDestruction : null;
-
-      const oppDestr =
-        (typeof display.oppDestructionPercentage === "number") ? display.oppDestructionPercentage :
-        (typeof display.oppDestruction === "number") ? display.oppDestruction : null;
-
-      setText("war-destr-us", fmtPct(ourDestr));
-      setText("war-destr-opp", fmtPct(oppDestr));
-
-      if(teamSize && typeof display.ourAttacksUsed === "number" && typeof display.oppAttacksUsed === "number"){
-        const total = teamSize * 2;
-        const ourUsed = Math.max(0, Math.min(total, display.ourAttacksUsed));
-        const oppUsed = Math.max(0, Math.min(total, display.oppAttacksUsed));
-        setText("war-attacks-us", `${ourUsed}/${total}`);
-        setText("war-attacks-opp", `${oppUsed}/${total}`);
-      } else {
-        setText("war-attacks-us","Updating…");
-        setText("war-attacks-opp","Updating…");
-      }
-
-      setClass("war-stars-us","war-green", isFullStars(ourStars, teamSize));
-      setClass("war-stars-opp","war-green", isFullStars(oppStars, teamSize));
-      setClass("war-destr-us","war-green", isFullDestruction(ourDestr));
-      setClass("war-destr-opp","war-green", isFullDestruction(oppDestr));
-
-      updateWarTimerOnly(showingPrevious, display);
-    }
-
-    // ===== Members + utils =====
-    function escapeHtml(s){
-      return String(s || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#39;");
-    }
-
-    // ✅ Surface JS errors inside the war chart mount (so failures can’t be “silent”)
-    window.addEventListener("error", (e) => {
-      const mount = document.getElementById("war-chart-mount");
-      if(mount){
-        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
-          JS Error: ${escapeHtml(e.message || "unknown")}
-        </div>`;
-      }
-    });
-    window.addEventListener("unhandledrejection", (e) => {
-      const mount = document.getElementById("war-chart-mount");
-      if(mount){
-        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
-          Promise Error: ${escapeHtml(String(e.reason || "unknown"))}
-        </div>`;
-      }
-    });
-
-    // ============================================================
-    // ✅ Schema-flexible war_detail parser (THIS is what fixes 200 OK but no rows)
-    // ============================================================
-    function pickObj(obj, paths){
-      for(const p of paths){
-        const parts = p.split(".");
-        let cur = obj;
-        let ok = true;
-        for(const part of parts){
-          if(cur && Object.prototype.hasOwnProperty.call(cur, part)){
-            cur = cur[part];
-          } else {
-            ok = false;
-            break;
-          }
-        }
-        if(ok && cur != null) return { value: cur, path: p };
-      }
-      return { value: null, path: "" };
-    }
-
-    function normalizeSide(side){
-      const name = side?.name || side?.clanName || side?.teamName || side?.title || "";
-      const tag  = side?.tag  || side?.clanTag  || side?.teamTag  || side?.id    || "";
-      const members =
-        (Array.isArray(side?.members) ? side.members :
-         Array.isArray(side?.memberList) ? side.memberList :
-         Array.isArray(side?.players) ? side.players :
-         Array.isArray(side?.roster) ? side.roster :
-         Array.isArray(side?.items) ? side.items :
-         []);
-      return { name, tag, members };
+      setText("war-stars-us", String(display.ourStars ?? "—"));
+      setText("war-stars-opp", String(display.oppStars ?? "—"));
+      setText("war-destr-us", String(display.ourDestructionPercentage ?? display.ourDestruction ?? "—"));
+      setText("war-destr-opp", String(display.oppDestructionPercentage ?? display.oppDestruction ?? "—"));
+      setText("war-attacks-us", String(display.ourAttacksUsed ?? "—"));
+      setText("war-attacks-opp", String(display.oppAttacksUsed ?? "—"));
     }
 
     function pickSides(detail){
-      const ourPick = pickObj(detail, ["our","clan","team","sideA","attacker","attackers","home","us"]);
-      const oppPick = pickObj(detail, ["opponent","opp","enemy","sideB","defender","defenders","away","them"]);
-
-      const ourSide = normalizeSide(ourPick.value || {});
-      const oppSide = normalizeSide(oppPick.value || {});
-
-      // fallback: top-level members array
-      if(ourSide.members.length === 0 && oppSide.members.length === 0){
-        const topMembersPick = pickObj(detail, ["members","memberList","players","items"]);
-        const topMembers = Array.isArray(topMembersPick.value) ? topMembersPick.value : [];
-        if(topMembers.length){
-          return {
-            our: { name: ourSide.name || "Our Clan", tag: ourSide.tag || "", members: topMembers },
-            opp: { name: oppSide.name || "Opponent", tag: oppSide.tag || "", members: [] },
-            debug: `top-level:${topMembersPick.path} (${topMembers.length})`
-          };
-        }
-      }
-
+      const our = detail?.our || {};
+      const opp = detail?.opponent || {};
+      const ourMembers = Array.isArray(our?.members) ? our.members : [];
+      const oppMembers = Array.isArray(opp?.members) ? opp.members : [];
       return {
-        our: { ...ourSide, name: ourSide.name || "Our Clan" },
-        opp: { ...oppSide, name: oppSide.name || "Opponent" },
-        debug: `our:${ourPick.path || "?"} (${ourSide.members.length}) | opp:${oppPick.path || "?"} (${oppSide.members.length})`
+        our: { name: our.name || "Our Clan", tag: our.tag || "", members: ourMembers },
+        opp: { name: opp.name || "Opponent", tag: opp.tag || "", members: oppMembers },
+        debug: `our:our (${ourMembers.length}) | opp:opponent (${oppMembers.length})`
       };
-    }
-
-    // ===== WAR CHART RENDER =====
-    function normalizeRole(role){
-      const r = String(role || "").trim().toLowerCase();
-      if(!r) return "";
-      if(r === "co-leader") return "coleader";
-      return r;
-    }
-
-    function roleLabelFromRole(role){
-      const r = normalizeRole(role);
-      if(r === "leader") return "Leader";
-      if(r === "coleader") return "Co";
-      if(r === "admin") return "Elder";
-      if(r === "elder") return "Elder";
-      if(r === "member") return "Member";
-      return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "Member";
-    }
-
-    function buildOurRoleMap(){
-      const map = new Map();
-      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : [];
-      for(const m of list){
-        if(!m) continue;
-        const tag = m.tag || m.playerTag || m.memberTag;
-        if(tag) map.set(tag, m.role || "");
-      }
-      return map;
     }
 
     function starsHTML(n){
@@ -1627,162 +852,93 @@
       `;
     }
 
-    function totalStarsFromAttacks(attacks){
-      const atks = Array.isArray(attacks) ? attacks : [];
-      return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
-    }
-
-    function buildDefenderIndex(members){
-      const idx = new Map();
-      (members || []).forEach(m => {
-        if(m && m.tag) idx.set(m.tag, m.name || m.playerName || m.username || "");
-        const mp = (m && (m.mapPosition ?? m.position ?? m.map));
-        if(mp !== null && mp !== undefined) idx.set(String(mp), m.name || m.playerName || m.username || "");
-      });
-      return idx;
-    }
-
-    function defenderNameForAttack(a, defenderIdx){
-      if(!a) return "—";
-      if(a.defenderTag && defenderIdx.has(a.defenderTag)) return defenderIdx.get(a.defenderTag) || "—";
-      if(a.defenderMapPosition != null && defenderIdx.has(String(a.defenderMapPosition))) return defenderIdx.get(String(a.defenderMapPosition)) || `#${a.defenderMapPosition}`;
-      if(a.defenderMapPosition != null) return `#${a.defenderMapPosition}`;
-      return "—";
-    }
-
-    function targetChipsHTMLFromAttacks(attacks){
-      const atks = Array.isArray(attacks) ? attacks : [];
-      const nums = atks
-        .map(a => (a && a.defenderMapPosition != null) ? Number(a.defenderMapPosition) : null)
-        .filter(v => v != null && Number.isFinite(v));
-
-      if(nums.length === 0) return "";
-      return `<span class="war-targetchips">
-        ${nums.map(n => `<span class="war-chip">${n}</span>`).join("")}
-      </span>`;
-    }
-
     function renderWarChart(){
       const mount = document.getElementById("war-chart-mount");
       if(!mount) return;
 
       const stamp = new Date(warDetailMeta.ts || Date.now()).toLocaleTimeString();
       const keys = warDetail && typeof warDetail === "object" ? Object.keys(warDetail) : [];
-      const keyLine = keys.length ? keys.slice(0, 14).join(", ") + (keys.length > 14 ? "…" : "") : "—";
 
-      const debugLineTop = `
+      const debugTop = `
         <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 8px;">
-          war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}
-          ${warDetailMeta.err ? `<div style="opacity:.9;margin-top:4px;">${escapeHtml(warDetailMeta.err)}</div>` : ""}
-          <div style="opacity:.65;margin-top:2px;">keys: ${escapeHtml(keyLine)}</div>
+          war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}<br/>
+          keys: ${escapeHtml(keys.join(", "))}<br/>
         </div>
       `;
 
       if(!warDetailFetched){
-        mount.innerHTML = debugLineTop + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
         return;
       }
 
-      if(!warDetail || warDetail.state === "error"){
-        mount.innerHTML = debugLineTop + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+      if(!warDetail){
+        mount.innerHTML = debugTop + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         return;
       }
 
-      const { our, opp, debug } = pickSides(warDetail || {});
+      const { our, opp, debug } = pickSides(warDetail);
       const ourMembers = Array.isArray(our.members) ? our.members.slice() : [];
       const oppMembers = Array.isArray(opp.members) ? opp.members.slice() : [];
 
-      const debugLine = debugLineTop.replace(
-        "</div>",
-        `<div style="opacity:.85;margin-top:4px;">shape: ${escapeHtml(debug)}</div></div>`
-      );
+      // EXTRA debug: first member keys
+      const first = ourMembers[0] || {};
+      const firstKeys = first && typeof first === "object" ? Object.keys(first).slice(0,18).join(", ") : "—";
 
-      if(ourMembers.length === 0 && oppMembers.length === 0){
-        mount.innerHTML = debugLine + `
-          <div class="muted" style="text-align:center;">
-            No members arrays found in war_detail.json.<br/>
-            (Check keys + shape line above.)
+      const debugMid = `
+        <div style="font-family:monospace;font-size:11px;opacity:.85;text-align:center;margin:-4px 0 10px;">
+          shape: ${escapeHtml(debug)}<br/>
+          ROWS BUILT (our): ${ourMembers.length} | first member keys: ${escapeHtml(firstKeys)}
+        </div>
+      `;
+
+      // A forced test row to prove visibility/layout
+      const testRow = `
+        <div class="war-chart-block">
+          <div class="war-chart-head">
+            <div class="war-chart-clan"><span class="war-dot"></span><span>VISIBILITY TEST</span></div>
+            <div class="war-chart-sub">should show 1 row</div>
           </div>
-        `;
-        return;
-      }
+          <div class="war-sheet">
+            <div class="war-sheet-row head">
+              <div class="war-cell right mono numcol">#</div>
+              <div class="war-cell">Player</div>
+              <div class="war-cell defender">Defender</div>
+              <div class="war-cell center mono">%</div>
+              <div class="war-cell center">Stars</div>
+              <div class="war-cell center mono">Total</div>
+            </div>
+            <div class="war-sheet-row">
+              <div class="war-cell right mono numcol">1.</div>
+              <div class="war-cell">TEST PLAYER</div>
+              <div class="war-cell defender">TEST DEF</div>
+              <div class="war-cell center mono">99%</div>
+              <div class="war-cell center"><span class="stars">${starsHTML(3)}</span></div>
+              <div class="war-cell center mono bold">3★</div>
+            </div>
+          </div>
+        </div>
+      `;
 
-      // Sort by map position if present
-      const pos = (m)=>Number(m?.mapPosition ?? m?.position ?? m?.map ?? 9999);
-      ourMembers.sort((a,b)=>pos(a)-pos(b));
-      oppMembers.sort((a,b)=>pos(a)-pos(b));
-
-      const ourDefIdx = buildDefenderIndex(oppMembers);
-      const oppDefIdx = buildDefenderIndex(ourMembers);
-      const ourRoleMap = buildOurRoleMap();
-
-      function rowHTML(member, defenderIdx, roleMapOrNull){
-        const attacks = Array.isArray(member?.attacks) ? member.attacks
-                      : Array.isArray(member?.attackLog) ? member.attackLog
-                      : [];
-        const a1 = attacks[0] || null;
-        const a2 = attacks[1] || null;
-
-        const a1Target = defenderNameForAttack(a1, defenderIdx);
-        const a2Target = defenderNameForAttack(a2, defenderIdx);
-
-        const a1Pct = (a1 && a1.destructionPercentage != null) ? `${a1.destructionPercentage}%` : "—";
-        const a2Pct = (a2 && a2.destructionPercentage != null) ? `${a2.destructionPercentage}%` : "—";
-
-        const a1Stars = a1 ? Number(a1.stars||0) : 0;
-        const a2Stars = a2 ? Number(a2.stars||0) : 0;
-
-        const name = member?.name || member?.playerName || member?.username || "—";
-        const tag  = member?.tag || member?.playerTag || member?.id || "";
-
-        const roleFromMap = (roleMapOrNull && tag && roleMapOrNull.has(tag)) ? roleMapOrNull.get(tag) : "";
-        const roleText = roleLabelFromRole(roleFromMap || member?.role || "");
-
-        const mapPos = member?.mapPosition ?? member?.position ?? member?.map ?? "—";
+      function rowHTML(member){
+        const name = member?.name || "—";
+        const mp = member?.mapPosition ?? "—";
+        const atks = Array.isArray(member?.attacks) ? member.attacks : [];
+        const a1 = atks[0] || null;
+        const a2 = atks[1] || null;
 
         return `
           <div class="war-sheet-row">
-            <div class="war-cell right mono numcol">${escapeHtml(mapPos)}.</div>
-
-            <div class="war-cell">
-              <div class="war-player">
-                <div class="name" title="${escapeHtml(name)}">
-                  <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${escapeHtml(name)}
-                  </span>
-                  ${targetChipsHTMLFromAttacks(attacks)}
-                </div>
-                <div class="role">${escapeHtml(roleText)}</div>
-              </div>
-            </div>
-
-            <div class="war-cell defender">
-              <div class="atk2">
-                <div class="atkline" title="${escapeHtml(a1Target)}">${a1 ? escapeHtml(a1Target) : "—"}</div>
-                <div class="atkline" title="${escapeHtml(a2Target)}">${a2 ? escapeHtml(a2Target) : "—"}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center mono">
-              <div class="atk2">
-                <div class="atkline" style="justify-content:center;">${a1 ? a1Pct : "—"}</div>
-                <div class="atkline" style="justify-content:center;">${a2 ? a2Pct : "—"}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center">
-              <div class="atk2">
-                <div class="stars">${a1 ? starsHTML(a1Stars) : `<span class="muted">—</span>`}</div>
-                <div class="stars">${a2 ? starsHTML(a2Stars) : `<span class="muted">—</span>`}</div>
-              </div>
-            </div>
-
-            <div class="war-cell center mono bold">${totalStarsFromAttacks(attacks)}★</div>
+            <div class="war-cell right mono numcol">${escapeHtml(mp)}.</div>
+            <div class="war-cell">${escapeHtml(name)}</div>
+            <div class="war-cell defender">${a1 ? "…" : "—"}<br/>${a2 ? "…" : "—"}</div>
+            <div class="war-cell center mono">${a1 ? (a1.destructionPercentage + "%") : "—"}<br/>${a2 ? (a2.destructionPercentage + "%") : "—"}</div>
+            <div class="war-cell center"><div class="atk2"><div class="stars">${a1 ? starsHTML(a1.stars) : `<span class="muted">—</span>`}</div><div class="stars">${a2 ? starsHTML(a2.stars) : `<span class="muted">—</span>`}</div></div></div>
+            <div class="war-cell center mono bold">${atks.reduce((s,a)=>s+(Number(a?.stars)||0),0)}★</div>
           </div>
         `;
       }
 
-      function blockHTML(title, tag, isOpp, members, defenderIdx, roleMapOrNull){
+      function blockHTML(title, tag, isOpp, members){
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1803,328 +959,22 @@
                 <div class="war-cell center mono">Total</div>
               </div>
 
-              ${(members || []).map(m => rowHTML(m, defenderIdx, roleMapOrNull)).join("")}
+              ${(members || []).map(m => rowHTML(m)).join("")}
             </div>
           </div>
         `;
       }
 
-      mount.innerHTML = debugLine + `
-        <div class="war-chart-title">War Chart</div>
-        ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx, ourRoleMap)}
-        ${oppMembers.length ? blockHTML(opp.name, opp.tag, true, oppMembers, oppDefIdx, null) : ""}
-      `;
+      mount.innerHTML =
+        debugTop +
+        debugMid +
+        `<div class="war-chart-title">War Chart</div>` +
+        testRow +
+        blockHTML(our.name, our.tag, false, ourMembers) +
+        blockHTML(opp.name, opp.tag, true,  oppMembers);
     }
 
-    async function fetchClanStats(){
-      try{
-        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        clanStats = res.ok ? await res.json() : null;
-      } catch(e){
-        clanStats = null;
-      }
-      renderClanStats();
-    }
-
-    function pickCapitalHallLevel(stats){
-      const v = stats?.clanCapital?.capitalHallLevel;
-      return (typeof v === "number") ? v : null;
-    }
-
-    function renderClanStats(){
-      if(clanStats){
-        const r = clanStats.rankings || {};
-        const hasAnyRank = (typeof r.globalTrophies === "number") || (typeof r.usaTrophies === "number");
-        setRankingsVisibility(hasAnyRank);
-
-        if(hasAnyRank){
-          setText("rank-global-trophies", fmtTop200(r.globalTrophies));
-          setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
-        }
-
-        const el = document.getElementById("clan-desc");
-        if(el){
-          let desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
-          if(desc){
-            desc = desc.replace(/Events\.\s*(TH\d+)/i, "Events.\n$1");
-            el.textContent = desc;
-          } else {
-            el.textContent = "—";
-          }
-        }
-
-        const cwlLeague = (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—";
-        const cwlFinish = (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—";
-        setText("cwl-league", cwlLeague);
-        setText("cwl-finish", cwlFinish);
-        setText("cwl-league-cwlpage", cwlLeague);
-        setText("cwl-finish-cwlpage", cwlFinish);
-
-        const hall = pickCapitalHallLevel(clanStats);
-        setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
-
-      } else {
-        setRankingsVisibility(false);
-        setText("clan-desc","—");
-        setText("cwl-league","—");
-        setText("cwl-finish","—");
-        setText("cwl-league-cwlpage","—");
-        setText("cwl-finish-cwlpage","—");
-        setText("capital-hall-level","—");
-      }
-
-      if(document.getElementById("war-record")){
-        ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
-
-        if(clanStats && clanStats.war){
-          const w = clanStats.war.wins ?? 0;
-          const l = clanStats.war.losses ?? 0;
-          const t = clanStats.war.ties ?? 0;
-
-          const rec = fmtWLTWithPctNums(w,l,t);
-          setText("war-record", rec.text);
-          setClass("war-record", "record-green", hasNoLosses(rec.losses));
-
-          setText("war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-          setText("war-longest", `${clanStats.war.longestStreak ?? "—"}`);
-
-          const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-          const l25 = fmtWLTWithPctObj(clanStats.war.last25);
-          const l50 = fmtWLTWithPctObj(clanStats.war.last50);
-
-          setText("war-last10", l10.text);
-          setText("war-last25", l25.text);
-          setText("war-last50", l50.text);
-
-          setClass("war-last10","record-green", hasNoLosses(l10.losses));
-          setClass("war-last25","record-green", hasNoLosses(l25.losses));
-          setClass("war-last50","record-green", hasNoLosses(l50.losses));
-        }
-      }
-
-      if(document.getElementById("home-war-record")){
-        setClass("home-war-record","record-green", false);
-        setClass("home-war-last10","record-green", false);
-
-        if(clanStats && clanStats.war){
-          const w = clanStats.war.wins ?? 0;
-          const l = clanStats.war.losses ?? 0;
-          const t = clanStats.war.ties ?? 0;
-
-          const rec = fmtWLTWithPctNums(w,l,t);
-          setText("home-war-record", rec.text);
-          setClass("home-war-record", "record-green", hasNoLosses(rec.losses));
-
-          const l10 = fmtWLTWithPctObj(clanStats.war.last10);
-          setText("home-war-last10", l10.text);
-          setClass("home-war-last10", "record-green", hasNoLosses(l10.losses));
-
-          setText("home-war-streak", `${clanStats.war.currentStreak ?? "—"}`);
-          setText("home-war-longest", `${clanStats.war.longestStreak ?? "—"}`);
-        } else {
-          setText("home-war-record","—");
-          setText("home-war-last10","—");
-          setText("home-war-streak","—");
-          setText("home-war-longest","—");
-        }
-      }
-    }
-
-    // ===== Members =====
-    function roleEmoji(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return "👑";
-      if(r === "elder") return "🛡️";
-      return "";
-    }
-
-    function isLeaderOnly(role){
-      return String(role || "").trim().toLowerCase() === "leader";
-    }
-
-    function readIntAny(obj, keys){
-      for(const k of keys){
-        const v = obj?.[k];
-        if(v !== null && v !== undefined && v !== "") return (v|0);
-      }
-      return 0;
-    }
-
-    function getThLevel(m){
-      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
-      return n > 0 ? n : 0;
-    }
-
-    function getWarStars(m){
-      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
-      return n >= 0 ? n : 0;
-    }
-
-    function getXP(m){
-      let n = readIntAny(m, ["expLevel","xp","level"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["expLevel","xp","level"]);
-      return n > 0 ? n : 0;
-    }
-
-    function getTrophies(m){
-      let n = readIntAny(m, ["trophies"]);
-      if(n > 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["trophies"]);
-      return n > 0 ? n : 0;
-    }
-
-    function getDonations(m){
-      let n = readIntAny(m, ["donations","troopsDonated","donated"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["donations","troopsDonated","donated"]);
-      return n >= 0 ? n : 0;
-    }
-
-    function getDonationsReceived(m){
-      let n = readIntAny(m, ["donationsReceived","troopsReceived","received"]);
-      if(n >= 0) return n;
-      const mm = m?.member || m?.player || m?.raw || null;
-      n = readIntAny(mm, ["donationsReceived","troopsReceived","received"]);
-      return n >= 0 ? n : 0;
-    }
-
-    function roleRank(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return 1;
-      if(r === "elder" || r === "admin") return 2;
-      return 3;
-    }
-
-    // ✅ FIXED compareName bug
-    function compareName(a,b){
-      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
-    }
-
-    function ensureSortDropdownBound(){
-      const sel = document.getElementById("membersSortSelect");
-      if(!sel) return;
-
-      sel.value = membersSortMode;
-
-      if(sel.dataset.bound === "1") return;
-      sel.addEventListener("change", () => {
-        membersSortMode = sel.value || "role";
-        renderMembers();
-      });
-      sel.dataset.bound = "1";
-    }
-
-    function renderMembers(){
-      const tbody = document.getElementById("members-body");
-      if(!tbody) return;
-
-      ensureSortDropdownBound();
-
-      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
-
-      if(!list){
-        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
-        return;
-      }
-      if(list.length === 0){
-        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
-        return;
-      }
-
-      const sorted = list.slice().sort((a,b) => {
-        const ta = getTrophies(a), tb = getTrophies(b);
-        const xa = getXP(a), xb = getXP(b);
-        const wa = getWarStars(a), wb = getWarStars(b);
-        const ha = getThLevel(a), hb = getThLevel(b);
-        const ra = roleRank(a.role), rb = roleRank(b.role);
-        const da = getDonations(a), db = getDonations(b);
-        const rxa = getDonationsReceived(a), rxb = getDonationsReceived(b);
-
-        if(membersSortMode === "role"){
-          if(ra !== rb) return ra - rb;
-          if(tb !== ta) return tb - ta;
-          if(xb !== xa) return xb - xa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "th"){
-          if(hb !== ha) return hb - ha;
-          if(xb !== xa) return xb - xa;
-          if(wb !== wa) return wb - wa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "trophies"){
-          if(tb !== ta) return tb - ta;
-          if(xb !== xa) return xb - xa;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "warStars"){
-          if(wb !== wa) return wb - wa;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "xp"){
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          if(hb !== ha) return hb - ha;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "donated"){
-          if(db !== da) return db - da;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-        if(membersSortMode === "received"){
-          if(rxb !== rxa) return rxb - rxa;
-          if(xb !== xa) return xb - xa;
-          if(tb !== ta) return tb - ta;
-          return compareName(a,b);
-        }
-
-        if(tb !== ta) return tb - ta;
-        if(xb !== xa) return xb - xa;
-        return compareName(a,b);
-      });
-
-      tbody.innerHTML = sorted.map(m => {
-        const badge = roleEmoji(m.role);
-        const name = escapeHtml(m.name);
-        const th = getThLevel(m);
-        const trophies = getTrophies(m);
-        const warStars = getWarStars(m);
-        const xp = getXP(m);
-        const donated = getDonations(m);
-        const received = getDonationsReceived(m);
-
-        const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
-
-        return `
-          <tr>
-            <td class="m-emoji">${badge || ""}</td>
-            <td><span class="m-user-name ${leaderClass}">${name}</span></td>
-            <td class="m-num">${th ? th : "—"}</td>
-            <td class="m-num">${trophies ? trophies : 0}</td>
-            <td class="m-num">${warStars ? warStars : 0}</td>
-            <td class="m-num">${xp ? xp : 0}</td>
-            <td class="m-num">${donated}</td>
-            <td class="m-num">${received}</td>
-          </tr>
-        `;
-      }).join("");
-    }
-
+    // ===== Members fetching (kept minimal) =====
     async function fetchMembersData(){
       try{
         const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
@@ -2133,98 +983,39 @@
       } catch(e){
         membersData = null;
       }
-      renderMembers();
-      renderWarChart();
     }
 
-    // ===== Timers (More page) =====
-    function getNextRaidWeekendEnd(now){
-      const day = now.getUTCDay();
-      const diffToFriday = (5 - day + 7) % 7;
-      let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
-      let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
-      if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
-      if(now > mondayEnd){
-        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
-        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+    // ===== Clan stats fetching (kept minimal) =====
+    async function fetchClanStats(){
+      try{
+        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        clanStats = res.ok ? await res.json() : null;
+      } catch(e){
+        clanStats = null;
       }
-      return mondayEnd;
-    }
-    function getNextClanGamesEnd(now){
-      const y=now.getUTCFullYear(), m=now.getUTCMonth();
-      const start = makeUTC(y,m,22,8);
-      const end   = makeUTC(y,m,28,8);
-      if(now < start) return end;
-      if(now <= end) return end;
-      const nextMonth = new Date(Date.UTC(y, m+1, 1));
-      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
-    }
-    function getNextSeasonEnd(now){ return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8); }
-    function getNextLeagueReset(now){
-      const y=now.getUTCFullYear(), m=now.getUTCMonth();
-      let first = makeUTC(y,m,1,5);
-      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
-      let reset = makeUTC(y,m,1+diffToMonday,5);
-      if(now > reset){
-        const nm = new Date(Date.UTC(y, m+1, 1));
-        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
-        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
-        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
-      }
-      return reset;
-    }
-    function updateRecurringTimers(){
-      if(!document.getElementById("raid-timer")) return;
-      const now = new Date();
-      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
-      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
-      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
-      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
-    function startHomeDataLoop(){
-      clearIntervals(homeIntervals);
-      membersSortMode = "role";
-
-      fetchClanStats();
-      fetchMembersData();
-
-      homeIntervals.push(setInterval(fetchClanStats, 5*1000));
-      homeIntervals.push(setInterval(fetchMembersData, 10*1000));
-    }
-
-    function startWarDataLoop(){
-      clearIntervals(warIntervals);
-      warFetched = false;
-      warDetailFetched = false;
-
-      fetchClanStats();
-      fetchWarData();
-      fetchWarDetail();
-      fetchMembersData();
-
-      warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
-      warIntervals.push(setInterval(fetchWarData, 5*1000));
-      warIntervals.push(setInterval(fetchWarDetail, 5*1000));
-      warIntervals.push(setInterval(fetchClanStats, 5*1000));
-      warIntervals.push(setInterval(fetchMembersData, 15*1000));
-    }
-
-    function startMoreTimers(){
-      clearIntervals(moreIntervals);
-      updateRecurringTimers();
-      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
-    }
-
+    // ===== Router =====
     function setDocTitle(route){
-      const map = {
-        home: "B•A•S•E•D — Home",
-        cwl: "B•A•S•E•D — CWL",
-        war: "B•A•S•E•D — War",
-        mystats: "B•A•S•E•D — My Stats",
-        more: "B•A•S•E•D — More",
-      };
+      const map = { home:"B•A•S•E•D — Home", cwl:"B•A•S•E•D — CWL", war:"B•A•S•E•D — War", mystats:"B•A•S•E•D — My Stats", more:"B•A•S•E•D — More" };
       document.title = map[route] || "B•A•S•E•D";
+    }
+
+    function setupNavUI(){
+      const pwa = isPwaInstalled();
+      const topNav = document.getElementById("topNav");
+      const tabbar = document.getElementById("pwaTabbar");
+
+      if(pwa){
+        if(topNav) topNav.style.display = "none";
+        if(tabbar) tabbar.style.display = "block";
+        document.body.classList.add("has-pwa-tabs");
+      } else {
+        if(topNav) topNav.style.display = "flex";
+        if(tabbar) tabbar.style.display = "none";
+        document.body.classList.remove("has-pwa-tabs");
+      }
     }
 
     function renderRoute(){
@@ -2239,17 +1030,19 @@
       clearIntervals(warIntervals);
       clearIntervals(moreIntervals);
 
-      if(isPwaInstalled()) setPwaTabHidden(false);
-
       app.innerHTML = renderRouteContent(route);
 
-      if(route === "home") startHomeDataLoop();
-      if(route === "war")  startWarDataLoop();
-      if(route === "more") startMoreTimers();
-
-      if(route === "cwl"){
+      if(route === "war"){
         fetchClanStats();
-        homeIntervals.push(setInterval(fetchClanStats, 5*1000));
+        fetchMembersData();
+        fetchWarData();
+        fetchWarDetail();
+
+        warIntervals.push(setInterval(fetchWarData, 5000));
+        warIntervals.push(setInterval(fetchWarDetail, 5000));
+      } else if(route === "home"){
+        fetchClanStats();
+        fetchMembersData();
       }
     }
 
