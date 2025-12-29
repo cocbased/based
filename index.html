@@ -908,6 +908,42 @@
     }
     lastWarSnapshot = loadLastWarSnapshot();
 
+    function safeNum(v, fallback=null){
+      return (typeof v === "number" && isFinite(v)) ? v : fallback;
+    }
+
+    function winPctFromWLT(w,l,t){
+      const W=(w|0), L=(l|0), T=(t|0);
+      const total=W+L+T;
+      if(total<=0) return null;
+      return (W + 0.5*T)/total;
+    }
+    function fmtPctDecimal(p){
+      if(typeof p !== "number" || !isFinite(p)) return "";
+      return ` (${p.toFixed(3)})`;
+    }
+    function fmtWLTWithPctNums(w,l,t){
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
+    }
+    function fmtWLTWithPctObj(obj){
+      if(!obj || typeof obj !== "object") return { text:"—", losses:null };
+      const w=(typeof obj.wins==="number")?obj.wins:null;
+      const l=(typeof obj.losses==="number")?obj.losses:null;
+      const t=(typeof obj.ties==="number")?obj.ties:null;
+      if(w===null||l===null||t===null) return { text:"—", losses:null };
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
+    }
+    function hasNoLosses(losses){
+      return typeof losses==="number" && isFinite(losses) && losses===0;
+    }
+    function setClass(id, className, on){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+
     // =========================
     // Fetchers
     // =========================
@@ -977,7 +1013,7 @@
       } catch(e){
         clanStats = null;
       }
-      renderClanStats();
+      renderClanStats(); // ✅ FIX: this is what updates the “Loading…” fields
     }
 
     // =========================
@@ -1012,7 +1048,6 @@
       setText("war-attacks-us", String(display.ourAttacksUsed ?? "—"));
       setText("war-attacks-opp", String(display.oppAttacksUsed ?? "—"));
 
-      // timer (best effort)
       if(display.endTimeIso){
         const end = new Date(display.endTimeIso);
         const now = new Date();
@@ -1023,10 +1058,7 @@
     }
 
     // =========================
-    // Render: War chart (FIXED)
-    // - No “test block”
-    // - Uses 2-line layout properly (no nowrap in stack cells)
-    // - Shows 20+20 rows immediately (no “hidden below” confusion)
+    // Render: War chart (works w/ your war_detail schema)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1093,8 +1125,8 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
-        // Defender fields vary by generator; keep placeholders but not blank.
-        // If your JSON has defenderMapPosition / defenderTag / defenderName, we can wire it exactly.
+        // Your current war_detail.json doesn’t include defender info, so we show “—”
+        // If your generator later adds defenderMapPosition, we’ll show “#”.
         const a1Def = a1 ? (a1.defenderName || (a1.defenderMapPosition != null ? ("#" + a1.defenderMapPosition) : "Attack 1")) : "—";
         const a2Def = a2 ? (a2.defenderName || (a2.defenderMapPosition != null ? ("#" + a2.defenderMapPosition) : "Attack 2")) : "—";
 
@@ -1171,7 +1203,8 @@
     }
 
     // =========================
-    // Render: Members + ClanStats (basic, so home doesn’t stay “Loading…”)
+    // Render: Members + ClanStats
+    // ✅ FIX: This now fills war record fields so they don’t stay “Loading…”
     // =========================
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
@@ -1354,15 +1387,18 @@
     }
 
     function renderClanStats(){
-      // Keep this lightweight: only fill fields that exist in your clan_stats.json
-      if(!clanStats) return;
+      // Always clear “Loading…” even if the JSON is missing pieces
+      // so you never get stuck.
+      const warObj = clanStats?.war || null;
 
+      // Description
       const descEl = document.getElementById("clan-desc");
       if(descEl){
-        const desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
+        const desc = (typeof clanStats?.description === "string") ? clanStats.description.trim() : "";
         descEl.textContent = desc || "—";
       }
 
+      // CWL fields
       const cwlLeague = clanStats?.cwl?.currentLeague || "—";
       const cwlFinish = clanStats?.cwl?.lastFinish || "—";
       setText("cwl-league", cwlLeague);
@@ -1370,12 +1406,78 @@
       setText("cwl-league-cwlpage", cwlLeague);
       setText("cwl-finish-cwlpage", cwlFinish);
 
+      // Capital
       const hall = clanStats?.clanCapital?.capitalHallLevel;
       setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
+
+      // ✅ WAR RECORDS (WAR PAGE)
+      if(document.getElementById("war-record")){
+        ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("war-record", rec.text);
+          setClass("war-record","record-green", hasNoLosses(rec.losses));
+
+          setText("war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("war-longest", `${warObj.longestStreak ?? "—"}`);
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          const l25 = fmtWLTWithPctObj(warObj.last25);
+          const l50 = fmtWLTWithPctObj(warObj.last50);
+
+          setText("war-last10", l10.text);
+          setText("war-last25", l25.text);
+          setText("war-last50", l50.text);
+
+          setClass("war-last10","record-green", hasNoLosses(l10.losses));
+          setClass("war-last25","record-green", hasNoLosses(l25.losses));
+          setClass("war-last50","record-green", hasNoLosses(l50.losses));
+        } else {
+          setText("war-record","—");
+          setText("war-last10","—");
+          setText("war-last25","—");
+          setText("war-last50","—");
+          setText("war-streak","—");
+          setText("war-longest","—");
+        }
+      }
+
+      // ✅ WAR RECORDS (HOME PAGE)
+      if(document.getElementById("home-war-record")){
+        setClass("home-war-record","record-green", false);
+        setClass("home-war-last10","record-green", false);
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("home-war-record", rec.text);
+          setClass("home-war-record","record-green", hasNoLosses(rec.losses));
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          setText("home-war-last10", l10.text);
+          setClass("home-war-last10","record-green", hasNoLosses(l10.losses));
+
+          setText("home-war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("home-war-longest", `${warObj.longestStreak ?? "—"}`);
+        } else {
+          setText("home-war-record","—");
+          setText("home-war-last10","—");
+          setText("home-war-streak","—");
+          setText("home-war-longest","—");
+        }
+      }
     }
 
     // =========================
-    // More page timers (same logic you had before, compact)
+    // More page timers
     // =========================
     function getNextRaidWeekendEnd(now){
       const day = now.getUTCDay();
@@ -1440,12 +1542,15 @@
       warFetched = false;
       warDetailFetched = false;
 
+      // ✅ FIX: war page needs clan stats too, otherwise the record rows never change
+      fetchClanStats();
       fetchWarData();
       fetchWarDetail();
 
+      warIntervals.push(setInterval(fetchClanStats, 5000));
       warIntervals.push(setInterval(fetchWarData, 5000));
       warIntervals.push(setInterval(fetchWarDetail, 5000));
-      warIntervals.push(setInterval(renderWarSection, 1000)); // timer refresh
+      warIntervals.push(setInterval(renderWarSection, 1000));
     }
 
     function startMoreLoop(){
