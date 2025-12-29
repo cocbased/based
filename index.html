@@ -1386,7 +1386,7 @@
       renderWarSection();
     }
 
-    // ✅ REPLACED: fetchWarDetail() with debug + text-first parsing
+    // ✅ fetchWarDetail() with debug + text-first parsing
     async function fetchWarDetail(){
       const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
       warDetailMeta = { ok:false, status:0, err:"", ts:Date.now(), url };
@@ -1395,7 +1395,7 @@
         const res = await fetch(url, { cache:"no-store" });
         warDetailMeta.status = res.status;
 
-        const text = await res.text(); // read as text first for debug
+        const text = await res.text();
         if(!res.ok){
           warDetail = null;
           warDetailMeta.err = `HTTP ${res.status} ${res.statusText} (first 80: ${text.slice(0,80).replace(/\s+/g," ")})`;
@@ -1528,6 +1528,67 @@
       }
     });
 
+    // ============================================================
+    // ✅ Schema-flexible war_detail parser (THIS is what fixes 200 OK but no rows)
+    // ============================================================
+    function pickObj(obj, paths){
+      for(const p of paths){
+        const parts = p.split(".");
+        let cur = obj;
+        let ok = true;
+        for(const part of parts){
+          if(cur && Object.prototype.hasOwnProperty.call(cur, part)){
+            cur = cur[part];
+          } else {
+            ok = false;
+            break;
+          }
+        }
+        if(ok && cur != null) return { value: cur, path: p };
+      }
+      return { value: null, path: "" };
+    }
+
+    function normalizeSide(side){
+      const name = side?.name || side?.clanName || side?.teamName || side?.title || "";
+      const tag  = side?.tag  || side?.clanTag  || side?.teamTag  || side?.id    || "";
+      const members =
+        (Array.isArray(side?.members) ? side.members :
+         Array.isArray(side?.memberList) ? side.memberList :
+         Array.isArray(side?.players) ? side.players :
+         Array.isArray(side?.roster) ? side.roster :
+         Array.isArray(side?.items) ? side.items :
+         []);
+      return { name, tag, members };
+    }
+
+    function pickSides(detail){
+      const ourPick = pickObj(detail, ["our","clan","team","sideA","attacker","attackers","home","us"]);
+      const oppPick = pickObj(detail, ["opponent","opp","enemy","sideB","defender","defenders","away","them"]);
+
+      const ourSide = normalizeSide(ourPick.value || {});
+      const oppSide = normalizeSide(oppPick.value || {});
+
+      // fallback: top-level members array
+      if(ourSide.members.length === 0 && oppSide.members.length === 0){
+        const topMembersPick = pickObj(detail, ["members","memberList","players","items"]);
+        const topMembers = Array.isArray(topMembersPick.value) ? topMembersPick.value : [];
+        if(topMembers.length){
+          return {
+            our: { name: ourSide.name || "Our Clan", tag: ourSide.tag || "", members: topMembers },
+            opp: { name: oppSide.name || "Opponent", tag: oppSide.tag || "", members: [] },
+            debug: `top-level:${topMembersPick.path} (${topMembers.length})`
+          };
+        }
+      }
+
+      return {
+        our: { ...ourSide, name: ourSide.name || "Our Clan" },
+        opp: { ...oppSide, name: oppSide.name || "Opponent" },
+        debug: `our:${ourPick.path || "?"} (${ourSide.members.length}) | opp:${oppPick.path || "?"} (${oppSide.members.length})`
+      };
+    }
+
     // ===== WAR CHART RENDER =====
     function normalizeRole(role){
       const r = String(role || "").trim().toLowerCase();
@@ -1566,16 +1627,17 @@
       `;
     }
 
-    function totalStars(member){
-      const atks = member?.attacks || [];
-      return atks.reduce((sum,a)=>sum + (Number(a.stars)||0), 0);
+    function totalStarsFromAttacks(attacks){
+      const atks = Array.isArray(attacks) ? attacks : [];
+      return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
     }
 
     function buildDefenderIndex(members){
       const idx = new Map();
       (members || []).forEach(m => {
-        if(m && m.tag) idx.set(m.tag, m.name || "");
-        if(m && (m.mapPosition !== null && m.mapPosition !== undefined)) idx.set(String(m.mapPosition), m.name || "");
+        if(m && m.tag) idx.set(m.tag, m.name || m.playerName || m.username || "");
+        const mp = (m && (m.mapPosition ?? m.position ?? m.map));
+        if(mp !== null && mp !== undefined) idx.set(String(mp), m.name || m.playerName || m.username || "");
       });
       return idx;
     }
@@ -1588,8 +1650,8 @@
       return "—";
     }
 
-    function targetChipsHTML(member){
-      const atks = member?.attacks || [];
+    function targetChipsHTMLFromAttacks(attacks){
+      const atks = Array.isArray(attacks) ? attacks : [];
       const nums = atks
         .map(a => (a && a.defenderMapPosition != null) ? Number(a.defenderMapPosition) : null)
         .filter(v => v != null && Number.isFinite(v));
@@ -1605,40 +1667,61 @@
       if(!mount) return;
 
       const stamp = new Date(warDetailMeta.ts || Date.now()).toLocaleTimeString();
-      const debugLine = `
+      const keys = warDetail && typeof warDetail === "object" ? Object.keys(warDetail) : [];
+      const keyLine = keys.length ? keys.slice(0, 14).join(", ") + (keys.length > 14 ? "…" : "") : "—";
+
+      const debugLineTop = `
         <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 8px;">
           war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}
           ${warDetailMeta.err ? `<div style="opacity:.9;margin-top:4px;">${escapeHtml(warDetailMeta.err)}</div>` : ""}
+          <div style="opacity:.65;margin-top:2px;">keys: ${escapeHtml(keyLine)}</div>
         </div>
       `;
 
       if(!warDetailFetched){
-        mount.innerHTML = debugLine + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        mount.innerHTML = debugLineTop + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
         return;
       }
 
       if(!warDetail || warDetail.state === "error"){
-        mount.innerHTML = debugLine + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        mount.innerHTML = debugLineTop + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         return;
       }
 
-      const our = warDetail.our || {};
-      const opp = warDetail.opponent || {};
-
+      const { our, opp, debug } = pickSides(warDetail || {});
       const ourMembers = Array.isArray(our.members) ? our.members.slice() : [];
       const oppMembers = Array.isArray(opp.members) ? opp.members.slice() : [];
 
-      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      const debugLine = debugLineTop.replace(
+        "</div>",
+        `<div style="opacity:.85;margin-top:4px;">shape: ${escapeHtml(debug)}</div></div>`
+      );
+
+      if(ourMembers.length === 0 && oppMembers.length === 0){
+        mount.innerHTML = debugLine + `
+          <div class="muted" style="text-align:center;">
+            No members arrays found in war_detail.json.<br/>
+            (Check keys + shape line above.)
+          </div>
+        `;
+        return;
+      }
+
+      // Sort by map position if present
+      const pos = (m)=>Number(m?.mapPosition ?? m?.position ?? m?.map ?? 9999);
+      ourMembers.sort((a,b)=>pos(a)-pos(b));
+      oppMembers.sort((a,b)=>pos(a)-pos(b));
 
       const ourDefIdx = buildDefenderIndex(oppMembers);
       const oppDefIdx = buildDefenderIndex(ourMembers);
-
       const ourRoleMap = buildOurRoleMap();
 
       function rowHTML(member, defenderIdx, roleMapOrNull){
-        const a1 = (member.attacks || [])[0] || null;
-        const a2 = (member.attacks || [])[1] || null;
+        const attacks = Array.isArray(member?.attacks) ? member.attacks
+                      : Array.isArray(member?.attackLog) ? member.attackLog
+                      : [];
+        const a1 = attacks[0] || null;
+        const a2 = attacks[1] || null;
 
         const a1Target = defenderNameForAttack(a1, defenderIdx);
         const a2Target = defenderNameForAttack(a2, defenderIdx);
@@ -1649,30 +1732,34 @@
         const a1Stars = a1 ? Number(a1.stars||0) : 0;
         const a2Stars = a2 ? Number(a2.stars||0) : 0;
 
-        const tag = member.tag;
+        const name = member?.name || member?.playerName || member?.username || "—";
+        const tag  = member?.tag || member?.playerTag || member?.id || "";
+
         const roleFromMap = (roleMapOrNull && tag && roleMapOrNull.has(tag)) ? roleMapOrNull.get(tag) : "";
-        const roleText = roleLabelFromRole(roleFromMap || member.role || "");
+        const roleText = roleLabelFromRole(roleFromMap || member?.role || "");
+
+        const mapPos = member?.mapPosition ?? member?.position ?? member?.map ?? "—";
 
         return `
           <div class="war-sheet-row">
-            <div class="war-cell right mono numcol">${member.mapPosition ?? "—"}.</div>
+            <div class="war-cell right mono numcol">${escapeHtml(mapPos)}.</div>
 
             <div class="war-cell">
               <div class="war-player">
-                <div class="name" title="${member.name || ""}">
+                <div class="name" title="${escapeHtml(name)}">
                   <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${member.name || "—"}
+                    ${escapeHtml(name)}
                   </span>
-                  ${targetChipsHTML(member)}
+                  ${targetChipsHTMLFromAttacks(attacks)}
                 </div>
-                <div class="role">${roleText}</div>
+                <div class="role">${escapeHtml(roleText)}</div>
               </div>
             </div>
 
             <div class="war-cell defender">
               <div class="atk2">
-                <div class="atkline" title="${a1Target}">${a1 ? a1Target : "—"}</div>
-                <div class="atkline" title="${a2Target}">${a2 ? a2Target : "—"}</div>
+                <div class="atkline" title="${escapeHtml(a1Target)}">${a1 ? escapeHtml(a1Target) : "—"}</div>
+                <div class="atkline" title="${escapeHtml(a2Target)}">${a2 ? escapeHtml(a2Target) : "—"}</div>
               </div>
             </div>
 
@@ -1690,7 +1777,7 @@
               </div>
             </div>
 
-            <div class="war-cell center mono bold">${totalStars(member)}★</div>
+            <div class="war-cell center mono bold">${totalStarsFromAttacks(attacks)}★</div>
           </div>
         `;
       }
@@ -1699,11 +1786,11 @@
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
-              <div class="war-chart-clan" title="${title || ""}">
+              <div class="war-chart-clan" title="${escapeHtml(title || "")}">
                 <span class="war-dot ${isOpp ? "opp" : ""}"></span>
-                <span>${title || (isOpp ? "Opponent" : "Our Clan")}</span>
+                <span>${escapeHtml(title || (isOpp ? "Opponent" : "Our Clan"))}</span>
               </div>
-              <div class="war-chart-sub">${tag || ""}</div>
+              <div class="war-chart-sub">${escapeHtml(tag || "")}</div>
             </div>
 
             <div class="war-sheet">
@@ -1725,7 +1812,7 @@
       mount.innerHTML = debugLine + `
         <div class="war-chart-title">War Chart</div>
         ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx, ourRoleMap)}
-        ${blockHTML(opp.name, opp.tag, true,  oppMembers, oppDefIdx, null)}
+        ${oppMembers.length ? blockHTML(opp.name, opp.tag, true, oppMembers, oppDefIdx, null) : ""}
       `;
     }
 
