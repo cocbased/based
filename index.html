@@ -32,6 +32,18 @@
     .topnav a{ flex: 0 0 auto; }
     .stage, #app{ min-height: 0; }
 
+    /* ✅ prevent text highlight across app (keeps selects usable) */
+    body, body *{
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, select, option, button{
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+
     body{
       margin:0;
       background:#000;
@@ -138,6 +150,19 @@
     .war-substat{ margin-top:8px; opacity:.95; }
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
+
+    /* ===== Drag-to-scroll (desktop) ===== */
+    .dragscroll{
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      cursor: grab;
+    }
+    .dragscroll.is-dragging{ cursor: grabbing; }
+    .dragscroll, .dragscroll *{
+      -webkit-user-select: none;
+      user-select: none;
+    }
 
     /* ===== WAR CHART ===== */
     .war-chart-wrap{ margin-top: 12px; }
@@ -671,20 +696,17 @@
           const y = getScrollTop();
           const dy = y - _lastScrollY;
 
-          // ignore tiny jitter
           if(Math.abs(dy) < 6){
             _lastScrollY = y;
             return;
           }
 
-          // if at/near top, always show
           if(y <= 8){
             showPwaTabbar();
             _lastScrollY = y;
             return;
           }
 
-          // hide on scroll down, show on scroll up
           if(dy > 0) hidePwaTabbar();
           else showPwaTabbar();
 
@@ -692,7 +714,6 @@
         });
       };
 
-      // store for cleanup (in case browsers keep handlers around)
       window.__pwaTabbarScrollHandler = onScroll;
       window.addEventListener("scroll", onScroll, { passive:true });
     }
@@ -707,6 +728,60 @@
       _rafPending = false;
     }
 
+    // =========================
+    // Drag-to-scroll for any .dragscroll
+    // =========================
+    function enableDragScroll(el){
+      if(!el || el.dataset.dragscroll === "1") return;
+      el.dataset.dragscroll = "1";
+
+      let isDown = false;
+      let startX = 0;
+      let startLeft = 0;
+      let moved = false;
+
+      const onDown = (e) => {
+        if(e.button !== 0) return;
+        isDown = true;
+        moved = false;
+        startX = e.pageX;
+        startLeft = el.scrollLeft;
+        el.classList.add("is-dragging");
+        e.preventDefault();
+      };
+
+      const onMove = (e) => {
+        if(!isDown) return;
+        const dx = e.pageX - startX;
+        if(Math.abs(dx) > 3) moved = true;
+        el.scrollLeft = startLeft - dx;
+      };
+
+      const onUp = () => {
+        if(!isDown) return;
+        isDown = false;
+        el.classList.remove("is-dragging");
+      };
+
+      const onClickCapture = (e) => {
+        if(moved){
+          e.preventDefault();
+          e.stopPropagation();
+          moved = false;
+        }
+      };
+
+      el.addEventListener("mousedown", onDown);
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+      el.addEventListener("mouseleave", onUp);
+      el.addEventListener("click", onClickCapture, true);
+    }
+
+    function enableDragScrollEverywhere(){
+      document.querySelectorAll(".dragscroll").forEach(enableDragScroll);
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -717,7 +792,6 @@
         if(tabbar) tabbar.style.display = "block";
         document.body.classList.add("has-pwa-tabs");
 
-        // ✅ make sure scroll auto-hide is active in PWA
         unbindPwaTabbarAutoHide();
         bindPwaTabbarAutoHide();
       } else {
@@ -839,7 +913,8 @@
             </div>
           </div>
 
-          <div class="members-wrap" aria-label="Clan members list">
+          <!-- ✅ add dragscroll -->
+          <div class="members-wrap dragscroll" aria-label="Clan members list">
             <table class="members-table">
               <colgroup>
                 <col style="width: var(--m-emoji-col);">
@@ -928,7 +1003,10 @@
             </div>
           </div>
 
-          <div id="war-chart-mount" class="war-chart-wrap"></div>
+          <!-- ✅ war chart wrapper is dragscroll (mount stays inside) -->
+          <div class="war-chart-wrap dragscroll">
+            <div id="war-chart-mount"></div>
+          </div>
         </div>
       `;
     }
@@ -1206,10 +1284,12 @@
 
       if(!warDetailFetched){
         mount.innerHTML = `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        enableDragScrollEverywhere();
         return;
       }
       if(!warDetail || typeof warDetail !== "object"){
         mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        enableDragScrollEverywhere();
         return;
       }
 
@@ -1358,6 +1438,9 @@
         (showMode ? `<div class="war-mode-title">${teamSize} v ${teamSize}</div>` : ``) +
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
+
+      // ✅ bind dragscroll after content updates
+      enableDragScrollEverywhere();
     }
 
     // =========================
@@ -1445,10 +1528,12 @@
       const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
       if(!list){
         tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
+        enableDragScrollEverywhere();
         return;
       }
       if(list.length === 0){
         tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
+        enableDragScrollEverywhere();
         return;
       }
 
@@ -1532,6 +1617,8 @@
           </tr>
         `;
       }).join("");
+
+      enableDragScrollEverywhere();
     }
 
     function renderClanStats(){
@@ -1724,6 +1811,9 @@
       clearIntervals(moreIntervals);
 
       app.innerHTML = renderRouteContent(route);
+
+      // ✅ bind dragscroll for current route content
+      enableDragScrollEverywhere();
 
       if(route === "home") startHomeLoop();
       if(route === "war")  startWarLoop();
