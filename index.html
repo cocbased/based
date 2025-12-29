@@ -225,10 +225,6 @@
 
     /* =========================
        WAR CHART (iPhone-fit, no horizontal scroll)
-       ✅ # narrow, no right border
-       ✅ Defender same width as Player + right aligned
-       ✅ % narrow, Stars narrow, Total narrow
-       ✅ NO vertical borders (only outside border)
        ========================= */
     .war-chart-wrap{ margin-top: 12px; }
 
@@ -245,7 +241,7 @@
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
       border-radius: 10px;
-      overflow: hidden;                 /* ✅ no horizontal scroll */
+      overflow: hidden;
     }
     .war-chart-block + .war-chart-block{ margin-top: 10px; }
 
@@ -291,21 +287,17 @@
       flex: 0 0 auto;
     }
 
-    .war-sheet{
-      width: 100%;
-    }
+    .war-sheet{ width: 100%; }
 
-    /* 6 columns:
-       # | Player | Defender | % | Stars | Total */
     .war-sheet-row{
       display:grid;
       grid-template-columns:
-        26px                      /* # fits “99.” */
-        minmax(0, 1fr)            /* Player */
-        minmax(0, 1fr)            /* Defender */
-        40px                      /* % fits “100%” */
-        64px                      /* Stars fits 3 */
-        36px;                     /* Total fits “9★” */
+        26px
+        minmax(0, 1fr)
+        minmax(0, 1fr)
+        40px
+        64px
+        36px;
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
@@ -316,7 +308,6 @@
       border-bottom: 1px solid rgba(255,255,255,0.10);
     }
 
-    /* ✅ NO vertical borders anywhere */
     .war-cell{
       padding: 8px 8px;
       font-size: 12.5px;
@@ -334,7 +325,6 @@
     .war-cell.right{ justify-content:flex-end; text-align:right; }
     .war-cell.bold{ font-weight: 900; }
 
-    /* # col */
     .war-cell.numcol{
       padding-right: 6px;
       opacity: .95;
@@ -361,7 +351,6 @@
       opacity: .70;
     }
 
-    /* Target chips (appear next to username only after attacks) */
     .war-targetchips{
       display:inline-flex;
       gap:4px;
@@ -396,7 +385,6 @@
       white-space: nowrap;
     }
 
-    /* Defender cell: right aligned */
     .war-cell.defender{
       justify-content: flex-end;
       text-align: right;
@@ -1034,7 +1022,6 @@
       `;
     }
 
-    // HOME
     function renderHome(){
       return `
         <div class="cards">
@@ -1287,6 +1274,9 @@
     let warDetail = null;
     let warDetailFetched = false;
 
+    // ✅ DEBUG META for war_detail.json
+    let warDetailMeta = { ok:false, status:0, err:"", ts:0, url:"" };
+
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
 
@@ -1396,14 +1386,33 @@
       renderWarSection();
     }
 
+    // ✅ REPLACED: fetchWarDetail() with debug + text-first parsing
     async function fetchWarDetail(){
+      const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
+      warDetailMeta = { ok:false, status:0, err:"", ts:Date.now(), url };
+
       try{
-        const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
         const res = await fetch(url, { cache:"no-store" });
-        warDetail = res.ok ? await res.json() : null;
+        warDetailMeta.status = res.status;
+
+        const text = await res.text(); // read as text first for debug
+        if(!res.ok){
+          warDetail = null;
+          warDetailMeta.err = `HTTP ${res.status} ${res.statusText} (first 80: ${text.slice(0,80).replace(/\s+/g," ")})`;
+        } else {
+          try{
+            warDetail = JSON.parse(text);
+            warDetailMeta.ok = true;
+          } catch(parseErr){
+            warDetail = null;
+            warDetailMeta.err = `JSON parse failed (first 80: ${text.slice(0,80).replace(/\s+/g," ")})`;
+          }
+        }
       } catch(e){
         warDetail = null;
+        warDetailMeta.err = (e && e.message) ? e.message : String(e);
       }
+
       warDetailFetched = true;
       renderWarChart();
     }
@@ -1491,9 +1500,35 @@
       updateWarTimerOnly(showingPrevious, display);
     }
 
-    // =========================
-    // WAR CHART RENDER (simplified + role fix)
-    // =========================
+    // ===== Members + utils =====
+    function escapeHtml(s){
+      return String(s || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+    }
+
+    // ✅ Surface JS errors inside the war chart mount (so failures can’t be “silent”)
+    window.addEventListener("error", (e) => {
+      const mount = document.getElementById("war-chart-mount");
+      if(mount){
+        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
+          JS Error: ${escapeHtml(e.message || "unknown")}
+        </div>`;
+      }
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const mount = document.getElementById("war-chart-mount");
+      if(mount){
+        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
+          Promise Error: ${escapeHtml(String(e.reason || "unknown"))}
+        </div>`;
+      }
+    });
+
+    // ===== WAR CHART RENDER =====
     function normalizeRole(role){
       const r = String(role || "").trim().toLowerCase();
       if(!r) return "";
@@ -1569,13 +1604,21 @@
       const mount = document.getElementById("war-chart-mount");
       if(!mount) return;
 
+      const stamp = new Date(warDetailMeta.ts || Date.now()).toLocaleTimeString();
+      const debugLine = `
+        <div style="font-family:monospace;font-size:11px;opacity:.75;text-align:center;margin:4px 0 8px;">
+          war_detail.json: ${warDetailMeta.ok ? "OK" : "FAIL"} | ${warDetailMeta.status || "—"} | ${stamp}
+          ${warDetailMeta.err ? `<div style="opacity:.9;margin-top:4px;">${escapeHtml(warDetailMeta.err)}</div>` : ""}
+        </div>
+      `;
+
       if(!warDetailFetched){
-        mount.innerHTML = `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        mount.innerHTML = debugLine + `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
         return;
       }
 
       if(!warDetail || warDetail.state === "error"){
-        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        mount.innerHTML = debugLine + `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         return;
       }
 
@@ -1679,7 +1722,7 @@
         `;
       }
 
-      mount.innerHTML = `
+      mount.innerHTML = debugLine + `
         <div class="war-chart-title">War Chart</div>
         ${blockHTML(our.name, our.tag, false, ourMembers, ourDefIdx, ourRoleMap)}
         ${blockHTML(opp.name, opp.tag, true,  oppMembers, oppDefIdx, null)}
@@ -1713,21 +1756,17 @@
           setText("rank-usa-trophies", fmtTop200(r.usaTrophies));
         }
 
-        // Description
-        {
-          const el = document.getElementById("clan-desc");
-          if(el){
-            let desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
-            if(desc){
-              desc = desc.replace(/Events\.\s*(TH\d+)/i, "Events.\n$1");
-              el.textContent = desc;
-            } else {
-              el.textContent = "—";
-            }
+        const el = document.getElementById("clan-desc");
+        if(el){
+          let desc = (typeof clanStats.description === "string") ? clanStats.description.trim() : "";
+          if(desc){
+            desc = desc.replace(/Events\.\s*(TH\d+)/i, "Events.\n$1");
+            el.textContent = desc;
+          } else {
+            el.textContent = "—";
           }
         }
 
-        // CWL values (Home + CWL page)
         const cwlLeague = (clanStats.cwl && clanStats.cwl.currentLeague) ? clanStats.cwl.currentLeague : "—";
         const cwlFinish = (clanStats.cwl && clanStats.cwl.lastFinish) ? clanStats.cwl.lastFinish : "—";
         setText("cwl-league", cwlLeague);
@@ -1735,7 +1774,6 @@
         setText("cwl-league-cwlpage", cwlLeague);
         setText("cwl-finish-cwlpage", cwlFinish);
 
-        // Capital Hall
         const hall = pickCapitalHallLevel(clanStats);
         setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
 
@@ -1749,7 +1787,6 @@
         setText("capital-hall-level","—");
       }
 
-      // WAR page bindings
       if(document.getElementById("war-record")){
         ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
 
@@ -1779,7 +1816,6 @@
         }
       }
 
-      // HOME war summary bindings
       if(document.getElementById("home-war-record")){
         setClass("home-war-record","record-green", false);
         setClass("home-war-last10","record-green", false);
@@ -1809,15 +1845,6 @@
     }
 
     // ===== Members =====
-    function escapeHtml(s){
-      return String(s || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#39;");
-    }
-
     function roleEmoji(role){
       const r = String(role || "").toLowerCase();
       if(r.includes("leader")) return "👑";
@@ -1892,8 +1919,9 @@
       return 3;
     }
 
+    // ✅ FIXED compareName bug
     function compareName(a,b){
-      return String(a.name||"").localeCompare(String(a.name||""), undefined, { sensitivity:"base" });
+      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
     }
 
     function ensureSortDropdownBound(){
@@ -2019,7 +2047,7 @@
         membersData = null;
       }
       renderMembers();
-      renderWarChart(); // ✅ roles can update chart too
+      renderWarChart();
     }
 
     // ===== Timers (More page) =====
@@ -2086,7 +2114,7 @@
       fetchClanStats();
       fetchWarData();
       fetchWarDetail();
-      fetchMembersData(); // ✅ required for role display in war chart
+      fetchMembersData();
 
       warIntervals.push(setInterval(() => updateWarTimerOnly(false, null), 1000));
       warIntervals.push(setInterval(fetchWarData, 5*1000));
@@ -2101,7 +2129,6 @@
       moreIntervals.push(setInterval(updateRecurringTimers, 1000));
     }
 
-    // ===== Router + tab UI =====
     function setDocTitle(route){
       const map = {
         home: "B•A•S•E•D — Home",
