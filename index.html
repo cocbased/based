@@ -913,7 +913,6 @@
             </div>
           </div>
 
-          <!-- ✅ add dragscroll -->
           <div class="members-wrap dragscroll" aria-label="Clan members list">
             <table class="members-table">
               <colgroup>
@@ -1003,7 +1002,6 @@
             </div>
           </div>
 
-          <!-- ✅ war chart wrapper is dragscroll (mount stays inside) -->
           <div class="war-chart-wrap dragscroll">
             <div id="war-chart-mount"></div>
           </div>
@@ -1049,6 +1047,40 @@
     let clanStats = null;
     let membersData = null;
     let membersSortMode = "role";
+
+    // =========================
+    // War-detail race safety + keys
+    // =========================
+    let _warDetailSeq = 0;
+    let _warDetailInFlight = false;
+    let _lastWarDetailKey = "";
+
+    function warDetailKey(obj){
+      const st = obj?.startTimeIso || obj?.startTime || "";
+      const et = obj?.endTimeIso || obj?.endTime || "";
+      const up = obj?.updatedAt || "";
+      const ts = obj?.teamSize ?? "";
+      const state = obj?.state ?? "";
+      return `${state}|${ts}|${st}|${et}|${up}`;
+    }
+
+    function fmtLocalTimeFromISO(iso){
+      try{
+        const d = new Date(String(iso || ""));
+        if(isNaN(d.getTime())) return "—";
+        return d.toLocaleString([], { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+      } catch(e){
+        return "—";
+      }
+    }
+
+    function warDetailStatusLine(){
+      const fetchedAt = warDetailMeta?.ts ? new Date(warDetailMeta.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }) : "—";
+      const http = warDetailMeta?.status ? `HTTP ${warDetailMeta.status}` : "HTTP —";
+      const ok = warDetailMeta?.ok ? "OK" : "FAIL";
+      const updatedAt = warDetail?.updatedAt ? fmtLocalTimeFromISO(warDetail.updatedAt) : "—";
+      return `updatedAt ${updatedAt} • fetched ${fetchedAt} • ${http} • ${ok}`;
+    }
 
     // =========================
     // Utilities
@@ -1142,7 +1174,12 @@
     }
 
     async function fetchWarDetail(){
-      const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
+      // ✅ prevent overlap + race conditions
+      if(_warDetailInFlight) return;
+      _warDetailInFlight = true;
+
+      const seq = ++_warDetailSeq;
+      const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now() + "&seq=" + seq;
       warDetailMeta = { ok:false, status:0, err:"", ts:Date.now(), url };
 
       try{
@@ -1150,6 +1187,10 @@
         warDetailMeta.status = res.status;
 
         const text = await res.text();
+
+        // ignore if a newer request started
+        if(seq !== _warDetailSeq) return;
+
         if(!res.ok){
           warDetail = null;
           warDetailMeta.err = `HTTP ${res.status} ${res.statusText} (first 80: ${text.slice(0,80).replace(/\s+/g," ")})`;
@@ -1163,8 +1204,11 @@
           }
         }
       } catch(e){
+        if(seq !== _warDetailSeq) return;
         warDetail = null;
         warDetailMeta.err = (e && e.message) ? e.message : String(e);
+      } finally {
+        if(seq === _warDetailSeq) _warDetailInFlight = false;
       }
 
       warDetailFetched = true;
@@ -1288,10 +1332,27 @@
         return;
       }
       if(!warDetail || typeof warDetail !== "object"){
-        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        mount.innerHTML = `
+          <div class="muted" style="text-align:center;">
+            War chart unavailable
+            <div style="margin-top:6px;font-family:monospace;font-size:11px;opacity:.75;">${escapeHtml(warDetailStatusLine())}</div>
+          </div>
+        `;
         enableDragScrollEverywhere();
         return;
       }
+
+      // ✅ If war changes, never allow old chart to “stick”
+      const key = warDetailKey(warDetail);
+      if(_lastWarDetailKey && key && key !== _lastWarDetailKey){
+        mount.innerHTML = `
+          <div class="muted" style="text-align:center;">
+            New war detected… refreshing
+            <div style="margin-top:6px;font-family:monospace;font-size:11px;opacity:.75;">${escapeHtml(warDetailStatusLine())}</div>
+          </div>
+        `;
+      }
+      _lastWarDetailKey = key;
 
       const state = String(warDetail.state || "").toLowerCase();
       const teamSize = Number(warDetail.teamSize || 0) || null;
@@ -1418,7 +1479,6 @@
 
       function blockHTML(title, isOpp, members){
         const defenderLU = isOpp ? ourLU : oppLU;
-
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1426,7 +1486,6 @@
                 <span>${escapeHtml(title || (isOpp ? "Opponent" : "Our Clan"))}</span>
               </div>
             </div>
-
             <div class="war-sheet">
               ${(members || []).map(m => rowHTML(m, defenderLU)).join("")}
             </div>
@@ -1434,12 +1493,18 @@
         `;
       }
 
+      const statusHTML = `
+        <div class="muted" style="text-align:center;font-family:monospace;font-size:11px;margin:6px 0 10px;opacity:.75;">
+          ${escapeHtml(warDetailStatusLine())}
+        </div>
+      `;
+
       mount.innerHTML =
         (showMode ? `<div class="war-mode-title">${teamSize} v ${teamSize}</div>` : ``) +
+        statusHTML +
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
 
-      // ✅ bind dragscroll after content updates
       enableDragScrollEverywhere();
     }
 
@@ -1768,6 +1833,10 @@
       warFetched = false;
       warDetailFetched = false;
 
+      // reset race safety on entering war page
+      _warDetailSeq++;
+      _warDetailInFlight = false;
+
       fetchClanStats();
       fetchWarData();
       fetchWarDetail();
@@ -1812,7 +1881,6 @@
 
       app.innerHTML = renderRouteContent(route);
 
-      // ✅ bind dragscroll for current route content
       enableDragScrollEverywhere();
 
       if(route === "home") startHomeLoop();
@@ -1823,7 +1891,6 @@
         homeIntervals.push(setInterval(fetchClanStats, 5000));
       }
 
-      // ✅ ensure tabbar hide/show still works after route render
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
