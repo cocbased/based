@@ -151,6 +151,22 @@
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
 
+    /* ✅ new: timer label (War Starts In / War Ends In / War Ended) */
+    .war-timer-label{
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:11px;
+      opacity:.82;
+      margin-top:2px;
+    }
+    .war-timer-sub{
+      font-family:monospace;
+      font-size:10px;
+      opacity:.68;
+      margin-top:2px;
+    }
+
     /* ===== Drag-to-scroll (desktop) ===== */
     .dragscroll{
       overflow-x: auto;
@@ -980,8 +996,15 @@
           <div class="divider"></div>
 
           <div class="section-title">Current War</div>
+
+          <!-- ✅ NEW: show "25 v 25" under Current War -->
+          <div id="war-mode-under-current" class="war-mode-title" style="margin-top:8px; display:none;">—</div>
+
           <div class="war-board">
+            <!-- ✅ NEW: label + countdown (stages) -->
+            <div id="war-timer-label" class="war-timer-label">Loading…</div>
             <div id="war-timer" class="war-timer">Loading…</div>
+            <div id="war-timer-sub" class="war-timer-sub" style="display:none;"></div>
 
             <div class="war-grid-3">
               <div>
@@ -1049,45 +1072,12 @@
     let membersSortMode = "role";
 
     // =========================
-    // War-detail race safety + keys
-    // =========================
-    let _warDetailSeq = 0;
-    let _warDetailInFlight = false;
-    let _lastWarDetailKey = "";
-
-    function warDetailKey(obj){
-      const st = obj?.startTimeIso || obj?.startTime || "";
-      const et = obj?.endTimeIso || obj?.endTime || "";
-      const up = obj?.updatedAt || "";
-      const ts = obj?.teamSize ?? "";
-      const state = obj?.state ?? "";
-      return `${state}|${ts}|${st}|${et}|${up}`;
-    }
-
-    function fmtLocalTimeFromISO(iso){
-      try{
-        const d = new Date(String(iso || ""));
-        if(isNaN(d.getTime())) return "—";
-        return d.toLocaleString([], { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-      } catch(e){
-        return "—";
-      }
-    }
-
-    function warDetailStatusLine(){
-      const fetchedAt = warDetailMeta?.ts ? new Date(warDetailMeta.ts).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }) : "—";
-      const http = warDetailMeta?.status ? `HTTP ${warDetailMeta.status}` : "HTTP —";
-      const ok = warDetailMeta?.ok ? "OK" : "FAIL";
-      const updatedAt = warDetail?.updatedAt ? fmtLocalTimeFromISO(warDetail.updatedAt) : "—";
-      return `updatedAt ${updatedAt} • fetched ${fetchedAt} • ${http} • ${ok}`;
-    }
-
-    // =========================
     // Utilities
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
+
     function formatCountdown(ms){
-      if(ms<=0) return "Active now";
+      if(ms<=0) return "0d 00h 00m 00s";
       const totalSeconds = Math.floor(ms/1000);
       const days = Math.floor(totalSeconds/86400);
       const hours = Math.floor((totalSeconds%86400)/3600);
@@ -1095,6 +1085,7 @@
       const seconds = totalSeconds%60;
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
+
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
     function loadLastWarSnapshot(){
@@ -1153,6 +1144,102 @@
       return String(role || "").trim().toLowerCase() === "leader";
     }
 
+    // ✅ NEW: update "X v X" under Current War using best available source
+    function updateWarModeUnderCurrent(){
+      const el = document.getElementById("war-mode-under-current");
+      if(!el) return;
+
+      // prefer warData teamSize, fallback warDetail teamSize
+      const ts =
+        (warData && (Number(warData.teamSize || warData.size || warData.members || 0) || 0)) ||
+        (warDetail && (Number(warDetail.teamSize || 0) || 0)) ||
+        0;
+
+      if(ts > 0){
+        el.textContent = `${ts} v ${ts}`;
+        el.style.display = "block";
+      } else {
+        el.style.display = "none";
+      }
+    }
+
+    // ✅ NEW: staged timer logic (War Starts In / War Ends In / War Ended)
+    function updateWarStageTimer(display){
+      const labelEl = document.getElementById("war-timer-label");
+      const timerEl = document.getElementById("war-timer");
+      const subEl   = document.getElementById("war-timer-sub");
+      if(!labelEl || !timerEl) return;
+
+      const now = new Date();
+
+      // try to get times from warData first (your current war endpoint),
+      // fallback to warDetail if needed.
+      const startIso =
+        (display && display.startTimeIso) ||
+        (warData && warData.startTimeIso) ||
+        (warDetail && warDetail.startTimeIso) ||
+        null;
+
+      const endIso =
+        (display && display.endTimeIso) ||
+        (warData && warData.endTimeIso) ||
+        (warDetail && warDetail.endTimeIso) ||
+        null;
+
+      const state =
+        (display && String(display.state || "")) ||
+        (warData && String(warData.state || "")) ||
+        (warDetail && String(warDetail.state || "")) ||
+        "";
+
+      const start = startIso ? new Date(startIso) : null;
+      const end   = endIso ? new Date(endIso) : null;
+
+      const hasStart = start && !isNaN(start.getTime());
+      const hasEnd   = end && !isNaN(end.getTime());
+
+      // show a subtle subline (optional) when we have timestamps
+      const showSub = (hasStart || hasEnd);
+      if(subEl) subEl.style.display = showSub ? "block" : "none";
+
+      // Default: if we cannot parse times, fall back to state-driven messaging
+      const safeSet = (lbl, t, sub="") => {
+        labelEl.textContent = lbl;
+        timerEl.textContent = t;
+        if(subEl) subEl.textContent = sub || "";
+      };
+
+      // If the war is over (or end time passed)
+      if(hasEnd && now >= end){
+        safeSet("War Ended", "—", "");
+        return;
+      }
+
+      // If start exists and we are before it, we're in preparation
+      if(hasStart && now < start){
+        safeSet("War Starts In:", formatCountdown(start - now), hasEnd ? `Ends: ${endIso}` : "");
+        return;
+      }
+
+      // Otherwise, if end exists and we are before it, we're in war day
+      if(hasEnd && now < end){
+        safeSet("War Ends In:", formatCountdown(end - now), hasStart ? `Started: ${startIso}` : "");
+        return;
+      }
+
+      // If we get here, times are missing or weird; use state fallback
+      const low = state.toLowerCase();
+      if(low.includes("preparation")){
+        safeSet("War Starts In:", "—", "Waiting for start time…");
+      } else if(low.includes("inwar") || low.includes("war") || low.includes("active")){
+        safeSet("War Ends In:", "—", "Waiting for end time…");
+      } else if(low.includes("notinwar")){
+        safeSet("No War", "—", "");
+      } else {
+        safeSet("War Status", "—", "");
+      }
+    }
+
     // =========================
     // Fetchers
     // =========================
@@ -1170,16 +1257,15 @@
         warData = null;
       }
       warFetched = true;
+
+      // ✅ ensure "X v X" is always in sync
+      updateWarModeUnderCurrent();
+
       renderWarSection();
     }
 
     async function fetchWarDetail(){
-      // ✅ prevent overlap + race conditions
-      if(_warDetailInFlight) return;
-      _warDetailInFlight = true;
-
-      const seq = ++_warDetailSeq;
-      const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now() + "&seq=" + seq;
+      const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
       warDetailMeta = { ok:false, status:0, err:"", ts:Date.now(), url };
 
       try{
@@ -1187,10 +1273,6 @@
         warDetailMeta.status = res.status;
 
         const text = await res.text();
-
-        // ignore if a newer request started
-        if(seq !== _warDetailSeq) return;
-
         if(!res.ok){
           warDetail = null;
           warDetailMeta.err = `HTTP ${res.status} ${res.statusText} (first 80: ${text.slice(0,80).replace(/\s+/g," ")})`;
@@ -1204,14 +1286,15 @@
           }
         }
       } catch(e){
-        if(seq !== _warDetailSeq) return;
         warDetail = null;
         warDetailMeta.err = (e && e.message) ? e.message : String(e);
-      } finally {
-        if(seq === _warDetailSeq) _warDetailInFlight = false;
       }
 
       warDetailFetched = true;
+
+      // ✅ also helps "X v X" if war.json is missing teamSize
+      updateWarModeUnderCurrent();
+
       renderWarChart();
     }
 
@@ -1238,18 +1321,34 @@
     }
 
     // =========================
-    // Render: Current War section
+    // Render: Current War section (staged timer + 25v25 under current war)
     // =========================
     function renderWarSection(){
+      // works only on war page
       if(!document.getElementById("war-timer")) return;
-      if(!warFetched){ setText("war-timer","Loading…"); return; }
+      if(!warFetched){
+        const lbl = document.getElementById("war-timer-label");
+        if(lbl) lbl.textContent = "Loading…";
+        setText("war-timer","Loading…");
+        return;
+      }
 
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
-      if(!display || !display.state){ setText("war-timer","Waiting…"); return; }
+      if(!display || !display.state){
+        const lbl = document.getElementById("war-timer-label");
+        if(lbl) lbl.textContent = "War Status";
+        setText("war-timer","Waiting…");
+        return;
+      }
+
+      // ✅ keep the "X v X" visible under Current War
+      updateWarModeUnderCurrent();
 
       if(display.state === "notInWar"){
-        setText("war-timer","No war started");
+        const lbl = document.getElementById("war-timer-label");
+        if(lbl) lbl.textContent = "No War";
+        setText("war-timer","—");
         setText("war-name-us","—"); setText("war-name-opp","—");
         setText("war-stars-us","—"); setText("war-stars-opp","—");
         setText("war-destr-us","—"); setText("war-destr-opp","—");
@@ -1279,13 +1378,8 @@
       setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
       setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
 
-      if(display.endTimeIso){
-        const end = new Date(display.endTimeIso);
-        const now = new Date();
-        setText("war-timer", isNaN(end.getTime()) ? "Active" : (now >= end ? "War ended" : formatCountdown(end - now)));
-      } else {
-        setText("war-timer","Active");
-      }
+      // ✅ NEW staged timer using start/end times (war.json preferred)
+      updateWarStageTimer(display);
     }
 
     // =========================
@@ -1332,27 +1426,10 @@
         return;
       }
       if(!warDetail || typeof warDetail !== "object"){
-        mount.innerHTML = `
-          <div class="muted" style="text-align:center;">
-            War chart unavailable
-            <div style="margin-top:6px;font-family:monospace;font-size:11px;opacity:.75;">${escapeHtml(warDetailStatusLine())}</div>
-          </div>
-        `;
+        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         enableDragScrollEverywhere();
         return;
       }
-
-      // ✅ If war changes, never allow old chart to “stick”
-      const key = warDetailKey(warDetail);
-      if(_lastWarDetailKey && key && key !== _lastWarDetailKey){
-        mount.innerHTML = `
-          <div class="muted" style="text-align:center;">
-            New war detected… refreshing
-            <div style="margin-top:6px;font-family:monospace;font-size:11px;opacity:.75;">${escapeHtml(warDetailStatusLine())}</div>
-          </div>
-        `;
-      }
-      _lastWarDetailKey = key;
 
       const state = String(warDetail.state || "").toLowerCase();
       const teamSize = Number(warDetail.teamSize || 0) || null;
@@ -1479,6 +1556,7 @@
 
       function blockHTML(title, isOpp, members){
         const defenderLU = isOpp ? ourLU : oppLU;
+
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1486,6 +1564,7 @@
                 <span>${escapeHtml(title || (isOpp ? "Opponent" : "Our Clan"))}</span>
               </div>
             </div>
+
             <div class="war-sheet">
               ${(members || []).map(m => rowHTML(m, defenderLU)).join("")}
             </div>
@@ -1493,15 +1572,8 @@
         `;
       }
 
-      const statusHTML = `
-        <div class="muted" style="text-align:center;font-family:monospace;font-size:11px;margin:6px 0 10px;opacity:.75;">
-          ${escapeHtml(warDetailStatusLine())}
-        </div>
-      `;
-
       mount.innerHTML =
         (showMode ? `<div class="war-mode-title">${teamSize} v ${teamSize}</div>` : ``) +
-        statusHTML +
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
 
@@ -1833,10 +1905,6 @@
       warFetched = false;
       warDetailFetched = false;
 
-      // reset race safety on entering war page
-      _warDetailSeq++;
-      _warDetailInFlight = false;
-
       fetchClanStats();
       fetchWarData();
       fetchWarDetail();
@@ -1844,6 +1912,8 @@
       warIntervals.push(setInterval(fetchClanStats, 5000));
       warIntervals.push(setInterval(fetchWarData, 5000));
       warIntervals.push(setInterval(fetchWarDetail, 5000));
+
+      // ✅ stage timer + fields update every second
       warIntervals.push(setInterval(renderWarSection, 1000));
     }
 
@@ -1890,6 +1960,9 @@
         fetchClanStats();
         homeIntervals.push(setInterval(fetchClanStats, 5000));
       }
+
+      // ✅ ensure current war mode text is correct immediately after render
+      updateWarModeUnderCurrent();
 
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
