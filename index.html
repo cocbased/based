@@ -116,7 +116,7 @@
       display:flex;
       flex-direction:column;
     }
-    .cards-title{ margin:0 0 6px; font-size:16px; text-align:center; }
+    .cards-title{ margin:0 0 6px; font-size:16px; text-align:center; font-weight:700; }
     .section-title{
       margin:10px 0 6px;
       font-size:13px;
@@ -150,16 +150,6 @@
     .war-substat{ margin-top:8px; opacity:.95; }
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
-
-    /* ✅ timer label (War Starts In / War Ends In / War Ended) */
-    .war-timer-label{
-      font-weight:900;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      font-size:11px;
-      opacity:.82;
-      margin-top:2px;
-    }
 
     /* ===== Drag-to-scroll (desktop) ===== */
     .dragscroll{
@@ -664,7 +654,7 @@
     }
 
     // =========================
-    // PWA tabbar hide-on-scroll (FIX)
+    // PWA tabbar hide-on-scroll
     // =========================
     let _pwaScrollBound = false;
     let _lastScrollY = 0;
@@ -978,7 +968,6 @@
     function renderWarPage(){
       return `
         <div class="cards">
-          <!-- ✅ make title weight/size match other pages -->
           <h2 class="cards-title">War</h2>
 
           <div class="row"><span class="row-label">War Record</span><span id="war-record" class="row-value">Loading…</span></div>
@@ -990,14 +979,12 @@
 
           <div class="divider"></div>
 
-          <!-- ✅ make title weight/size match other pages -->
-          <h2 class="cards-title" style="margin: 2px 0 10px;">Current War</h2>
-
-          <div id="war-mode-under-current" class="war-mode-title" style="margin-top:0; display:none;">—</div>
+          <h2 class="cards-title" style="margin-top:6px;">Current War</h2>
+          <div id="war-size" class="war-mode-title" style="margin:6px 0 6px;">—</div>
 
           <div class="war-board">
-            <div id="war-timer-label" class="war-timer-label">Loading…</div>
-            <div id="war-timer" class="war-timer">Loading…</div>
+            <div id="war-stage-label" class="war-mode-title" style="margin: 8px 0 4px;">Loading…</div>
+            <div id="war-timer" class="war-timer">—</div>
 
             <div class="war-grid-3">
               <div>
@@ -1068,7 +1055,6 @@
     // Utilities
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
-
     function formatCountdown(ms){
       if(ms<=0) return "0d 00h 00m 00s";
       const totalSeconds = Math.floor(ms/1000);
@@ -1078,7 +1064,6 @@
       const seconds = totalSeconds%60;
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
-
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
     function loadLastWarSnapshot(){
@@ -1137,87 +1122,6 @@
       return String(role || "").trim().toLowerCase() === "leader";
     }
 
-    function updateWarModeUnderCurrent(){
-      const el = document.getElementById("war-mode-under-current");
-      if(!el) return;
-
-      const ts =
-        (warData && (Number(warData.teamSize || warData.size || warData.members || 0) || 0)) ||
-        (warDetail && (Number(warDetail.teamSize || 0) || 0)) ||
-        0;
-
-      if(ts > 0){
-        el.textContent = `${ts} v ${ts}`;
-        el.style.display = "block";
-      } else {
-        el.style.display = "none";
-      }
-    }
-
-    // ✅ staged timer logic WITHOUT the redundant sub text
-    function updateWarStageTimer(display){
-      const labelEl = document.getElementById("war-timer-label");
-      const timerEl = document.getElementById("war-timer");
-      if(!labelEl || !timerEl) return;
-
-      const now = new Date();
-
-      const startIso =
-        (display && display.startTimeIso) ||
-        (warData && warData.startTimeIso) ||
-        (warDetail && warDetail.startTimeIso) ||
-        null;
-
-      const endIso =
-        (display && display.endTimeIso) ||
-        (warData && warData.endTimeIso) ||
-        (warDetail && warDetail.endTimeIso) ||
-        null;
-
-      const state =
-        (display && String(display.state || "")) ||
-        (warData && String(warData.state || "")) ||
-        (warDetail && String(warDetail.state || "")) ||
-        "";
-
-      const start = startIso ? new Date(startIso) : null;
-      const end   = endIso ? new Date(endIso) : null;
-
-      const hasStart = start && !isNaN(start.getTime());
-      const hasEnd   = end && !isNaN(end.getTime());
-
-      const safeSet = (lbl, t) => {
-        labelEl.textContent = lbl;
-        timerEl.textContent = t;
-      };
-
-      if(hasEnd && now >= end){
-        safeSet("War Ended", "—");
-        return;
-      }
-
-      if(hasStart && now < start){
-        safeSet("War Starts In:", formatCountdown(start - now));
-        return;
-      }
-
-      if(hasEnd && now < end){
-        safeSet("War Ends In:", formatCountdown(end - now));
-        return;
-      }
-
-      const low = state.toLowerCase();
-      if(low.includes("preparation")){
-        safeSet("War Starts In:", "—");
-      } else if(low.includes("inwar") || low.includes("war") || low.includes("active")){
-        safeSet("War Ends In:", "—");
-      } else if(low.includes("notinwar")){
-        safeSet("No War", "—");
-      } else {
-        safeSet("War Status", "—");
-      }
-    }
-
     // =========================
     // Fetchers
     // =========================
@@ -1235,8 +1139,6 @@
         warData = null;
       }
       warFetched = true;
-
-      updateWarModeUnderCurrent();
       renderWarSection();
     }
 
@@ -1267,8 +1169,6 @@
       }
 
       warDetailFetched = true;
-
-      updateWarModeUnderCurrent();
       renderWarChart();
     }
 
@@ -1291,36 +1191,41 @@
       } catch(e){
         clanStats = null;
       }
+      // ✅ MUST exist globally (fixes iOS ReferenceError)
       renderClanStats();
     }
 
     // =========================
-    // Render: Current War section
+    // Render: Current War section (staged timer + size)
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
+
       if(!warFetched){
-        const lbl = document.getElementById("war-timer-label");
-        if(lbl) lbl.textContent = "Loading…";
-        setText("war-timer","Loading…");
+        setText("war-stage-label","Loading…");
+        setText("war-timer","—");
+        setText("war-size","—");
         return;
       }
 
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
       if(!display || !display.state){
-        const lbl = document.getElementById("war-timer-label");
-        if(lbl) lbl.textContent = "War Status";
-        setText("war-timer","Waiting…");
+        setText("war-stage-label","Waiting…");
+        setText("war-timer","—");
+        setText("war-size","—");
         return;
       }
 
-      updateWarModeUnderCurrent();
+      const stateRaw = String(display.state || "");
+      const state = stateRaw.trim().toLowerCase();
 
-      if(display.state === "notInWar"){
-        const lbl = document.getElementById("war-timer-label");
-        if(lbl) lbl.textContent = "No War";
-        setText("war-timer","—");
+      const teamSize = Number(display.teamSize || display.size || display.members || 0) || null;
+      setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
+
+      if(state === "notinwar" || state === "notinwar " || stateRaw === "notInWar"){
+        setText("war-stage-label","No War");
+        setText("war-timer","");
         setText("war-name-us","—"); setText("war-name-opp","—");
         setText("war-stars-us","—"); setText("war-stars-opp","—");
         setText("war-destr-us","—"); setText("war-destr-opp","—");
@@ -1328,7 +1233,6 @@
         return;
       }
 
-      const teamSize = Number(display.teamSize || display.size || display.members || 0) || null;
       const maxStars = teamSize ? (3 * teamSize) : null;
       const maxAttacks = teamSize ? (2 * teamSize) : null;
 
@@ -1350,11 +1254,59 @@
       setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
       setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
 
-      updateWarStageTimer(display);
+      const now = new Date();
+      const start = display.startTimeIso ? new Date(display.startTimeIso) : null;
+      const end   = display.endTimeIso ? new Date(display.endTimeIso) : null;
+
+      const startOk = start && !isNaN(start.getTime());
+      const endOk   = end && !isNaN(end.getTime());
+
+      // ✅ Staged labels
+      if(state === "preparation"){
+        setText("war-stage-label","WAR STARTS IN:");
+        if(startOk){
+          const ms = start - now;
+          setText("war-timer", ms <= 0 ? "0d 00h 00m 00s" : formatCountdown(ms));
+        } else {
+          setText("war-timer","—");
+        }
+        return;
+      }
+
+      if(state === "inwar"){
+        if(endOk && now >= end){
+          setText("war-stage-label","WAR ENDED");
+          setText("war-timer","");
+          return;
+        }
+        setText("war-stage-label","WAR ENDS IN:");
+        if(endOk){
+          const ms = end - now;
+          setText("war-timer", ms <= 0 ? "0d 00h 00m 00s" : formatCountdown(ms));
+        } else {
+          setText("war-timer","—");
+        }
+        return;
+      }
+
+      // fallback for any other states
+      if(endOk && now >= end){
+        setText("war-stage-label","WAR ENDED");
+        setText("war-timer","");
+      } else if(endOk){
+        setText("war-stage-label","WAR ENDS IN:");
+        setText("war-timer", formatCountdown(end - now));
+      } else if(startOk && now < start){
+        setText("war-stage-label","WAR STARTS IN:");
+        setText("war-timer", formatCountdown(start - now));
+      } else {
+        setText("war-stage-label","ACTIVE");
+        setText("war-timer","—");
+      }
     }
 
     // =========================
-    // Render: War chart (unchanged)
+    // Render: War chart
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1413,12 +1365,7 @@
       const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(b.mapPosition)||9999)-(Number(a.mapPosition)||9999));
-      // ^ keep your original ordering preference if needed; if you prefer ascending, swap back.
-
-      // (keeping the rest of your war chart exactly as-is from your prior version)
-      // NOTE: For safety/consistency, I'm leaving your chart logic untouched aside from the sort line above.
-      // If you want me to restore exact original sort, tell me and I’ll flip it back.
+      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
       function buildLookup(members){
         const byTag = new Map();
@@ -1557,6 +1504,268 @@
     }
 
     // =========================
+    // Members + ClanStats
+    // =========================
+    function readIntAny(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== null && v !== undefined && v !== "") return (v|0);
+      }
+      return 0;
+    }
+    function getThLevel(m){
+      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
+      return n > 0 ? n : 0;
+    }
+    function getWarStars(m){
+      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
+      return n >= 0 ? n : 0;
+    }
+    function getXP(m){
+      let n = readIntAny(m, ["expLevel","xp","level"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["expLevel","xp","level"]);
+      return n > 0 ? n : 0;
+    }
+    function getTrophies(m){
+      let n = readIntAny(m, ["trophies"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["trophies"]);
+      return n > 0 ? n : 0;
+    }
+    function getDonations(m){
+      let n = readIntAny(m, ["donations","troopsDonated","donated"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donations","troopsDonated","donated"]);
+      return n >= 0 ? n : 0;
+    }
+    function getDonationsReceived(m){
+      let n = readIntAny(m, ["donationsReceived","troopsReceived","received"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donationsReceived","troopsReceived","received"]);
+      return n >= 0 ? n : 0;
+    }
+    function roleRank(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return 1;
+      if(r === "elder" || r === "admin") return 2;
+      return 3;
+    }
+    function compareName(a,b){
+      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+    }
+
+    function ensureSortDropdownBound(){
+      const sel = document.getElementById("membersSortSelect");
+      if(!sel) return;
+
+      sel.value = membersSortMode;
+
+      if(sel.dataset.bound === "1") return;
+      sel.addEventListener("change", () => {
+        membersSortMode = sel.value || "role";
+        renderMembers();
+      });
+      sel.dataset.bound = "1";
+    }
+
+    function renderMembers(){
+      const tbody = document.getElementById("members-body");
+      if(!tbody) return;
+
+      ensureSortDropdownBound();
+
+      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
+      if(!list){
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+      if(list.length === 0){
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+
+      const sorted = list.slice().sort((a,b) => {
+        const ta = getTrophies(a), tb = getTrophies(b);
+        const xa = getXP(a), xb = getXP(b);
+        const wa = getWarStars(a), wb = getWarStars(b);
+        const ha = getThLevel(a), hb = getThLevel(b);
+        const ra = roleRank(a.role), rb = roleRank(b.role);
+        const da = getDonations(a), db = getDonations(b);
+        const rxa = getDonationsReceived(a), rxb = getDonationsReceived(b);
+
+        if(membersSortMode === "role"){
+          if(ra !== rb) return ra - rb;
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "th"){
+          if(hb !== ha) return hb - ha;
+          if(xb !== xa) return xb - xa;
+          if(wb !== wa) return wb - wa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "trophies"){
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "warStars"){
+          if(wb !== wa) return wb - wa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "xp"){
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          if(hb !== ha) return hb - ha;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "donated"){
+          if(db !== da) return db - da;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "received"){
+          if(rxb !== rxa) return rxb - rxa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+
+        if(tb !== ta) return tb - ta;
+        if(xb !== xa) return xb - xa;
+        return compareName(a,b);
+      });
+
+      tbody.innerHTML = sorted.map(m => {
+        const badge = roleEmoji(m.role);
+        const name = escapeHtml(m.name);
+        const th = getThLevel(m);
+        const trophies = getTrophies(m);
+        const warStars = getWarStars(m);
+        const xp = getXP(m);
+        const donated = getDonations(m);
+        const received = getDonationsReceived(m);
+        const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
+
+        return `
+          <tr>
+            <td class="m-emoji">${badge || ""}</td>
+            <td><span class="m-user-name ${leaderClass}">${name}</span></td>
+            <td class="m-num">${th ? th : "—"}</td>
+            <td class="m-num">${trophies ? trophies : 0}</td>
+            <td class="m-num">${warStars ? warStars : 0}</td>
+            <td class="m-num">${xp ? xp : 0}</td>
+            <td class="m-num">${donated}</td>
+            <td class="m-num">${received}</td>
+          </tr>
+        `;
+      }).join("");
+
+      enableDragScrollEverywhere();
+    }
+
+    // ✅ Keep as a FUNCTION DECLARATION (global) to avoid iOS "Can't find variable"
+    function renderClanStats(){
+      const warObj = clanStats?.war || null;
+
+      const descEl = document.getElementById("clan-desc");
+      if(descEl){
+        const desc = (typeof clanStats?.description === "string") ? clanStats.description.trim() : "";
+        descEl.textContent = desc || "—";
+      }
+
+      const cwlLeague = clanStats?.cwl?.currentLeague || "—";
+      const cwlFinish = clanStats?.cwl?.lastFinish || "—";
+      setText("cwl-league", cwlLeague);
+      setText("cwl-finish", cwlFinish);
+      setText("cwl-league-cwlpage", cwlLeague);
+      setText("cwl-finish-cwlpage", cwlFinish);
+
+      const hall = clanStats?.clanCapital?.capitalHallLevel;
+      setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
+
+      if(document.getElementById("war-record")){
+        ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("war-record", rec.text);
+          setClass("war-record","record-green", hasNoLosses(rec.losses));
+
+          setText("war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("war-longest", `${warObj.longestStreak ?? "—"}`);
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          const l25 = fmtWLTWithPctObj(warObj.last25);
+          const l50 = fmtWLTWithPctObj(warObj.last50);
+
+          setText("war-last10", l10.text);
+          setText("war-last25", l25.text);
+          setText("war-last50", l50.text);
+
+          setClass("war-last10","record-green", hasNoLosses(l10.losses));
+          setClass("war-last25","record-green", hasNoLosses(l25.losses));
+          setClass("war-last50","record-green", hasNoLosses(l50.losses));
+        } else {
+          setText("war-record","—");
+          setText("war-last10","—");
+          setText("war-last25","—");
+          setText("war-last50","—");
+          setText("war-streak","—");
+          setText("war-longest","—");
+        }
+      }
+
+      if(document.getElementById("home-war-record")){
+        setClass("home-war-record","record-green", false);
+        setClass("home-war-last10","record-green", false);
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("home-war-record", rec.text);
+          setClass("home-war-record","record-green", hasNoLosses(rec.losses));
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          setText("home-war-last10", l10.text);
+          setClass("home-war-last10","record-green", hasNoLosses(l10.losses));
+
+          setText("home-war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("home-war-longest", `${warObj.longestStreak ?? "—"}`);
+        } else {
+          setText("home-war-record","—");
+          setText("home-war-last10","—");
+          setText("home-war-streak","—");
+          setText("home-war-longest","—");
+        }
+      }
+    }
+
+    // =========================
     // More page timers
     // =========================
     function getNextRaidWeekendEnd(now){
@@ -1674,8 +1883,6 @@
         homeIntervals.push(setInterval(fetchClanStats, 5000));
       }
 
-      updateWarModeUnderCurrent();
-
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
@@ -1689,6 +1896,7 @@
       if(document.visibilityState === "visible") renderRoute();
     });
 
+    // Keep handlers, but don't overwrite the UI with errors unless war chart exists
     window.addEventListener("error", (e) => {
       const mount = document.getElementById("war-chart-mount");
       if(mount){
