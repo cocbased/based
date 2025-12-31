@@ -601,24 +601,37 @@
   </nav>
 
   <script>
-    // =========================
-    // ✅ HARD FIX: if an old Service Worker is caching JSON, unregister it once.
-    // This is the #1 reason GitHub Pages PWAs "never update" even with ?cb=.
-    // =========================
-    (async function killOldServiceWorkerOnce(){
+    // ============================================================
+    // ✅ REAL "never updates" fix:
+    // 1) Unregister any old Service Workers
+    // 2) Clear CacheStorage (where old JSON/assets often remain)
+    // 3) Do it ONCE per version, then reload
+    // ============================================================
+    (async function purgePwaCachesOnce(){
+      const KEY = "based_pwa_cache_purged_v2";
       try{
-        if(!("serviceWorker" in navigator)) return;
-        const regs = await navigator.serviceWorker.getRegistrations();
-        if(!regs || !regs.length) return;
+        if(localStorage.getItem(KEY) === "1") return;
 
-        const key = "based_sw_unregistered_once";
-        if(localStorage.getItem(key) === "1") return;
+        // Clear CacheStorage
+        if("caches" in window){
+          try{
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }catch(e){}
+        }
 
-        for(const r of regs){ try{ await r.unregister(); } catch(e){} }
-        localStorage.setItem(key, "1");
-        // reload once after unregister
+        // Unregister SW
+        if("serviceWorker" in navigator){
+          try{
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all((regs||[]).map(r => r.unregister().catch(()=>{})));
+          }catch(e){}
+        }
+
+        localStorage.setItem(KEY, "1");
+        // Hard reload
         location.reload();
-      } catch(e){}
+      }catch(e){}
     })();
 
     // =========================
@@ -836,6 +849,13 @@
         .replace(/'/g,"&#39;");
     }
     function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    function setTextAny(ids, text){
+      for(const id of ids){
+        const el = document.getElementById(id);
+        if(el){ el.textContent = text; return true; }
+      }
+      return false;
+    }
 
     // =========================
     // Templates
@@ -969,6 +989,10 @@
               </tbody>
             </table>
           </div>
+
+          <!-- ✅ NEW: show whether JSON is actually changing -->
+          <div id="clan-fetch-status" class="tiny-status">Clan stats fetch: —</div>
+          <div id="members-fetch-status" class="tiny-status">Members fetch: —</div>
         </div>
       `;
     }
@@ -986,6 +1010,8 @@
           <div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">
             More CWL details coming soon.
           </div>
+
+          <div id="clan-fetch-status-cwl" class="tiny-status">Clan stats fetch: —</div>
         </div>
       `;
     }
@@ -1030,6 +1056,7 @@
             </div>
 
             <div id="war-fetch-status" class="tiny-status">Last fetch: —</div>
+            <div id="clan-fetch-status-war" class="tiny-status">Clan stats fetch: —</div>
           </div>
 
           <div class="war-chart-wrap dragscroll">
@@ -1056,6 +1083,14 @@
     const RAW_WAR_DETAIL_URL_BASE = "./war_detail.json";
     const RAW_CLAN_URL_BASE       = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE    = "./members.json";
+
+    // ✅ Fallbacks (often update faster than GitHub Pages CDN)
+    // If your repo/branch differs, it’ll just fail silently and keep using Pages.
+    const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/cocbased/based/main/";
+    const RAW_WAR_FALLBACK        = RAW_FALLBACK_BASE + "war.json";
+    const RAW_WAR_DETAIL_FALLBACK = RAW_FALLBACK_BASE + "war_detail.json";
+    const RAW_CLAN_FALLBACK       = RAW_FALLBACK_BASE + "clan_stats.json";
+    const RAW_MEMBERS_FALLBACK    = RAW_FALLBACK_BASE + "members.json";
 
     // =========================
     // State + intervals
@@ -1191,27 +1226,107 @@
       return { start, end };
     }
 
+    function stampTime(){
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+    }
+
     // =========================
-    // Robust JSON fetch (adds cache-busters + no-cache headers)
+    // ✅ Robust JSON fetch + real "did it change?" diagnostics
     // =========================
-    async function fetchJsonFresh(baseUrl){
+    const endpointState = new Map(); // key => { lastHash, unchangedStreak }
+
+    function fnv1a32(str){
+      let h = 0x811c9dc5;
+      for(let i=0;i<str.length;i++){
+        h ^= str.charCodeAt(i);
+        h = (h + ((h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24))) >>> 0;
+      }
+      return h >>> 0;
+    }
+
+    async function fetchJsonWithMeta(url, stateKey){
+      const key = stateKey || url;
       const cb = Date.now();
       const rnd = Math.random().toString(16).slice(2);
-      const url = `${baseUrl}?cb=${cb}&r=${rnd}`;
-      const res = await fetch(url, {
+      const busted = `${url}${url.includes("?") ? "&" : "?"}cb=${cb}&r=${rnd}`;
+
+      const started = performance.now();
+      const res = await fetch(busted, {
         cache: "no-store",
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
           "Pragma": "no-cache"
         }
       });
-      if(!res.ok) throw new Error(`${baseUrl} HTTP ${res.status}`);
-      return await res.json();
+
+      const text = await res.text();
+      if(!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+
+      const hash = fnv1a32(text).toString(16).padStart(8,"0");
+      const bytes = text.length;
+
+      const st = endpointState.get(key) || { lastHash:null, unchangedStreak:0 };
+      const unchanged = (st.lastHash === hash);
+      st.unchangedStreak = unchanged ? (st.unchangedStreak + 1) : 0;
+      st.lastHash = hash;
+      endpointState.set(key, st);
+
+      let data;
+      try{
+        data = JSON.parse(text);
+      }catch(e){
+        throw new Error(`${url} JSON parse error`);
+      }
+
+      const ms = Math.round(performance.now() - started);
+      const meta = {
+        ok: true,
+        url: busted,
+        hash,
+        bytes,
+        ms,
+        unchanged,
+        unchangedStreak: st.unchangedStreak,
+        lastModified: res.headers.get("Last-Modified") || "",
+        etag: res.headers.get("ETag") || ""
+      };
+      return { data, meta };
     }
 
-    function stampTime(){
-      const d = new Date();
-      return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+    async function fetchJsonSmart(pagesUrl, rawFallbackUrl, stateKey){
+      // Primary: GitHub Pages
+      const primary = await fetchJsonWithMeta(pagesUrl, stateKey || pagesUrl);
+
+      // If Pages is repeatedly unchanged, try raw fallback once in a while
+      if(rawFallbackUrl){
+        const st = endpointState.get(stateKey || pagesUrl);
+        const shouldTryFallback = primary.meta.unchanged && st && st.unchangedStreak >= 3;
+
+        if(shouldTryFallback){
+          try{
+            const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
+            // If raw differs, use it (this is the real-world “Pages CDN is stale” fix)
+            if(fb.meta.hash !== primary.meta.hash){
+              fb.meta.via = "raw";
+              return fb;
+            }
+          }catch(e){
+            // ignore fallback errors
+          }
+        }
+      }
+
+      primary.meta.via = "pages";
+      return primary;
+    }
+
+    function formatMetaLine(label, meta){
+      if(!meta) return `${label}: ${stampTime()} ❌`;
+      const changedTxt = meta.unchanged ? "UNCHANGED" : "CHANGED";
+      const lm = meta.lastModified ? ` · LM ${meta.lastModified}` : "";
+      const via = meta.via ? ` · ${meta.via.toUpperCase()}` : "";
+      return `${label}: ${stampTime()} ✅ ${changedTxt} · ${meta.bytes}B · #${meta.hash}${via}${lm}`;
     }
 
     // =========================
@@ -1219,14 +1334,15 @@
     // =========================
     async function fetchWarData(){
       try{
-        warData = await fetchJsonFresh(RAW_WAR_URL_BASE);
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACK, "war.json");
+        warData = data;
 
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
         }
 
-        setText("war-fetch-status", `Last fetch: ${stampTime()} ✅`);
+        setText("war-fetch-status", formatMetaLine("Last fetch", meta));
       } catch(e){
         warData = null;
         setText("war-fetch-status", `Last fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
@@ -1237,8 +1353,9 @@
 
     async function fetchWarDetail(){
       try{
-        warDetail = await fetchJsonFresh(RAW_WAR_DETAIL_URL_BASE);
-        setText("war-chart-status", `Chart fetch: ${stampTime()} ✅`);
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACK, "war_detail.json");
+        warDetail = data;
+        setText("war-chart-status", formatMetaLine("Chart fetch", meta));
       } catch(e){
         warDetail = null;
         setText("war-chart-status", `Chart fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
@@ -1248,20 +1365,104 @@
       renderWarChart();
     }
 
+    // =========================
+    // ✅ More tolerant schema helpers (so UI doesn't "freeze" if backend changed)
+    // =========================
+    function pick(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== undefined && v !== null && v !== "") return v;
+      }
+      return null;
+    }
+    function pickObj(obj, keys){
+      const v = pick(obj, keys);
+      return (v && typeof v === "object") ? v : null;
+    }
+    function pickNum(obj, keys){
+      const v = pick(obj, keys);
+      const n = (typeof v === "number") ? v : Number(v);
+      return isFinite(n) ? n : null;
+    }
+
+    function normalizeClanStats(raw){
+      if(!raw || typeof raw !== "object") return null;
+
+      const description = pick(raw, ["description","desc","clanDescription","about"]) || "";
+
+      const cwl = pickObj(raw, ["cwl","CWL","cwlInfo","cwl_info"]) || {};
+      const cwlLeague =
+        pick(cwl, ["currentLeague","league","name"]) ||
+        pick(raw, ["cwlLeague","cwl_league","cwlLeagueName"]) ||
+        "—";
+
+      const cwlFinish =
+        pick(cwl, ["lastFinish","finish","last_finish"]) ||
+        pick(raw, ["cwlFinish","cwl_finish","lastCwlFinish"]) ||
+        "—";
+
+      const capital = pickObj(raw, ["clanCapital","capital","clan_capital"]) || {};
+      const capitalHallLevel =
+        pickNum(capital, ["capitalHallLevel","hallLevel","capital_hall_level"]) ??
+        pickNum(raw, ["capitalHallLevel","capitalHall","capital_hall_level"]);
+
+      // War stats could be nested or flattened
+      const war =
+        pickObj(raw, ["war","warStats","war_stats","warRecord","war_record"]) || {};
+
+      const wins   = pickNum(war, ["wins"])   ?? pickNum(raw, ["warWins","wins","war_wins"]) ?? 0;
+      const losses = pickNum(war, ["losses"]) ?? pickNum(raw, ["warLosses","losses","war_losses"]) ?? 0;
+      const ties   = pickNum(war, ["ties"])   ?? pickNum(raw, ["warTies","ties","war_ties"]) ?? 0;
+
+      const currentStreak =
+        pickNum(war, ["currentStreak","streak","current_streak"]) ??
+        pickNum(raw, ["currentStreak","current_streak","warStreak"]);
+
+      const longestStreak =
+        pickNum(war, ["longestStreak","bestStreak","longest_streak"]) ??
+        pickNum(raw, ["longestStreak","longest_streak","bestWarStreak"]);
+
+      const last10  = pickObj(war, ["last10","last_10","lastTen"])  || pickObj(raw, ["last10","last_10","lastTen"]);
+      const last25  = pickObj(war, ["last25","last_25"])            || pickObj(raw, ["last25","last_25"]);
+      const last50  = pickObj(war, ["last50","last_50"])            || pickObj(raw, ["last50","last_50"]);
+
+      return {
+        description,
+        cwl: { currentLeague: cwlLeague, lastFinish: cwlFinish },
+        clanCapital: { capitalHallLevel: (typeof capitalHallLevel === "number" ? capitalHallLevel : null) },
+        war: {
+          wins, losses, ties,
+          currentStreak: (typeof currentStreak === "number" ? currentStreak : null),
+          longestStreak: (typeof longestStreak === "number" ? longestStreak : null),
+          last10, last25, last50
+        },
+        __raw: raw
+      };
+    }
+
     async function fetchMembersData(){
       try{
-        membersData = await fetchJsonFresh(RAW_MEMBERS_URL_BASE);
+        const { data, meta } = await fetchJsonSmart(RAW_MEMBERS_URL_BASE, RAW_MEMBERS_FALLBACK, "members.json");
+        membersData = data;
+        setTextAny(["members-fetch-status"], formatMetaLine("Members fetch", meta));
       } catch(e){
         membersData = null;
+        setTextAny(["members-fetch-status"], `Members fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       renderMembers();
     }
 
     async function fetchClanStats(){
       try{
-        clanStats = await fetchJsonFresh(RAW_CLAN_URL_BASE);
+        const { data, meta } = await fetchJsonSmart(RAW_CLAN_URL_BASE, RAW_CLAN_FALLBACK, "clan_stats.json");
+        clanStats = normalizeClanStats(data) || null;
+
+        const line = formatMetaLine("Clan stats fetch", meta);
+        setTextAny(["clan-fetch-status","clan-fetch-status-war","clan-fetch-status-cwl"], line);
       } catch(e){
         clanStats = null;
+        const line = `Clan stats fetch: ${stampTime()} ❌ ${String(e.message || e)}`;
+        setTextAny(["clan-fetch-status","clan-fetch-status-war","clan-fetch-status-cwl"], line);
       }
       renderClanStats();
     }
@@ -1294,7 +1495,6 @@
         return;
       }
 
-      // If your war.json schema differs, at least show something instead of freezing
       const maxStars = teamSize ? (3 * teamSize) : null;
       const maxAttacks = teamSize ? (2 * teamSize) : null;
 
@@ -1410,7 +1610,6 @@
         return;
       }
 
-      // Support either schema: warDetail.our OR warDetail.clan
       const our = warDetail.our || warDetail.clan || {};
       const opp = warDetail.opponent || {};
 
@@ -1548,7 +1747,7 @@
     }
 
     // =========================
-    // Members + ClanStats (unchanged logic)
+    // Members + ClanStats
     // =========================
     function readIntAny(obj, keys){
       for(const k of keys){
@@ -1629,7 +1828,14 @@
 
       ensureSortDropdownBound();
 
-      const list = (membersData && Array.isArray(membersData.members)) ? membersData.members : null;
+      // Accept multiple shapes: {members:[...]}, {items:[...]}, or [...]
+      let list = null;
+      if(membersData){
+        if(Array.isArray(membersData.members)) list = membersData.members;
+        else if(Array.isArray(membersData.items)) list = membersData.items;
+        else if(Array.isArray(membersData)) list = membersData;
+      }
+
       if(!list){
         tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
         enableDragScrollEverywhere();
