@@ -1061,6 +1061,25 @@
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
     }
 
+    function pick(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== undefined && v !== null && v !== "") return v;
+      }
+      return null;
+    }
+    function pickNum(obj, keys){
+      const v = pick(obj, keys);
+      const n = (v === null) ? null : Number(v);
+      return (n === null || !isFinite(n)) ? null : n;
+    }
+    function toPctString(v){
+      if(v === null || v === undefined || v === "") return "—";
+      const n = Number(v);
+      if(!isFinite(n)) return String(v);
+      return `${n}%`;
+    }
+
     function loadLastWarSnapshot(){
       try{
         const raw = localStorage.getItem(LAST_WAR_STORAGE_KEY);
@@ -1118,7 +1137,7 @@
     }
 
     // =========================
-    // ✅ TIME PARSING (ISO + CoC formats)
+    // TIME PARSING (ISO + CoC formats)
     // =========================
     function parseWarTime(val){
       if(!val) return null;
@@ -1127,11 +1146,9 @@
       const s = String(val).trim();
       if(!s) return null;
 
-      // Standard ISO first
       const dIso = new Date(s);
       if(!isNaN(dIso.getTime())) return dIso;
 
-      // CoC format: 20251231T005246.000Z OR 20251231T005246Z
       const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.(\d{3}))?Z$/);
       if(m){
         const [,Y,MO,DA,HH,MI,SS,MS] = m;
@@ -1149,6 +1166,7 @@
         parseWarTime(display?.start) ||
         parseWarTime(warDetail?.startTimeIso) ||
         parseWarTime(warDetail?.startTime) ||
+        parseWarTime(warDetail?.startTime) ||
         null;
 
       const end =
@@ -1163,7 +1181,17 @@
     }
 
     // =========================
-    // Fetchers
+    // Normalize war_detail schema (supports: our/opponent OR clan/opponent)
+    // =========================
+    function getDetailSides(){
+      const d = warDetail || {};
+      const our = d.our || d.clan || d.ourClan || d.team || null;
+      const opp = d.opponent || d.opp || d.opponentClan || null;
+      return { our, opp };
+    }
+
+    // =========================
+    // Fetchers (force re-render every time)
     // =========================
     async function fetchWarData(){
       try{
@@ -1179,6 +1207,8 @@
         warData = null;
       }
       warFetched = true;
+
+      // ✅ always re-render scoreboard after fetch
       renderWarSection();
     }
 
@@ -1192,7 +1222,7 @@
       }
       warDetailFetched = true;
 
-      // Update both after detail arrives
+      // ✅ always re-render chart + (also) scoreboard (since scoreboard can use detail fallback)
       renderWarSection();
       renderWarChart();
     }
@@ -1220,23 +1250,24 @@
     }
 
     // =========================
-    // Render: Current War section (✅ stage based on times, not state)
+    // Render: Current War section (live scoreboard uses warData OR warDetail)
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
 
-      // Prefer warData; fallback snapshot
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
+
+      const { our: ourD, opp: oppD } = getDetailSides();
 
       const stateRaw = String(display?.state || warDetail?.state || "");
       const state = stateRaw.trim().toLowerCase();
 
-      // Team size from either
       const teamSize =
         Number(display?.teamSize || display?.size || 0) ||
-        Number(warDetail?.teamSize || 0) ||
+        Number(warDetail?.teamSize || ourD?.teamSize || 0) ||
         null;
+
       setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
 
       // No war
@@ -1250,55 +1281,90 @@
         return;
       }
 
-      // Fill scoreboard from war.json if present
-      if(display && (display.ourName || display.oppName)){
-        const maxStars = teamSize ? (3 * teamSize) : null;
-        const maxAttacks = teamSize ? (2 * teamSize) : null;
+      const maxStars = teamSize ? (3 * teamSize) : null;
+      const maxAttacks = teamSize ? (2 * teamSize) : null;
 
-        setText("war-name-us",(display.ourName || "US"));
-        setText("war-name-opp",(display.oppName || "OPPONENT"));
+      // ✅ Names: try war.json then war_detail
+      const ourName =
+        pick(display, ["ourName","clanName","name","our","clan"]) ||
+        pick(ourD, ["name","clanName"]) ||
+        "US";
 
-        const ourStars = (display.ourStars ?? null);
-        const oppStars = (display.oppStars ?? null);
+      const oppName =
+        pick(display, ["oppName","opponentName","enemyName","opp","opponent"]) ||
+        pick(oppD, ["name","clanName"]) ||
+        "OPPONENT";
 
-        setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
-        setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
+      setText("war-name-us", String(ourName));
+      setText("war-name-opp", String(oppName));
 
-        setText("war-destr-us", String(display.ourDestructionPercentage ?? display.ourDestruction ?? "—"));
-        setText("war-destr-opp", String(display.oppDestructionPercentage ?? display.oppDestruction ?? "—"));
+      // ✅ Stars: try war.json then war_detail
+      const ourStars =
+        pickNum(display, ["ourStars","starsUs","clanStars"]) ??
+        pickNum(ourD, ["stars","starCount","totalStars"]);
 
-        const ourAtkUsed = (display.ourAttacksUsed ?? null);
-        const oppAtkUsed = (display.oppAttacksUsed ?? null);
+      const oppStars =
+        pickNum(display, ["oppStars","starsOpp","opponentStars"]) ??
+        pickNum(oppD, ["stars","starCount","totalStars"]);
 
-        setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
-        setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
-      }
+      setText("war-stars-us",
+        (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars))
+      );
+      setText("war-stars-opp",
+        (oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars))
+      );
 
+      // ✅ Destruction: try war.json then war_detail
+      const ourDestr =
+        pick(display, ["ourDestructionPercentage","ourDestruction","destructionUs"]) ??
+        pick(ourD, ["destructionPercentage","destruction"]);
+
+      const oppDestr =
+        pick(display, ["oppDestructionPercentage","oppDestruction","destructionOpp"]) ??
+        pick(oppD, ["destructionPercentage","destruction"]);
+
+      setText("war-destr-us", toPctString(ourDestr));
+      setText("war-destr-opp", toPctString(oppDestr));
+
+      // ✅ Attacks used: try war.json then war_detail
+      const ourAtkUsed =
+        pickNum(display, ["ourAttacksUsed","attacksUsedUs","attacksUs"]) ??
+        pickNum(ourD, ["attacks","attacksUsed","attacksMade"]);
+
+      const oppAtkUsed =
+        pickNum(display, ["oppAttacksUsed","attacksUsedOpp","attacksOpp"]) ??
+        pickNum(oppD, ["attacks","attacksUsed","attacksMade"]);
+
+      setText("war-attacks-us",
+        (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed))
+      );
+      setText("war-attacks-opp",
+        (oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed))
+      );
+
+      // ✅ Timer stage based on times
       const now = new Date();
       const { start, end } = getWarTimes(display);
       const startOk = start && !isNaN(start.getTime());
       const endOk = end && !isNaN(end.getTime());
 
-      // ✅ Primary truth: time window
       if(endOk && now >= end){
         setText("war-stage-label","WAR ENDED");
         setText("war-timer","");
         return;
       }
-
       if(startOk && now < start){
         setText("war-stage-label","WAR STARTS IN:");
         setText("war-timer", formatCountdown(start - now));
         return;
       }
-
       if(endOk && now < end){
         setText("war-stage-label","WAR ENDS IN:");
         setText("war-timer", formatCountdown(end - now));
         return;
       }
 
-      // Fallbacks if times missing
+      // fallback if times missing
       if(state === "preparation"){
         setText("war-stage-label","WAR STARTS IN:");
         setText("war-timer","—");
@@ -1315,7 +1381,7 @@
     }
 
     // =========================
-    // Render: War chart
+    // Render: War chart (supports our/opponent OR clan/opponent)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1334,7 +1400,7 @@
       const r = String(role || "").trim();
       if(!r) return "";
       const low = r.toLowerCase();
-      if(low === "coLeader" || low === "co-leader" || low === "coleader") return "Co Leader";
+      if(low === "coleader" || low === "co-leader" || low === "coleader" || low === "coLeader") return "Co Leader";
       if(low === "leader") return "Leader";
       if(low === "elder") return "Elder";
       return r;
@@ -1363,9 +1429,14 @@
         return;
       }
 
-      const our = warDetail.our || {};
-      const opp = warDetail.opponent || {};
+      const { our, opp } = getDetailSides();
+      if(!our || !opp){
+        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        enableDragScrollEverywhere();
+        return;
+      }
 
+      // members arrays can be under: members OR clan.members OR opponent.members
       const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
       const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
@@ -1452,7 +1523,7 @@
                   ${emHTML}
                   ${roleInline}
                 </div>
-                <div class="role">TH${member?.townhallLevel ?? "—"}</div>
+                <div class="role">TH${member?.townhallLevel ?? member?.townHallLevel ?? "—"}</div>
               </div>
             </div>
 
@@ -1500,10 +1571,10 @@
         `;
       }
 
-      // ✅ no duplicate "25 v 25" here
+      // ✅ NO duplicate "25 v 25" here
       mount.innerHTML =
-        blockHTML(our.name, false, ourMembers) +
-        blockHTML(opp.name, true,  oppMembers);
+        blockHTML(pick(our, ["name"]) || "Our Clan", false, ourMembers) +
+        blockHTML(pick(opp, ["name"]) || "Opponent", true,  oppMembers);
 
       enableDragScrollEverywhere();
     }
@@ -1770,7 +1841,7 @@
     }
 
     // =========================
-    // More page timers (unchanged)
+    // More page timers
     // =========================
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
@@ -1839,10 +1910,11 @@
       fetchWarData();
       fetchWarDetail();
 
+      // ✅ keep pulling fresh files + re-render every cycle
       warIntervals.push(setInterval(fetchClanStats, 5000));
       warIntervals.push(setInterval(fetchWarData, 5000));
       warIntervals.push(setInterval(fetchWarDetail, 5000));
-      warIntervals.push(setInterval(renderWarSection, 1000));
+      warIntervals.push(setInterval(renderWarSection, 1000)); // timer ticks + keeps scoreboard fresh even if only detail changes
     }
 
     function startMoreLoop(){
