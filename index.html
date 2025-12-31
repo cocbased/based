@@ -300,6 +300,14 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
+    .tiny-status{
+      text-align:center;
+      font-family:monospace;
+      font-size:11px;
+      opacity:.70;
+      margin-top: 8px;
+    }
+
     @media (max-width: 420px){
       .war-cell.defender{ justify-content: flex-start; text-align: left; }
       .war-cell.defender .atk2{ align-items: flex-start; }
@@ -593,6 +601,26 @@
   </nav>
 
   <script>
+    // =========================
+    // ✅ HARD FIX: if an old Service Worker is caching JSON, unregister it once.
+    // This is the #1 reason GitHub Pages PWAs "never update" even with ?cb=.
+    // =========================
+    (async function killOldServiceWorkerOnce(){
+      try{
+        if(!("serviceWorker" in navigator)) return;
+        const regs = await navigator.serviceWorker.getRegistrations();
+        if(!regs || !regs.length) return;
+
+        const key = "based_sw_unregistered_once";
+        if(localStorage.getItem(key) === "1") return;
+
+        for(const r of regs){ try{ await r.unregister(); } catch(e){} }
+        localStorage.setItem(key, "1");
+        // reload once after unregister
+        location.reload();
+      } catch(e){}
+    })();
+
     // =========================
     // Core helpers
     // =========================
@@ -1000,10 +1028,13 @@
                 <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
               </div>
             </div>
+
+            <div id="war-fetch-status" class="tiny-status">Last fetch: —</div>
           </div>
 
           <div class="war-chart-wrap dragscroll">
             <div id="war-chart-mount"></div>
+            <div id="war-chart-status" class="tiny-status">Chart fetch: —</div>
           </div>
         </div>
       `;
@@ -1059,25 +1090,6 @@
       const minutes = Math.floor((totalSeconds%86400%3600)/60);
       const seconds = totalSeconds%60;
       return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
-    }
-
-    function pick(obj, keys){
-      for(const k of keys){
-        const v = obj?.[k];
-        if(v !== undefined && v !== null && v !== "") return v;
-      }
-      return null;
-    }
-    function pickNum(obj, keys){
-      const v = pick(obj, keys);
-      const n = (v === null) ? null : Number(v);
-      return (n === null || !isFinite(n)) ? null : n;
-    }
-    function toPctString(v){
-      if(v === null || v === undefined || v === "") return "—";
-      const n = Number(v);
-      if(!isFinite(n)) return String(v);
-      return `${n}%`;
     }
 
     function loadLastWarSnapshot(){
@@ -1166,7 +1178,6 @@
         parseWarTime(display?.start) ||
         parseWarTime(warDetail?.startTimeIso) ||
         parseWarTime(warDetail?.startTime) ||
-        parseWarTime(warDetail?.startTime) ||
         null;
 
       const end =
@@ -1181,57 +1192,65 @@
     }
 
     // =========================
-    // Normalize war_detail schema (supports: our/opponent OR clan/opponent)
+    // Robust JSON fetch (adds cache-busters + no-cache headers)
     // =========================
-    function getDetailSides(){
-      const d = warDetail || {};
-      const our = d.our || d.clan || d.ourClan || d.team || null;
-      const opp = d.opponent || d.opp || d.opponentClan || null;
-      return { our, opp };
+    async function fetchJsonFresh(baseUrl){
+      const cb = Date.now();
+      const rnd = Math.random().toString(16).slice(2);
+      const url = `${baseUrl}?cb=${cb}&r=${rnd}`;
+      const res = await fetch(url, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache"
+        }
+      });
+      if(!res.ok) throw new Error(`${baseUrl} HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    function stampTime(){
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
     }
 
     // =========================
-    // Fetchers (force re-render every time)
+    // Fetchers
     // =========================
     async function fetchWarData(){
       try{
-        const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        warData = res.ok ? await res.json() : null;
+        warData = await fetchJsonFresh(RAW_WAR_URL_BASE);
 
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
         }
+
+        setText("war-fetch-status", `Last fetch: ${stampTime()} ✅`);
       } catch(e){
         warData = null;
+        setText("war-fetch-status", `Last fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       warFetched = true;
-
-      // ✅ always re-render scoreboard after fetch
       renderWarSection();
     }
 
     async function fetchWarDetail(){
       try{
-        const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        warDetail = res.ok ? await res.json() : null;
+        warDetail = await fetchJsonFresh(RAW_WAR_DETAIL_URL_BASE);
+        setText("war-chart-status", `Chart fetch: ${stampTime()} ✅`);
       } catch(e){
         warDetail = null;
+        setText("war-chart-status", `Chart fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       warDetailFetched = true;
-
-      // ✅ always re-render chart + (also) scoreboard (since scoreboard can use detail fallback)
       renderWarSection();
       renderWarChart();
     }
 
     async function fetchMembersData(){
       try{
-        const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        membersData = res.ok ? await res.json() : null;
+        membersData = await fetchJsonFresh(RAW_MEMBERS_URL_BASE);
       } catch(e){
         membersData = null;
       }
@@ -1240,9 +1259,7 @@
 
     async function fetchClanStats(){
       try{
-        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
-        const res = await fetch(url, { cache:"no-store" });
-        clanStats = res.ok ? await res.json() : null;
+        clanStats = await fetchJsonFresh(RAW_CLAN_URL_BASE);
       } catch(e){
         clanStats = null;
       }
@@ -1250,7 +1267,7 @@
     }
 
     // =========================
-    // Render: Current War section (live scoreboard uses warData OR warDetail)
+    // Render: Current War section
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
@@ -1258,19 +1275,15 @@
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
-      const { our: ourD, opp: oppD } = getDetailSides();
-
       const stateRaw = String(display?.state || warDetail?.state || "");
       const state = stateRaw.trim().toLowerCase();
 
       const teamSize =
         Number(display?.teamSize || display?.size || 0) ||
-        Number(warDetail?.teamSize || ourD?.teamSize || 0) ||
+        Number(warDetail?.teamSize || 0) ||
         null;
-
       setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
 
-      // No war
       if(state === "notinwar" || stateRaw === "notInWar"){
         setText("war-stage-label","No War");
         setText("war-timer","");
@@ -1281,68 +1294,33 @@
         return;
       }
 
+      // If your war.json schema differs, at least show something instead of freezing
       const maxStars = teamSize ? (3 * teamSize) : null;
       const maxAttacks = teamSize ? (2 * teamSize) : null;
 
-      // ✅ Names: try war.json then war_detail
-      const ourName =
-        pick(display, ["ourName","clanName","name","our","clan"]) ||
-        pick(ourD, ["name","clanName"]) ||
-        "US";
+      const ourName = display?.ourName || warDetail?.clan?.name || warDetail?.our?.name || "US";
+      const oppName = display?.oppName || warDetail?.opponent?.name || "OPPONENT";
+      setText("war-name-us", ourName);
+      setText("war-name-opp", oppName);
 
-      const oppName =
-        pick(display, ["oppName","opponentName","enemyName","opp","opponent"]) ||
-        pick(oppD, ["name","clanName"]) ||
-        "OPPONENT";
+      const ourStars = (display?.ourStars ?? warDetail?.clan?.stars ?? warDetail?.our?.stars ?? null);
+      const oppStars = (display?.oppStars ?? warDetail?.opponent?.stars ?? null);
 
-      setText("war-name-us", String(ourName));
-      setText("war-name-opp", String(oppName));
+      setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
+      setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
 
-      // ✅ Stars: try war.json then war_detail
-      const ourStars =
-        pickNum(display, ["ourStars","starsUs","clanStars"]) ??
-        pickNum(ourD, ["stars","starCount","totalStars"]);
+      const ourDes = (display?.ourDestructionPercentage ?? warDetail?.clan?.destructionPercentage ?? warDetail?.our?.destructionPercentage ?? null);
+      const oppDes = (display?.oppDestructionPercentage ?? warDetail?.opponent?.destructionPercentage ?? null);
 
-      const oppStars =
-        pickNum(display, ["oppStars","starsOpp","opponentStars"]) ??
-        pickNum(oppD, ["stars","starCount","totalStars"]);
+      setText("war-destr-us", (ourDes == null) ? "—" : `${Number(ourDes)}%`);
+      setText("war-destr-opp", (oppDes == null) ? "—" : `${Number(oppDes)}%`);
 
-      setText("war-stars-us",
-        (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars))
-      );
-      setText("war-stars-opp",
-        (oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars))
-      );
+      const ourAtkUsed = (display?.ourAttacksUsed ?? warDetail?.clan?.attacks ?? warDetail?.our?.attacks ?? null);
+      const oppAtkUsed = (display?.oppAttacksUsed ?? warDetail?.opponent?.attacks ?? null);
 
-      // ✅ Destruction: try war.json then war_detail
-      const ourDestr =
-        pick(display, ["ourDestructionPercentage","ourDestruction","destructionUs"]) ??
-        pick(ourD, ["destructionPercentage","destruction"]);
+      setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
+      setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
 
-      const oppDestr =
-        pick(display, ["oppDestructionPercentage","oppDestruction","destructionOpp"]) ??
-        pick(oppD, ["destructionPercentage","destruction"]);
-
-      setText("war-destr-us", toPctString(ourDestr));
-      setText("war-destr-opp", toPctString(oppDestr));
-
-      // ✅ Attacks used: try war.json then war_detail
-      const ourAtkUsed =
-        pickNum(display, ["ourAttacksUsed","attacksUsedUs","attacksUs"]) ??
-        pickNum(ourD, ["attacks","attacksUsed","attacksMade"]);
-
-      const oppAtkUsed =
-        pickNum(display, ["oppAttacksUsed","attacksUsedOpp","attacksOpp"]) ??
-        pickNum(oppD, ["attacks","attacksUsed","attacksMade"]);
-
-      setText("war-attacks-us",
-        (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed))
-      );
-      setText("war-attacks-opp",
-        (oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed))
-      );
-
-      // ✅ Timer stage based on times
       const now = new Date();
       const { start, end } = getWarTimes(display);
       const startOk = start && !isNaN(start.getTime());
@@ -1364,7 +1342,6 @@
         return;
       }
 
-      // fallback if times missing
       if(state === "preparation"){
         setText("war-stage-label","WAR STARTS IN:");
         setText("war-timer","—");
@@ -1381,7 +1358,7 @@
     }
 
     // =========================
-    // Render: War chart (supports our/opponent OR clan/opponent)
+    // War chart
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1395,7 +1372,6 @@
       const atks = Array.isArray(member?.attacks) ? member.attacks : [];
       return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
     }
-
     function niceRole(role){
       const r = String(role || "").trim();
       if(!r) return "";
@@ -1405,13 +1381,18 @@
       if(low === "elder") return "Elder";
       return r;
     }
-
     function readFirst(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
         if(v !== undefined && v !== null && v !== "") return v;
       }
       return null;
+    }
+    function roleEmojiForWar(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return "👑";
+      if(r === "elder") return "🛡️";
+      return "";
     }
 
     function renderWarChart(){
@@ -1429,14 +1410,10 @@
         return;
       }
 
-      const { our, opp } = getDetailSides();
-      if(!our || !opp){
-        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
-        enableDragScrollEverywhere();
-        return;
-      }
+      // Support either schema: warDetail.our OR warDetail.clan
+      const our = warDetail.our || warDetail.clan || {};
+      const opp = warDetail.opponent || {};
 
-      // members arrays can be under: members OR clan.members OR opponent.members
       const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
       const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
@@ -1479,13 +1456,6 @@
 
         if(dName) return String(dName);
         return "—";
-      }
-
-      function roleEmojiForWar(role){
-        const r = String(role || "").toLowerCase();
-        if(r.includes("leader")) return "👑";
-        if(r === "elder") return "🛡️";
-        return "";
       }
 
       function rowHTML(member, defenderSideLU){
@@ -1555,7 +1525,6 @@
 
       function blockHTML(title, isOpp, members){
         const defenderLU = isOpp ? ourLU : oppLU;
-
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1571,10 +1540,9 @@
         `;
       }
 
-      // ✅ NO duplicate "25 v 25" here
       mount.innerHTML =
-        blockHTML(pick(our, ["name"]) || "Our Clan", false, ourMembers) +
-        blockHTML(pick(opp, ["name"]) || "Opponent", true,  oppMembers);
+        blockHTML(our.name, false, ourMembers) +
+        blockHTML(opp.name, true,  oppMembers);
 
       enableDragScrollEverywhere();
     }
@@ -1910,11 +1878,10 @@
       fetchWarData();
       fetchWarDetail();
 
-      // ✅ keep pulling fresh files + re-render every cycle
       warIntervals.push(setInterval(fetchClanStats, 5000));
       warIntervals.push(setInterval(fetchWarData, 5000));
       warIntervals.push(setInterval(fetchWarDetail, 5000));
-      warIntervals.push(setInterval(renderWarSection, 1000)); // timer ticks + keeps scoreboard fresh even if only detail changes
+      warIntervals.push(setInterval(renderWarSection, 1000));
     }
 
     function startMoreLoop(){
