@@ -300,14 +300,6 @@
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
 
-    .tiny-status{
-      text-align:center;
-      font-family:monospace;
-      font-size:11px;
-      opacity:.70;
-      margin-top: 8px;
-    }
-
     @media (max-width: 420px){
       .war-cell.defender{ justify-content: flex-start; text-align: left; }
       .war-cell.defender .atk2{ align-items: flex-start; }
@@ -320,7 +312,6 @@
       }
     }
 
-    /* Members (unchanged styling) */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
@@ -601,26 +592,6 @@
   </nav>
 
   <script>
-    // =========================
-    // ✅ HARD FIX: if an old Service Worker is caching JSON, unregister it once.
-    // This is the #1 reason GitHub Pages PWAs "never update" even with ?cb=.
-    // =========================
-    (async function killOldServiceWorkerOnce(){
-      try{
-        if(!("serviceWorker" in navigator)) return;
-        const regs = await navigator.serviceWorker.getRegistrations();
-        if(!regs || !regs.length) return;
-
-        const key = "based_sw_unregistered_once";
-        if(localStorage.getItem(key) === "1") return;
-
-        for(const r of regs){ try{ await r.unregister(); } catch(e){} }
-        localStorage.setItem(key, "1");
-        // reload once after unregister
-        location.reload();
-      } catch(e){}
-    })();
-
     // =========================
     // Core helpers
     // =========================
@@ -1028,13 +999,10 @@
                 <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
               </div>
             </div>
-
-            <div id="war-fetch-status" class="tiny-status">Last fetch: —</div>
           </div>
 
           <div class="war-chart-wrap dragscroll">
             <div id="war-chart-mount"></div>
-            <div id="war-chart-status" class="tiny-status">Chart fetch: —</div>
           </div>
         </div>
       `;
@@ -1083,7 +1051,7 @@
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
     function formatCountdown(ms){
-      if(ms <= 0) return "0d 00h 00m 00s";
+      if(ms<=0) return "0d 00h 00m 00s";
       const totalSeconds = Math.floor(ms/1000);
       const days = Math.floor(totalSeconds/86400);
       const hours = Math.floor((totalSeconds%86400)/3600);
@@ -1149,69 +1117,60 @@
     }
 
     // =========================
-    // TIME PARSING (ISO + CoC formats)
+    // ✅ TIME PARSING FIX (ISO + CoC "YYYYMMDDTHHMMSS.000Z")
     // =========================
     function parseWarTime(val){
       if(!val) return null;
+
+      // If it's already a Date:
       if(val instanceof Date) return isNaN(val.getTime()) ? null : val;
 
       const s = String(val).trim();
       if(!s) return null;
 
+      // ISO parse
       const dIso = new Date(s);
       if(!isNaN(dIso.getTime())) return dIso;
 
-      const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.(\d{3}))?Z$/);
+      // CoC format: 20251231T005246.000Z
+      const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.(\d{3})Z$/);
       if(m){
         const [,Y,MO,DA,HH,MI,SS,MS] = m;
-        const ms = MS ? +MS : 0;
-        const d = new Date(Date.UTC(+Y, +MO-1, +DA, +HH, +MI, +SS, ms));
+        const d = new Date(Date.UTC(+Y, +MO-1, +DA, +HH, +MI, +SS, +MS));
         return isNaN(d.getTime()) ? null : d;
       }
+
       return null;
     }
 
     function getWarTimes(display){
+      // 1) try war.json variants
       const start =
         parseWarTime(display?.startTimeIso) ||
         parseWarTime(display?.startTime) ||
         parseWarTime(display?.start) ||
-        parseWarTime(warDetail?.startTimeIso) ||
-        parseWarTime(warDetail?.startTime) ||
         null;
 
       const end =
         parseWarTime(display?.endTimeIso) ||
         parseWarTime(display?.endTime) ||
         parseWarTime(display?.end) ||
+        null;
+
+      // 2) fallback to war_detail.json (you DO have startTimeIso/endTimeIso there)
+      const start2 =
+        start ||
+        parseWarTime(warDetail?.startTimeIso) ||
+        parseWarTime(warDetail?.startTime) ||
+        null;
+
+      const end2 =
+        end ||
         parseWarTime(warDetail?.endTimeIso) ||
         parseWarTime(warDetail?.endTime) ||
         null;
 
-      return { start, end };
-    }
-
-    // =========================
-    // Robust JSON fetch (adds cache-busters + no-cache headers)
-    // =========================
-    async function fetchJsonFresh(baseUrl){
-      const cb = Date.now();
-      const rnd = Math.random().toString(16).slice(2);
-      const url = `${baseUrl}?cb=${cb}&r=${rnd}`;
-      const res = await fetch(url, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache"
-        }
-      });
-      if(!res.ok) throw new Error(`${baseUrl} HTTP ${res.status}`);
-      return await res.json();
-    }
-
-    function stampTime(){
-      const d = new Date();
-      return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+      return { start: start2, end: end2 };
     }
 
     // =========================
@@ -1219,17 +1178,16 @@
     // =========================
     async function fetchWarData(){
       try{
-        warData = await fetchJsonFresh(RAW_WAR_URL_BASE);
+        const url = RAW_WAR_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        warData = res.ok ? await res.json() : null;
 
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
           saveLastWarSnapshot(warData);
         }
-
-        setText("war-fetch-status", `Last fetch: ${stampTime()} ✅`);
       } catch(e){
         warData = null;
-        setText("war-fetch-status", `Last fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       warFetched = true;
       renderWarSection();
@@ -1237,20 +1195,24 @@
 
     async function fetchWarDetail(){
       try{
-        warDetail = await fetchJsonFresh(RAW_WAR_DETAIL_URL_BASE);
-        setText("war-chart-status", `Chart fetch: ${stampTime()} ✅`);
+        const url = RAW_WAR_DETAIL_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        warDetail = res.ok ? await res.json() : null;
       } catch(e){
         warDetail = null;
-        setText("war-chart-status", `Chart fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       warDetailFetched = true;
+
+      // ✅ timer can rely on war_detail fallback too, so update after detail fetch
       renderWarSection();
       renderWarChart();
     }
 
     async function fetchMembersData(){
       try{
-        membersData = await fetchJsonFresh(RAW_MEMBERS_URL_BASE);
+        const url = RAW_MEMBERS_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        membersData = res.ok ? await res.json() : null;
       } catch(e){
         membersData = null;
       }
@@ -1259,7 +1221,9 @@
 
     async function fetchClanStats(){
       try{
-        clanStats = await fetchJsonFresh(RAW_CLAN_URL_BASE);
+        const url = RAW_CLAN_URL_BASE + "?cb=" + Date.now();
+        const res = await fetch(url, { cache:"no-store" });
+        clanStats = res.ok ? await res.json() : null;
       } catch(e){
         clanStats = null;
       }
@@ -1267,23 +1231,34 @@
     }
 
     // =========================
-    // Render: Current War section
+    // Render: Current War section (staged timer + size)
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
 
+      // Prefer warData; fallback to last snapshot; if missing, still allow warDetail for times/stage.
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
       const stateRaw = String(display?.state || warDetail?.state || "");
       const state = stateRaw.trim().toLowerCase();
 
+      // Team size from war.json OR war_detail.json
       const teamSize =
         Number(display?.teamSize || display?.size || 0) ||
         Number(warDetail?.teamSize || 0) ||
         null;
+
       setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
 
+      // If no war at all
+      if(!state){
+        setText("war-stage-label", "Waiting…");
+        setText("war-timer", "—");
+        return;
+      }
+
+      // notInWar
       if(state === "notinwar" || stateRaw === "notInWar"){
         setText("war-stage-label","No War");
         setText("war-timer","");
@@ -1294,71 +1269,82 @@
         return;
       }
 
-      // If your war.json schema differs, at least show something instead of freezing
-      const maxStars = teamSize ? (3 * teamSize) : null;
-      const maxAttacks = teamSize ? (2 * teamSize) : null;
+      // Fill stats if warData present
+      if(display && display.ourName){
+        const maxStars = teamSize ? (3 * teamSize) : null;
+        const maxAttacks = teamSize ? (2 * teamSize) : null;
 
-      const ourName = display?.ourName || warDetail?.clan?.name || warDetail?.our?.name || "US";
-      const oppName = display?.oppName || warDetail?.opponent?.name || "OPPONENT";
-      setText("war-name-us", ourName);
-      setText("war-name-opp", oppName);
+        setText("war-name-us",(display.ourName || "US"));
+        setText("war-name-opp",(display.oppName || "OPPONENT"));
 
-      const ourStars = (display?.ourStars ?? warDetail?.clan?.stars ?? warDetail?.our?.stars ?? null);
-      const oppStars = (display?.oppStars ?? warDetail?.opponent?.stars ?? null);
+        const ourStars = (display.ourStars ?? null);
+        const oppStars = (display.oppStars ?? null);
 
-      setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
-      setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
+        setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
+        setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
 
-      const ourDes = (display?.ourDestructionPercentage ?? warDetail?.clan?.destructionPercentage ?? warDetail?.our?.destructionPercentage ?? null);
-      const oppDes = (display?.oppDestructionPercentage ?? warDetail?.opponent?.destructionPercentage ?? null);
+        setText("war-destr-us", String(display.ourDestructionPercentage ?? display.ourDestruction ?? "—"));
+        setText("war-destr-opp", String(display.oppDestructionPercentage ?? display.oppDestruction ?? "—"));
 
-      setText("war-destr-us", (ourDes == null) ? "—" : `${Number(ourDes)}%`);
-      setText("war-destr-opp", (oppDes == null) ? "—" : `${Number(oppDes)}%`);
+        const ourAtkUsed = (display.ourAttacksUsed ?? null);
+        const oppAtkUsed = (display.oppAttacksUsed ?? null);
 
-      const ourAtkUsed = (display?.ourAttacksUsed ?? warDetail?.clan?.attacks ?? warDetail?.our?.attacks ?? null);
-      const oppAtkUsed = (display?.oppAttacksUsed ?? warDetail?.opponent?.attacks ?? null);
-
-      setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
-      setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
+        setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
+        setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
+      }
 
       const now = new Date();
       const { start, end } = getWarTimes(display);
-      const startOk = start && !isNaN(start.getTime());
-      const endOk = end && !isNaN(end.getTime());
 
+      const startOk = start && !isNaN(start.getTime());
+      const endOk   = end && !isNaN(end.getTime());
+
+      // ✅ Staged labels
+      if(state === "preparation"){
+        setText("war-stage-label","WAR STARTS IN:");
+        if(startOk){
+          const ms = start - now;
+          setText("war-timer", formatCountdown(ms));
+        } else {
+          setText("war-timer","—");
+        }
+        return;
+      }
+
+      if(state === "inwar"){
+        if(endOk && now >= end){
+          setText("war-stage-label","WAR ENDED");
+          setText("war-timer","");
+          return;
+        }
+        setText("war-stage-label","WAR ENDS IN:");
+        if(endOk){
+          const ms = end - now;
+          setText("war-timer", formatCountdown(ms));
+        } else {
+          setText("war-timer","—");
+        }
+        return;
+      }
+
+      // fallback for any other states
       if(endOk && now >= end){
         setText("war-stage-label","WAR ENDED");
         setText("war-timer","");
-        return;
-      }
-      if(startOk && now < start){
-        setText("war-stage-label","WAR STARTS IN:");
-        setText("war-timer", formatCountdown(start - now));
-        return;
-      }
-      if(endOk && now < end){
+      } else if(endOk){
         setText("war-stage-label","WAR ENDS IN:");
         setText("war-timer", formatCountdown(end - now));
-        return;
-      }
-
-      if(state === "preparation"){
+      } else if(startOk && now < start){
         setText("war-stage-label","WAR STARTS IN:");
+        setText("war-timer", formatCountdown(start - now));
+      } else {
+        setText("war-stage-label","ACTIVE");
         setText("war-timer","—");
-        return;
       }
-      if(state === "inwar"){
-        setText("war-stage-label","WAR ENDS IN:");
-        setText("war-timer","—");
-        return;
-      }
-
-      setText("war-stage-label","ACTIVE");
-      setText("war-timer","—");
     }
 
     // =========================
-    // War chart
+    // Render: War chart
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1372,27 +1358,23 @@
       const atks = Array.isArray(member?.attacks) ? member.attacks : [];
       return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
     }
+
     function niceRole(role){
       const r = String(role || "").trim();
       if(!r) return "";
       const low = r.toLowerCase();
-      if(low === "coleader" || low === "co-leader" || low === "coleader" || low === "coLeader") return "Co Leader";
+      if(low === "coLeader" || low === "co-leader" || low === "coleader") return "Co Leader";
       if(low === "leader") return "Leader";
       if(low === "elder") return "Elder";
       return r;
     }
+
     function readFirst(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
         if(v !== undefined && v !== null && v !== "") return v;
       }
       return null;
-    }
-    function roleEmojiForWar(role){
-      const r = String(role || "").toLowerCase();
-      if(r.includes("leader")) return "👑";
-      if(r === "elder") return "🛡️";
-      return "";
     }
 
     function renderWarChart(){
@@ -1410,8 +1392,11 @@
         return;
       }
 
-      // Support either schema: warDetail.our OR warDetail.clan
-      const our = warDetail.our || warDetail.clan || {};
+      const state = String(warDetail.state || "").toLowerCase();
+      const teamSize = Number(warDetail.teamSize || 0) || null;
+      const showMode = (state && state !== "notinwar") && teamSize;
+
+      const our = warDetail.our || {};
       const opp = warDetail.opponent || {};
 
       const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
@@ -1458,6 +1443,13 @@
         return "—";
       }
 
+      function roleEmojiForWar(role){
+        const r = String(role || "").toLowerCase();
+        if(r.includes("leader")) return "👑";
+        if(r === "elder") return "🛡️";
+        return "";
+      }
+
       function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
         const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
@@ -1493,7 +1485,7 @@
                   ${emHTML}
                   ${roleInline}
                 </div>
-                <div class="role">TH${member?.townhallLevel ?? member?.townHallLevel ?? "—"}</div>
+                <div class="role">TH${member?.townhallLevel ?? "—"}</div>
               </div>
             </div>
 
@@ -1525,6 +1517,7 @@
 
       function blockHTML(title, isOpp, members){
         const defenderLU = isOpp ? ourLU : oppLU;
+
         return `
           <div class="war-chart-block">
             <div class="war-chart-head">
@@ -1541,6 +1534,7 @@
       }
 
       mount.innerHTML =
+        (showMode ? `<div class="war-mode-title">${teamSize} v ${teamSize}</div>` : ``) +
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
 
@@ -1548,7 +1542,7 @@
     }
 
     // =========================
-    // Members + ClanStats (unchanged logic)
+    // Members + ClanStats (unchanged)
     // =========================
     function readIntAny(obj, keys){
       for(const k of keys){
@@ -1809,7 +1803,7 @@
     }
 
     // =========================
-    // More page timers
+    // More page timers (unchanged)
     // =========================
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
