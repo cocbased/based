@@ -312,6 +312,7 @@
       }
     }
 
+    /* Members (unchanged styling) */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
@@ -1051,7 +1052,7 @@
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
     function formatCountdown(ms){
-      if(ms<=0) return "0d 00h 00m 00s";
+      if(ms <= 0) return "0d 00h 00m 00s";
       const totalSeconds = Math.floor(ms/1000);
       const days = Math.floor(totalSeconds/86400);
       const hours = Math.floor((totalSeconds%86400)/3600);
@@ -1117,60 +1118,48 @@
     }
 
     // =========================
-    // ✅ TIME PARSING FIX (ISO + CoC "YYYYMMDDTHHMMSS.000Z")
+    // ✅ TIME PARSING (ISO + CoC formats)
     // =========================
     function parseWarTime(val){
       if(!val) return null;
-
-      // If it's already a Date:
       if(val instanceof Date) return isNaN(val.getTime()) ? null : val;
 
       const s = String(val).trim();
       if(!s) return null;
 
-      // ISO parse
+      // Standard ISO first
       const dIso = new Date(s);
       if(!isNaN(dIso.getTime())) return dIso;
 
-      // CoC format: 20251231T005246.000Z
-      const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.(\d{3})Z$/);
+      // CoC format: 20251231T005246.000Z OR 20251231T005246Z
+      const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.(\d{3}))?Z$/);
       if(m){
         const [,Y,MO,DA,HH,MI,SS,MS] = m;
-        const d = new Date(Date.UTC(+Y, +MO-1, +DA, +HH, +MI, +SS, +MS));
+        const ms = MS ? +MS : 0;
+        const d = new Date(Date.UTC(+Y, +MO-1, +DA, +HH, +MI, +SS, ms));
         return isNaN(d.getTime()) ? null : d;
       }
-
       return null;
     }
 
     function getWarTimes(display){
-      // 1) try war.json variants
       const start =
         parseWarTime(display?.startTimeIso) ||
         parseWarTime(display?.startTime) ||
         parseWarTime(display?.start) ||
+        parseWarTime(warDetail?.startTimeIso) ||
+        parseWarTime(warDetail?.startTime) ||
         null;
 
       const end =
         parseWarTime(display?.endTimeIso) ||
         parseWarTime(display?.endTime) ||
         parseWarTime(display?.end) ||
-        null;
-
-      // 2) fallback to war_detail.json (you DO have startTimeIso/endTimeIso there)
-      const start2 =
-        start ||
-        parseWarTime(warDetail?.startTimeIso) ||
-        parseWarTime(warDetail?.startTime) ||
-        null;
-
-      const end2 =
-        end ||
         parseWarTime(warDetail?.endTimeIso) ||
         parseWarTime(warDetail?.endTime) ||
         null;
 
-      return { start: start2, end: end2 };
+      return { start, end };
     }
 
     // =========================
@@ -1203,7 +1192,7 @@
       }
       warDetailFetched = true;
 
-      // ✅ timer can rely on war_detail fallback too, so update after detail fetch
+      // Update both after detail arrives
       renderWarSection();
       renderWarChart();
     }
@@ -1231,34 +1220,26 @@
     }
 
     // =========================
-    // Render: Current War section (staged timer + size)
+    // Render: Current War section (✅ stage based on times, not state)
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
 
-      // Prefer warData; fallback to last snapshot; if missing, still allow warDetail for times/stage.
+      // Prefer warData; fallback snapshot
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
       const stateRaw = String(display?.state || warDetail?.state || "");
       const state = stateRaw.trim().toLowerCase();
 
-      // Team size from war.json OR war_detail.json
+      // Team size from either
       const teamSize =
         Number(display?.teamSize || display?.size || 0) ||
         Number(warDetail?.teamSize || 0) ||
         null;
-
       setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
 
-      // If no war at all
-      if(!state){
-        setText("war-stage-label", "Waiting…");
-        setText("war-timer", "—");
-        return;
-      }
-
-      // notInWar
+      // No war
       if(state === "notinwar" || stateRaw === "notInWar"){
         setText("war-stage-label","No War");
         setText("war-timer","");
@@ -1269,8 +1250,8 @@
         return;
       }
 
-      // Fill stats if warData present
-      if(display && display.ourName){
+      // Fill scoreboard from war.json if present
+      if(display && (display.ourName || display.oppName)){
         const maxStars = teamSize ? (3 * teamSize) : null;
         const maxAttacks = teamSize ? (2 * teamSize) : null;
 
@@ -1295,52 +1276,42 @@
 
       const now = new Date();
       const { start, end } = getWarTimes(display);
-
       const startOk = start && !isNaN(start.getTime());
-      const endOk   = end && !isNaN(end.getTime());
+      const endOk = end && !isNaN(end.getTime());
 
-      // ✅ Staged labels
-      if(state === "preparation"){
-        setText("war-stage-label","WAR STARTS IN:");
-        if(startOk){
-          const ms = start - now;
-          setText("war-timer", formatCountdown(ms));
-        } else {
-          setText("war-timer","—");
-        }
-        return;
-      }
-
-      if(state === "inwar"){
-        if(endOk && now >= end){
-          setText("war-stage-label","WAR ENDED");
-          setText("war-timer","");
-          return;
-        }
-        setText("war-stage-label","WAR ENDS IN:");
-        if(endOk){
-          const ms = end - now;
-          setText("war-timer", formatCountdown(ms));
-        } else {
-          setText("war-timer","—");
-        }
-        return;
-      }
-
-      // fallback for any other states
+      // ✅ Primary truth: time window
       if(endOk && now >= end){
         setText("war-stage-label","WAR ENDED");
         setText("war-timer","");
-      } else if(endOk){
-        setText("war-stage-label","WAR ENDS IN:");
-        setText("war-timer", formatCountdown(end - now));
-      } else if(startOk && now < start){
+        return;
+      }
+
+      if(startOk && now < start){
         setText("war-stage-label","WAR STARTS IN:");
         setText("war-timer", formatCountdown(start - now));
-      } else {
-        setText("war-stage-label","ACTIVE");
-        setText("war-timer","—");
+        return;
       }
+
+      if(endOk && now < end){
+        setText("war-stage-label","WAR ENDS IN:");
+        setText("war-timer", formatCountdown(end - now));
+        return;
+      }
+
+      // Fallbacks if times missing
+      if(state === "preparation"){
+        setText("war-stage-label","WAR STARTS IN:");
+        setText("war-timer","—");
+        return;
+      }
+      if(state === "inwar"){
+        setText("war-stage-label","WAR ENDS IN:");
+        setText("war-timer","—");
+        return;
+      }
+
+      setText("war-stage-label","ACTIVE");
+      setText("war-timer","—");
     }
 
     // =========================
@@ -1391,10 +1362,6 @@
         enableDragScrollEverywhere();
         return;
       }
-
-      const state = String(warDetail.state || "").toLowerCase();
-      const teamSize = Number(warDetail.teamSize || 0) || null;
-      const showMode = (state && state !== "notinwar") && teamSize;
 
       const our = warDetail.our || {};
       const opp = warDetail.opponent || {};
@@ -1533,16 +1500,16 @@
         `;
       }
 
+      // ✅ no duplicate "25 v 25" here
       mount.innerHTML =
         blockHTML(our.name, false, ourMembers) +
         blockHTML(opp.name, true,  oppMembers);
-
 
       enableDragScrollEverywhere();
     }
 
     // =========================
-    // Members + ClanStats (unchanged)
+    // Members + ClanStats (unchanged logic)
     // =========================
     function readIntAny(obj, keys){
       for(const k of keys){
