@@ -749,18 +749,18 @@
       padding: 6px 0 2px;
     }
 
-    /* ✅ CWL: headerbar that mimics Members (SCROLL perfectly centered, even with sort on right) */
+    /* ✅ CWL: headerbar that mimics Members (scroll text + sort) */
     .cwl-subheaderbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
       display:grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr auto;
       grid-template-rows: auto;
       column-gap: 12px;
       align-items:center;
     }
     .cwl-scroll-inline{
-      grid-column:2/3;
+      grid-column:1/2;
       display:flex;
       justify-content:center;
       text-align:center;
@@ -771,10 +771,9 @@
       line-height: 1;
       pointer-events:none;
       padding: 2px 0 0;
-      justify-self:center;
     }
     .cwl-sortbtn-wrap{
-      grid-column:3/4;
+      grid-column:2/3;
       justify-self:end;
       align-self:center;
     }
@@ -789,6 +788,8 @@
     .cwl-day-end{
       border-right: 2px solid var(--sep-strong) !important;
     }
+
+    /* League Overview: keep compact, but show day-style separators not needed */
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -825,6 +826,9 @@
   </nav>
 
   <script>
+    // ============================================================
+    // ✅ REAL "never updates" fix:
+    // ============================================================
     (async function purgePwaCachesOnce(){
       const KEY = "based_pwa_cache_purged_v2";
       try{
@@ -1064,6 +1068,13 @@
         .replace(/'/g,"&#39;");
     }
     function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    function setTextAny(ids, text){
+      for(const id of ids){
+        const el = document.getElementById(id);
+        if(el){ el.textContent = text; return true; }
+      }
+      return false;
+    }
 
     // =========================
     // Templates
@@ -1101,15 +1112,107 @@
       `;
     }
 
-    // ✅ FIX #1 (Home/War disappeared):
-    // DO NOT overwrite your real renderHome/renderWarPage functions.
-    // We call the globally-defined ones (from your original full file).
-    function callGlobalRenderer(fnName, fallbackHtml){
-      try{
-        const fn = window[fnName];
-        if(typeof fn === "function") return fn();
-      }catch(e){}
-      return fallbackHtml;
+    function renderHome(){
+      return `
+        <div class="cards">
+          <h2 class="cards-title">Clan Overview</h2>
+
+          <div id="rankings-block">
+            <div class="section-title">Rankings</div>
+            <div class="row"><span class="row-label">Global Trophies</span><span id="rank-global-trophies" class="row-value">Loading…</span></div>
+            <div class="row"><span class="row-label">USA Trophies</span><span id="rank-usa-trophies" class="row-value">Loading…</span></div>
+            <div class="divider"></div>
+          </div>
+
+          <div id="clan-desc" class="clan-desc-block">Loading…</div>
+          <div class="divider"></div>
+
+          <div class="row"><span class="row-label">CWL League</span><span id="cwl-league" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish" class="row-value">Loading…</span></div>
+
+          <div class="row"><span class="row-label">War Record</span><span id="home-war-record" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 10 Wars</span><span id="home-war-last10" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Current Streak</span><span id="home-war-streak" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Longest Streak</span><span id="home-war-longest" class="row-value">Loading…</span></div>
+
+          <div class="row"><span class="row-label">Capital Hall Level</span><span id="capital-hall-level" class="row-value">Loading…</span></div>
+
+          <div class="divider"></div>
+
+          <h2 class="cards-title" style="margin: 2px 0 10px;">Members</h2>
+
+          <div class="members-headerbar" aria-label="Members header controls">
+            <div class="members-leaderline">
+              <div class="members-keyline">
+                <span class="key-emoji">&nbsp;&nbsp;👑</span>
+                <span class="key-text"><span class="legend-underline">Leader</span> / Co</span>
+              </div>
+            </div>
+
+            <div></div>
+            <div></div>
+
+            <div class="members-elderline">
+              <div class="members-keyline">
+                <span class="key-emoji">&nbsp;&nbsp;🛡️</span>
+                <span class="key-text">Elder</span>
+              </div>
+            </div>
+
+            <div class="members-scroll-inline">← SCROLL →</div>
+
+            <div class="members-sortbtn-wrap">
+              <div class="sort-btn">
+                SORT
+                <select id="membersSortSelect" aria-label="Sort members">
+                  <option value="role">Role</option>
+                  <option value="th">TH</option>
+                  <option value="trophies">Trophies</option>
+                  <option value="warStars">War Stars</option>
+                  <option value="xp">XP</option>
+                  <option value="donated">Donated</option>
+                  <option value="received">Received</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="members-wrap dragscroll" aria-label="Clan members list">
+            <table class="members-table">
+              <colgroup>
+                <col style="width: var(--m-emoji-col);">
+                <col style="width: var(--m-name-col);">
+                <col style="width: 44px;">
+                <col style="width: 84px;">
+                <col style="width: 98px;">
+                <col style="width: 58px;">
+                <col style="width: 86px;">
+                <col style="width: 96px;">
+              </colgroup>
+
+              <thead>
+                <tr>
+                  <th class="m-emoji" style="text-align:right;"></th>
+                  <th style="text-align:left;"></th>
+                  <th class="m-num">TH</th>
+                  <th class="m-num">Trophies</th>
+                  <th class="m-num">War Stars</th>
+                  <th class="m-num">XP</th>
+                  <th class="m-num">Donated</th>
+                  <th class="m-num">Received</th>
+                </tr>
+              </thead>
+
+              <tbody id="members-body">
+                <tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="clan-fetch-status" class="tiny-status">Clan stats fetch: —</div>
+          <div id="members-fetch-status" class="tiny-status">Members fetch: —</div>
+        </div>
+      `;
     }
 
     function renderCwlPage(){
@@ -1134,8 +1237,8 @@
 
           <div class="section-title">League Overview</div>
 
+          <!-- ✅ Add same SCROLL line above chart -->
           <div class="cwl-subheaderbar" aria-label="CWL league overview header">
-            <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
             <div></div>
           </div>
@@ -1144,7 +1247,7 @@
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:112px;">
+                <col style="width:280px;">
                 <col style="width:120px;">
                 <col style="width:90px;">
                 <col style="width:140px;">
@@ -1168,8 +1271,8 @@
 
           <div class="section-title">Member Overview</div>
 
+          <!-- ✅ Replace note with Members-style scroll + add sort button -->
           <div class="cwl-subheaderbar" aria-label="CWL member overview header">
-            <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
             <div class="cwl-sortbtn-wrap">
               <div class="sort-btn">
@@ -1189,12 +1292,13 @@
             <table class="cwl-table cwl-wide">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:88px;">
+                <col style="width:220px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
                 <col style="width:96px;">
                 <col style="width:92px;">
                 <col style="width:92px;">
+                <!-- Day blocks -->
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
@@ -1223,6 +1327,7 @@
                   <th class="cwl-dayhead" colspan="3">Day 7</th>
                 </tr>
 
+                <!-- ✅ Fix styling: no more "-" spam; keep subtle row labels only -->
                 <tr>
                   <th class="sticky-1 muted">&nbsp;</th>
                   <th class="sticky-2 muted">&nbsp;</th>
@@ -1255,23 +1360,64 @@
       `;
     }
 
+    function renderWarPage(){
+      return `
+        <div class="cards">
+          <h2 class="cards-title">War</h2>
+
+          <div class="row"><span class="row-label">War Record</span><span id="war-record" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 10 Wars</span><span id="war-last10" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 25 Wars</span><span id="war-last25" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Last 50 Wars</span><span id="war-last50" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Current Streak</span><span id="war-streak" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Longest Streak</span><span id="war-longest" class="row-value">Loading…</span></div>
+
+          <div class="divider"></div>
+
+          <h2 class="cards-title" style="margin-top:6px;">Current War</h2>
+          <div id="war-size" class="war-mode-title" style="margin:6px 0 6px;">—</div>
+
+          <div class="war-board">
+            <div id="war-stage-label" class="war-mode-title" style="margin: 8px 0 4px;">Loading…</div>
+            <div id="war-timer" class="war-timer">—</div>
+
+            <div class="war-grid-3">
+              <div>
+                <div id="war-name-us" class="war-name">—</div>
+                <div class="war-stat"><span id="war-stars-us">—</span> <span>⭐</span></div>
+                <div class="war-substat"><span id="war-destr-us">—</span> <span>🎯</span></div>
+                <div class="war-substat"><span id="war-attacks-us">—</span> <span>⚔️</span></div>
+              </div>
+
+              <div id="war-vs" class="war-vs">VS</div>
+
+              <div>
+                <div id="war-name-opp" class="war-name">—</div>
+                <div class="war-stat"><span id="war-stars-opp">—</span> <span>⭐</span></div>
+                <div class="war-substat"><span id="war-destr-opp">—</span> <span>🎯</span></div>
+                <div class="war-substat"><span id="war-attacks-opp">—</span> <span>⚔️</span></div>
+              </div>
+            </div>
+
+            <div id="war-fetch-status" class="tiny-status">Last fetch: —</div>
+            <div id="clan-fetch-status-war" class="tiny-status">Clan stats fetch: —</div>
+          </div>
+
+          <div class="war-chart-wrap dragscroll">
+            <div id="war-chart-mount"></div>
+            <div id="war-chart-status" class="tiny-status">Chart fetch: —</div>
+          </div>
+        </div>
+      `;
+    }
+
     function renderRouteContent(route){
-      if(route === "home"){
-        return callGlobalRenderer(
-          "renderHome",
-          `<div class="cards"><h2 class="cards-title">Home</h2><div class="muted">renderHome() not found (it must exist in your original file).</div></div>`
-        );
-      }
+      if(route === "home") return renderHome();
       if(route === "cwl") return renderCwlPage();
-      if(route === "war"){
-        return callGlobalRenderer(
-          "renderWarPage",
-          `<div class="cards"><h2 class="cards-title">War</h2><div class="muted">renderWarPage() not found (it must exist in your original file).</div></div>`
-        );
-      }
+      if(route === "war") return renderWarPage();
       if(route === "mystats") return pageShellCards("My Stats", "Coming Soon!");
       if(route === "more") return renderMore();
-      return callGlobalRenderer("renderHome", `<div class="cards"><h2 class="cards-title">Home</h2></div>`);
+      return renderHome();
     }
 
     // =========================
@@ -1282,9 +1428,11 @@
     const RAW_CLAN_URL_BASE       = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE    = "./members.json";
 
+    // CWL endpoints
     const RAW_CWL_CURRENT_URL_BASE = "./cwl_current.json";
     const RAW_CWL_INDEX_URL_BASE   = "./cwl_index.json";
 
+    // Fallbacks
     const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/cocbased/based/main/";
     const RAW_WAR_FALLBACK         = RAW_FALLBACK_BASE + "war.json";
     const RAW_WAR_DETAIL_FALLBACK  = RAW_FALLBACK_BASE + "war_detail.json";
@@ -1315,18 +1463,29 @@
     let membersData = null;
     let membersSortMode = "role";
 
+    // CWL state
     const CWL_SELECTED_KEY = "based_cwl_selected_season";
     let cwlIndex = null;
     let cwlCurrent = null;
     let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current");
     let cwlSelectedPayload = null;
 
+    // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
 
     // =========================
     // Utilities
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
+    function formatCountdown(ms){
+      if(ms <= 0) return "0d 00h 00m 00s";
+      const totalSeconds = Math.floor(ms/1000);
+      const days = Math.floor(totalSeconds/86400);
+      const hours = Math.floor((totalSeconds%86400)/3600);
+      const minutes = Math.floor((totalSeconds%86400%3600)/60);
+      const seconds = totalSeconds%60;
+      return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
+    }
 
     function loadLastWarSnapshot(){
       try{
@@ -1341,6 +1500,91 @@
       try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
     }
     lastWarSnapshot = loadLastWarSnapshot();
+
+    function winPctFromWLT(w,l,t){
+      const W=(w|0), L=(l|0), T=(t|0);
+      const total=W+L+T;
+      if(total<=0) return null;
+      return (W + 0.5*T)/total;
+    }
+    function fmtPctDecimal(p){
+      if(typeof p !== "number" || !isFinite(p)) return "";
+      return ` (${p.toFixed(3)})`;
+    }
+    function fmtWLTWithPctNums(w,l,t){
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:(l|0) };
+    }
+    function fmtWLTWithPctObj(obj){
+      if(!obj || typeof obj !== "object") return { text:"—", losses:null };
+      const w=(typeof obj.wins==="number")?obj.wins:null;
+      const l=(typeof obj.losses==="number")?obj.losses:null;
+      const t=(typeof obj.ties==="number")?obj.ties:null;
+      if(w===null||l===null||t===null) return { text:"—", losses:null };
+      const pct=winPctFromWLT(w,l,t);
+      return { text:`${w}-${l}-${t}${fmtPctDecimal(pct)}`, losses:l };
+    }
+    function hasNoLosses(losses){
+      return typeof losses==="number" && isFinite(losses) && losses===0;
+    }
+    function setClass(id, className, on){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle(className, !!on);
+    }
+
+    function roleEmoji(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return "👑";
+      if(r === "elder") return "🛡️";
+      return "";
+    }
+    function isLeaderOnly(role){
+      return String(role || "").trim().toLowerCase() === "leader";
+    }
+
+    // =========================
+    // TIME PARSING (ISO + CoC formats)
+    // =========================
+    function parseWarTime(val){
+      if(!val) return null;
+      if(val instanceof Date) return isNaN(val.getTime()) ? null : val;
+
+      const s = String(val).trim();
+      if(!s) return null;
+
+      const dIso = new Date(s);
+      if(!isNaN(dIso.getTime())) return dIso;
+
+      const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.(\d{3}))?Z$/);
+      if(m){
+        const [,Y,MO,DA,HH,MI,SS,MS] = m;
+        const ms = MS ? +MS : 0;
+        const d = new Date(Date.UTC(+Y, +MO-1, +DA, +HH, +MI, +SS, ms));
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+
+    function getWarTimes(display){
+      const start =
+        parseWarTime(display?.startTimeIso) ||
+        parseWarTime(display?.startTime) ||
+        parseWarTime(display?.start) ||
+        parseWarTime(warDetail?.startTimeIso) ||
+        parseWarTime(warDetail?.startTime) ||
+        null;
+
+      const end =
+        parseWarTime(display?.endTimeIso) ||
+        parseWarTime(display?.endTime) ||
+        parseWarTime(display?.end) ||
+        parseWarTime(warDetail?.endTimeIso) ||
+        parseWarTime(warDetail?.endTime) ||
+        null;
+
+      return { start, end };
+    }
 
     function stampTime(){
       const d = new Date();
@@ -1441,7 +1685,144 @@
     }
 
     // =========================
-    // Fetchers (CWL index/current/history)
+    // Fetchers
+    // =========================
+    async function fetchWarData(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACK, "war.json");
+        warData = data;
+
+        if(warData && warData.state && warData.state !== "notInWar"){
+          lastWarSnapshot = warData;
+          saveLastWarSnapshot(warData);
+        }
+
+        setText("war-fetch-status", formatMetaLine("Last fetch", meta));
+      } catch(e){
+        warData = null;
+        setText("war-fetch-status", `Last fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      warFetched = true;
+      renderWarSection();
+    }
+
+    async function fetchWarDetail(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACK, "war_detail.json");
+        warDetail = data;
+        setText("war-chart-status", formatMetaLine("Chart fetch", meta));
+      } catch(e){
+        warDetail = null;
+        setText("war-chart-status", `Chart fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      warDetailFetched = true;
+      renderWarSection();
+      renderWarChart();
+    }
+
+    // =========================
+    // More tolerant schema helpers
+    // =========================
+    function pick(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== undefined && v !== null && v !== "") return v;
+      }
+      return null;
+    }
+    function pickObj(obj, keys){
+      const v = pick(obj, keys);
+      return (v && typeof v === "object") ? v : null;
+    }
+    function pickNum(obj, keys){
+      const v = pick(obj, keys);
+      const n = (typeof v === "number") ? v : Number(v);
+      return isFinite(n) ? n : null;
+    }
+
+    function normalizeClanStats(raw){
+      if(!raw || typeof raw !== "object") return null;
+
+      const description = pick(raw, ["description","desc","clanDescription","about"]) || "";
+
+      const cwl = pickObj(raw, ["cwl","CWL","cwlInfo","cwl_info"]) || {};
+      const cwlLeague =
+        pick(cwl, ["currentLeague","league","name"]) ||
+        pick(raw, ["cwlLeague","cwl_league","cwlLeagueName"]) ||
+        "—";
+
+      const cwlFinish =
+        pick(cwl, ["lastFinish","finish","last_finish"]) ||
+        pick(raw, ["cwlFinish","cwl_finish","lastCwlFinish"]) ||
+        "—";
+
+      const capital = pickObj(raw, ["clanCapital","capital","clan_capital"]) || {};
+      const capitalHallLevel =
+        pickNum(capital, ["capitalHallLevel","hallLevel","capital_hall_level"]) ??
+        pickNum(raw, ["capitalHallLevel","capitalHall","capital_hall_level"]);
+
+      const war =
+        pickObj(raw, ["war","warStats","war_stats","warRecord","war_record"]) || {};
+
+      const wins   = pickNum(war, ["wins"])   ?? pickNum(raw, ["warWins","wins","war_wins"]) ?? 0;
+      const losses = pickNum(war, ["losses"]) ?? pickNum(raw, ["warLosses","losses","war_losses"]) ?? 0;
+      const ties   = pickNum(war, ["ties"])   ?? pickNum(raw, ["warTies","ties","war_ties"]) ?? 0;
+
+      const currentStreak =
+        pickNum(war, ["currentStreak","streak","current_streak"]) ??
+        pickNum(raw, ["currentStreak","current_streak","warStreak"]);
+
+      const longestStreak =
+        pickNum(war, ["longestStreak","bestStreak","longest_streak"]) ??
+        pickNum(raw, ["longestStreak","longest_streak","bestWarStreak"]);
+
+      const last10  = pickObj(war, ["last10","last_10","lastTen"])  || pickObj(raw, ["last10","last_10","lastTen"]);
+      const last25  = pickObj(war, ["last25","last_25"])            || pickObj(raw, ["last25","last_25"]);
+      const last50  = pickObj(war, ["last50","last_50"])            || pickObj(raw, ["last50","last_50"]);
+
+      return {
+        description,
+        cwl: { currentLeague: cwlLeague, lastFinish: cwlFinish },
+        clanCapital: { capitalHallLevel: (typeof capitalHallLevel === "number" ? capitalHallLevel : null) },
+        war: {
+          wins, losses, ties,
+          currentStreak: (typeof currentStreak === "number" ? currentStreak : null),
+          longestStreak: (typeof longestStreak === "number" ? longestStreak : null),
+          last10, last25, last50
+        },
+        __raw: raw
+      };
+    }
+
+    async function fetchMembersData(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_MEMBERS_URL_BASE, RAW_MEMBERS_FALLBACK, "members.json");
+        membersData = data;
+        setTextAny(["members-fetch-status"], formatMetaLine("Members fetch", meta));
+      } catch(e){
+        membersData = null;
+        setTextAny(["members-fetch-status"], `Members fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      renderMembers();
+    }
+
+    async function fetchClanStats(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_CLAN_URL_BASE, RAW_CLAN_FALLBACK, "clan_stats.json");
+        clanStats = normalizeClanStats(data) || null;
+
+        const line = formatMetaLine("Clan stats fetch", meta);
+        setTextAny(["clan-fetch-status","clan-fetch-status-war","clan-fetch-status-cwl"], line);
+      } catch(e){
+        clanStats = null;
+        const line = `Clan stats fetch: ${stampTime()} ❌ ${String(e.message || e)}`;
+        setTextAny(["clan-fetch-status","clan-fetch-status-war","clan-fetch-status-cwl"], line);
+      }
+      renderClanStats();
+    }
+
+    // =========================
+    // CWL fetchers
     // =========================
     async function fetchCwlIndex(){
       try{
@@ -1491,21 +1872,552 @@
     }
 
     // =========================
-    // CWL render helpers
+    // Render: Current War section
     // =========================
-    function pick(obj, keys){
+    function renderWarSection(){
+      if(!document.getElementById("war-timer")) return;
+
+      let display = warData;
+      if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
+
+      const stateRaw = String(display?.state || warDetail?.state || "");
+      const state = stateRaw.trim().toLowerCase();
+
+      const teamSize =
+        Number(display?.teamSize || display?.size || 0) ||
+        Number(warDetail?.teamSize || 0) ||
+        null;
+      setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
+
+      if(state === "notinwar" || stateRaw === "notInWar"){
+        setText("war-stage-label","No War");
+        setText("war-timer","");
+        setText("war-name-us","—"); setText("war-name-opp","—");
+        setText("war-stars-us","—"); setText("war-stars-opp","—");
+        setText("war-destr-us","—"); setText("war-destr-opp","—");
+        setText("war-attacks-us","—"); setText("war-attacks-opp","—");
+        return;
+      }
+
+      const maxStars = teamSize ? (3 * teamSize) : null;
+      const maxAttacks = teamSize ? (2 * teamSize) : null;
+
+      const ourName = display?.ourName || warDetail?.clan?.name || warDetail?.our?.name || "US";
+      const oppName = display?.oppName || warDetail?.opponent?.name || "OPPONENT";
+      setText("war-name-us", ourName);
+      setText("war-name-opp", oppName);
+
+      const ourStars = (display?.ourStars ?? warDetail?.clan?.stars ?? warDetail?.our?.stars ?? null);
+      const oppStars = (display?.oppStars ?? warDetail?.opponent?.stars ?? null);
+
+      setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
+      setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
+
+      const ourDes = (display?.ourDestructionPercentage ?? warDetail?.clan?.destructionPercentage ?? warDetail?.our?.destructionPercentage ?? null);
+      const oppDes = (display?.oppDestructionPercentage ?? warDetail?.opponent?.destructionPercentage ?? null);
+
+      setText("war-destr-us", (ourDes == null) ? "—" : `${Number(ourDes)}%`);
+      setText("war-destr-opp", (oppDes == null) ? "—" : `${Number(oppDes)}%`);
+
+      const ourAtkUsed = (display?.ourAttacksUsed ?? warDetail?.clan?.attacks ?? warDetail?.our?.attacks ?? null);
+      const oppAtkUsed = (display?.oppAttacksUsed ?? warDetail?.opponent?.attacks ?? null);
+
+      setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
+      setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
+
+      const now = new Date();
+      const { start, end } = getWarTimes(display);
+      const startOk = start && !isNaN(start.getTime());
+      const endOk = end && !isNaN(end.getTime());
+
+      if(endOk && now >= end){
+        setText("war-stage-label","WAR ENDED");
+        setText("war-timer","");
+        return;
+      }
+      if(startOk && now < start){
+        setText("war-stage-label","WAR STARTS IN:");
+        setText("war-timer", formatCountdown(start - now));
+        return;
+      }
+      if(endOk && now < end){
+        setText("war-stage-label","WAR ENDS IN:");
+        setText("war-timer", formatCountdown(end - now));
+        return;
+      }
+
+      if(state === "preparation"){
+        setText("war-stage-label","WAR STARTS IN:");
+        setText("war-timer","—");
+        return;
+      }
+      if(state === "inwar"){
+        setText("war-stage-label","WAR ENDS IN:");
+        setText("war-timer","—");
+        return;
+      }
+
+      setText("war-stage-label","ACTIVE");
+      setText("war-timer","—");
+    }
+
+    // =========================
+    // War chart (unchanged)
+    // =========================
+    function starsHTML(n){
+      const s = Number(n || 0);
+      return `
+        <span class="star ${s>=1 ? "" : "dim"}">★</span>
+        <span class="star ${s>=2 ? "" : "dim"}">★</span>
+        <span class="star ${s>=3 ? "" : "dim"}">★</span>
+      `;
+    }
+    function totalStars(member){
+      const atks = Array.isArray(member?.attacks) ? member.attacks : [];
+      return atks.reduce((sum,a)=>sum + (Number(a?.stars)||0), 0);
+    }
+    function niceRole(role){
+      const r = String(role || "").trim();
+      if(!r) return "";
+      const low = r.toLowerCase();
+      if(low === "coleader" || low === "co-leader" || low === "coleader" || low === "coLeader") return "Co Leader";
+      if(low === "leader") return "Leader";
+      if(low === "elder") return "Elder";
+      return r;
+    }
+    function readFirst(obj, keys){
       for(const k of keys){
         const v = obj?.[k];
         if(v !== undefined && v !== null && v !== "") return v;
       }
       return null;
     }
-    function pickNum(obj, keys){
-      const v = pick(obj, keys);
-      const n = (typeof v === "number") ? v : Number(v);
-      return isFinite(n) ? n : null;
+    function roleEmojiForWar(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return "👑";
+      if(r === "elder") return "🛡️";
+      return "";
     }
 
+    function renderWarChart(){
+      const mount = document.getElementById("war-chart-mount");
+      if(!mount) return;
+
+      if(!warDetailFetched){
+        mount.innerHTML = `<div class="muted" style="text-align:center;">Loading war chart…</div>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+      if(!warDetail || typeof warDetail !== "object"){
+        mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+
+      const our = warDetail.our || warDetail.clan || {};
+      const opp = warDetail.opponent || {};
+
+      const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
+      const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
+
+      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+
+      function buildLookup(members){
+        const byTag = new Map();
+        const byPos = new Map();
+        for(const m of (members||[])){
+          const tag = m?.tag ? String(m.tag) : "";
+          const pos = (m?.mapPosition != null) ? Number(m.mapPosition) : null;
+          if(tag) byTag.set(tag, m);
+          if(pos != null && isFinite(pos)) byPos.set(pos, m);
+        }
+        return { byTag, byPos };
+      }
+      const ourLU = buildLookup(ourMembers);
+      const oppLU = buildLookup(oppMembers);
+
+      function formatDefenderFromAttack(a, defenderSideLU){
+        if(!a) return "—";
+        const dName = readFirst(a, ["defenderName","defender","targetName","defenderPlayerName","defender_name"]);
+        const dTag  = readFirst(a, ["defenderTag","defender_tag","targetTag","defenderPlayerTag"]);
+        const dPos  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
+
+        if(dTag && defenderSideLU?.byTag?.has(String(dTag))){
+          const m = defenderSideLU.byTag.get(String(dTag));
+          const pos = (m?.mapPosition != null) ? m.mapPosition : (dPos != null ? dPos : "—");
+          const nm  = m?.name || dName || "—";
+          return `${pos}. ${nm}`;
+        }
+
+        const posNum = (dPos != null && dPos !== "") ? Number(dPos) : null;
+        if(posNum != null && isFinite(posNum) && defenderSideLU?.byPos?.has(posNum)){
+          const m = defenderSideLU.byPos.get(posNum);
+          const nm = m?.name || dName || "—";
+          return `${posNum}. ${nm}`;
+        }
+
+        if(dName) return String(dName);
+        return "—";
+      }
+
+      function rowHTML(member, defenderSideLU){
+        const name = member?.name || "—";
+        const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
+        const atks = Array.isArray(member?.attacks) ? member.attacks : [];
+        const a1 = atks[0] || null;
+        const a2 = atks[1] || null;
+
+        const a1Pct = (a1 && a1.destructionPercentage != null) ? `${a1.destructionPercentage}%` : "—";
+        const a2Pct = (a2 && a2.destructionPercentage != null) ? `${a2.destructionPercentage}%` : "—";
+
+        const a1Stars = a1 ? Number(a1.stars||0) : 0;
+        const a2Stars = a2 ? Number(a2.stars||0) : 0;
+
+        const a1Def = formatDefenderFromAttack(a1, defenderSideLU);
+        const a2Def = formatDefenderFromAttack(a2, defenderSideLU);
+
+        const roleLabel = niceRole(member?.role);
+        const roleInline = roleLabel ? ` <span class="war-name-role">(${escapeHtml(roleLabel)})</span>` : "";
+
+        const em = roleEmojiForWar(member?.role);
+        const emHTML = em ? `<span class="war-role-emoji" aria-hidden="true">${em}</span>` : "";
+
+        const nameClass = isLeaderOnly(member?.role) ? "war-leader-underline" : "";
+
+        return `
+          <div class="war-sheet-row">
+            <div class="war-cell right mono numcol">${escapeHtml(mp)}.</div>
+
+            <div class="war-cell">
+              <div class="war-player">
+                <div class="name" title="${escapeHtml(name)}">
+                  <span class="${nameClass}" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                  ${emHTML}
+                  ${roleInline}
+                </div>
+                <div class="role">TH${member?.townhallLevel ?? member?.townHallLevel ?? "—"}</div>
+              </div>
+            </div>
+
+            <div class="war-cell defender stack">
+              <div class="atk2">
+                <div class="atkline" title="${escapeHtml(a1Def)}">${escapeHtml(a1Def)}</div>
+                <div class="atkline" title="${escapeHtml(a2Def)}">${escapeHtml(a2Def)}</div>
+              </div>
+            </div>
+
+            <div class="war-cell center mono stack">
+              <div class="atk2">
+                <div class="atkline" style="justify-content:center;">${a1 ? escapeHtml(a1Pct) : "—"}</div>
+                <div class="atkline" style="justify-content:center;">${a2 ? escapeHtml(a2Pct) : "—"}</div>
+              </div>
+            </div>
+
+            <div class="war-cell center stack">
+              <div class="atk2">
+                <div class="stars">${a1 ? starsHTML(a1Stars) : `<span class="muted">—</span>`}</div>
+                <div class="stars">${a2 ? starsHTML(a2Stars) : `<span class="muted">—</span>`}</div>
+              </div>
+            </div>
+
+            <div class="war-cell center mono bold">${totalStars(member)}★</div>
+          </div>
+        `;
+      }
+
+      function blockHTML(title, isOpp, members){
+        const defenderLU = isOpp ? ourLU : oppLU;
+        return `
+          <div class="war-chart-block">
+            <div class="war-chart-head">
+              <div class="war-chart-clan" title="${escapeHtml(title || "")}">
+                <span>${escapeHtml(title || (isOpp ? "Opponent" : "Our Clan"))}</span>
+              </div>
+            </div>
+
+            <div class="war-sheet">
+              ${(members || []).map(m => rowHTML(m, defenderLU)).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      mount.innerHTML =
+        blockHTML(our.name, false, ourMembers) +
+        blockHTML(opp.name, true,  oppMembers);
+
+      enableDragScrollEverywhere();
+    }
+
+    // =========================
+    // Members + ClanStats
+    // =========================
+    function readIntAny(obj, keys){
+      for(const k of keys){
+        const v = obj?.[k];
+        if(v !== null && v !== undefined && v !== "") return (v|0);
+      }
+      return 0;
+    }
+    function getThLevel(m){
+      let n = readIntAny(m, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["townHallLevel","th","thLevel","townHall","townhallLevel"]);
+      return n > 0 ? n : 0;
+    }
+    function getWarStars(m){
+      let n = readIntAny(m, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["warStars","totalWarStars","warStarCount","totalStars","stars"]);
+      return n >= 0 ? n : 0;
+    }
+    function getXP(m){
+      let n = readIntAny(m, ["expLevel","xp","level"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["expLevel","xp","level"]);
+      return n > 0 ? n : 0;
+    }
+    function getTrophies(m){
+      let n = readIntAny(m, ["trophies"]);
+      if(n > 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["trophies"]);
+      return n > 0 ? n : 0;
+    }
+    function getDonations(m){
+      let n = readIntAny(m, ["donations","troopsDonated","donated"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donations","troopsDonated","donated"]);
+      return n >= 0 ? n : 0;
+    }
+    function getDonationsReceived(m){
+      let n = readIntAny(m, ["donationsReceived","troopsReceived","received"]);
+      if(n >= 0) return n;
+      const mm = m?.member || m?.player || m?.raw || null;
+      n = readIntAny(mm, ["donationsReceived","troopsReceived","received"]);
+      return n >= 0 ? n : 0;
+    }
+    function roleRank(role){
+      const r = String(role || "").toLowerCase();
+      if(r.includes("leader")) return 1;
+      if(r === "elder" || r === "admin") return 2;
+      return 3;
+    }
+    function compareName(a,b){
+      return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
+    }
+
+    function ensureSortDropdownBound(){
+      const sel = document.getElementById("membersSortSelect");
+      if(!sel) return;
+
+      sel.value = membersSortMode;
+
+      if(sel.dataset.bound === "1") return;
+      sel.addEventListener("change", () => {
+        membersSortMode = sel.value || "role";
+        renderMembers();
+      });
+      sel.dataset.bound = "1";
+    }
+
+    function renderMembers(){
+      const tbody = document.getElementById("members-body");
+      if(!tbody) return;
+
+      ensureSortDropdownBound();
+
+      let list = null;
+      if(membersData){
+        if(Array.isArray(membersData.members)) list = membersData.members;
+        else if(Array.isArray(membersData.items)) list = membersData.items;
+        else if(Array.isArray(membersData)) list = membersData;
+      }
+
+      if(!list){
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+      if(list.length === 0){
+        tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
+        enableDragScrollEverywhere();
+        return;
+      }
+
+      const sorted = list.slice().sort((a,b) => {
+        const ta = getTrophies(a), tb = getTrophies(b);
+        const xa = getXP(a), xb = getXP(b);
+        const wa = getWarStars(a), wb = getWarStars(b);
+        const ha = getThLevel(a), hb = getThLevel(b);
+        const ra = roleRank(a.role), rb = roleRank(b.role);
+        const da = getDonations(a), db = getDonations(b);
+        const rxa = getDonationsReceived(a), rxb = getDonationsReceived(b);
+
+        if(membersSortMode === "role"){
+          if(ra !== rb) return ra - rb;
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "th"){
+          if(hb !== ha) return hb - ha;
+          if(xb !== xa) return xb - xa;
+          if(wb !== wa) return wb - wa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "trophies"){
+          if(tb !== ta) return tb - ta;
+          if(xb !== xa) return xb - xa;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "warStars"){
+          if(wb !== wa) return wb - wa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "xp"){
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          if(hb !== ha) return hb - ha;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "donated"){
+          if(db !== da) return db - da;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+        if(membersSortMode === "received"){
+          if(rxb !== rxa) return rxb - rxa;
+          if(xb !== xa) return xb - xa;
+          if(tb !== ta) return tb - ta;
+          return compareName(a,b);
+        }
+
+        if(tb !== ta) return tb - ta;
+        if(xb !== xa) return xb - xa;
+        return compareName(a,b);
+      });
+
+      tbody.innerHTML = sorted.map(m => {
+        const badge = roleEmoji(m.role);
+        const name = escapeHtml(m.name);
+        const th = getThLevel(m);
+        const trophies = getTrophies(m);
+        const warStars = getWarStars(m);
+        const xp = getXP(m);
+        const donated = getDonations(m);
+        const received = getDonationsReceived(m);
+        const leaderClass = isLeaderOnly(m.role) ? "m-leader" : "";
+
+        return `
+          <tr>
+            <td class="m-emoji">${badge || ""}</td>
+            <td><span class="m-user-name ${leaderClass}">${name}</span></td>
+            <td class="m-num">${th ? th : "—"}</td>
+            <td class="m-num">${trophies ? trophies : 0}</td>
+            <td class="m-num">${warStars ? warStars : 0}</td>
+            <td class="m-num">${xp ? xp : 0}</td>
+            <td class="m-num">${donated}</td>
+            <td class="m-num">${received}</td>
+          </tr>
+        `;
+      }).join("");
+
+      enableDragScrollEverywhere();
+    }
+
+    function renderClanStats(){
+      const warObj = clanStats?.war || null;
+
+      const descEl = document.getElementById("clan-desc");
+      if(descEl){
+        const desc = (typeof clanStats?.description === "string") ? clanStats.description.trim() : "";
+        descEl.textContent = desc || "—";
+      }
+
+      const cwlLeague = clanStats?.cwl?.currentLeague || "—";
+      const cwlFinish = clanStats?.cwl?.lastFinish || "—";
+      setText("cwl-league", cwlLeague);
+      setText("cwl-finish", cwlFinish);
+
+      const hall = clanStats?.clanCapital?.capitalHallLevel;
+      setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
+
+      if(document.getElementById("war-record")){
+        ["war-record","war-last10","war-last25","war-last50"].forEach(id => setClass(id,"record-green",false));
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("war-record", rec.text);
+          setClass("war-record","record-green", hasNoLosses(rec.losses));
+
+          setText("war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("war-longest", `${warObj.longestStreak ?? "—"}`);
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          const l25 = fmtWLTWithPctObj(warObj.last25);
+          const l50 = fmtWLTWithPctObj(warObj.last50);
+
+          setText("war-last10", l10.text);
+          setText("war-last25", l25.text);
+          setText("war-last50", l50.text);
+
+          setClass("war-last10","record-green", hasNoLosses(l10.losses));
+          setClass("war-last25","record-green", hasNoLosses(l25.losses));
+          setClass("war-last50","record-green", hasNoLosses(l50.losses));
+        } else {
+          setText("war-record","—");
+          setText("war-last10","—");
+          setText("war-last25","—");
+          setText("war-last50","—");
+          setText("war-streak","—");
+          setText("war-longest","—");
+        }
+      }
+
+      if(document.getElementById("home-war-record")){
+        setClass("home-war-record","record-green", false);
+        setClass("home-war-last10","record-green", false);
+
+        if(warObj){
+          const w = warObj.wins ?? 0;
+          const l = warObj.losses ?? 0;
+          const t = warObj.ties ?? 0;
+
+          const rec = fmtWLTWithPctNums(w,l,t);
+          setText("home-war-record", rec.text);
+          setClass("home-war-record","record-green", hasNoLosses(rec.losses));
+
+          const l10 = fmtWLTWithPctObj(warObj.last10);
+          setText("home-war-last10", l10.text);
+          setClass("home-war-last10","record-green", hasNoLosses(l10.losses));
+
+          setText("home-war-streak", `${warObj.currentStreak ?? "—"}`);
+          setText("home-war-longest", `${warObj.longestStreak ?? "—"}`);
+        } else {
+          setText("home-war-record","—");
+          setText("home-war-last10","—");
+          setText("home-war-streak","—");
+          setText("home-war-longest","—");
+        }
+      }
+    }
+
+    // =========================
+    // CWL render
+    // =========================
     function ensureCwlSelectBound(){
       const sel = document.getElementById("cwlSeasonSelect");
       if(!sel) return;
@@ -1590,13 +2502,39 @@
       const x = Number(n);
       return isFinite(x) ? String(x) : fallback;
     }
+    function fmtPct(n, fallback="—"){
+      if(n === null || n === undefined || n === "") return fallback;
+      const x = Number(n);
+      return isFinite(x) ? `${x}%` : fallback;
+    }
+    // ✅ CWL decimals to tenth (NOT hundredth)
     function fmt1(n, fallback="—"){
       if(n === null || n === undefined || n === "") return fallback;
       const x = Number(n);
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
+    function toDayNumber(d, idx){
+      // ✅ Fix "Day 1 appearing in Day 4" by being tolerant:
+      // - accept multiple keys
+      // - if missing, use array index+1
+      // - if 0-based, convert to 1-based
+      const candidates = [
+        d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex
+      ];
+      for(const c of candidates){
+        if(c === null || c === undefined || c === "") continue;
+        const n = Number(String(c).replace(/[^\d-]/g,""));
+        if(isFinite(n)){
+          if(n >= 1 && n <= 7) return n;
+          if(n >= 0 && n <= 6) return n + 1;
+        }
+      }
+      return (idx >= 0 && idx < 7) ? (idx + 1) : null;
+    }
+
     function getStarsWithBonus(r){
+      // ✅ Hide Bonus column; compute Stars+Bonus if needed.
       const sWB = pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]);
       if(sWB !== null) return sWB;
 
@@ -1606,87 +2544,8 @@
       const bonus = pickNum(r, ["bonusStars","bonus","bonus_points","bonus_points_stars"]);
       if(starsBase !== null && bonus !== null) return starsBase + bonus;
 
-      if(starsBase !== null) return starsBase + (wins * 10);
+      if(starsBase !== null) return starsBase + (wins * 10); // your requested rule
       return null;
-    }
-
-    // ✅ FIX #2 (Day alignment):
-    // Prefer explicit day numbers IF they’re sane; otherwise ROTATE by where "Day 1" is; otherwise normalize by min day.
-    function parseDayNumber(d){
-      const candidates = [d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex];
-      for(const c of candidates){
-        if(c === null || c === undefined || c === "") continue;
-        const cleaned = String(c).trim();
-        const n = Number(cleaned.replace(/[^\d-]/g,""));
-        if(!isFinite(n)) continue;
-        if(n >= 1 && n <= 7) return n;
-        if(n >= 0 && n <= 6) return n + 1; // 0-based -> 1-based
-      }
-      return null;
-    }
-
-    function rotateArrayToIndex(arr, startIdx){
-      const n = arr.length;
-      if(n === 0) return arr;
-      const k = ((startIdx % n) + n) % n;
-      return arr.slice(k).concat(arr.slice(0, k));
-    }
-
-    function buildDayMap(days){
-      const arr = Array.isArray(days) ? days.filter(Boolean).slice(0, 7) : [];
-      const byDay = new Map();
-      if(!arr.length) return byDay;
-
-      const nums = arr.map(parseDayNumber);
-      const valid = nums.filter(n => n && n >= 1 && n <= 7);
-
-      // Case A: we have a clean unique mapping -> trust it
-      if(valid.length === arr.length){
-        const set = new Set(valid);
-        if(set.size === valid.length){
-          for(let i=0;i<arr.length;i++){
-            const n = nums[i];
-            if(n) byDay.set(n, arr[i]);
-          }
-          return byDay;
-        }
-      }
-
-      // Case B: rotate so the entry whose day==1 becomes first (common “Day 1 shows under Day 4” bug)
-      const idxDay1 = nums.findIndex(n => n === 1);
-      if(idxDay1 !== -1){
-        const rotated = rotateArrayToIndex(arr, idxDay1);
-        for(let i=0;i<7;i++){
-          const d = rotated[i] || null;
-          if(d) byDay.set(i + 1, d);
-        }
-        return byDay;
-      }
-
-      // Case C: normalize by minimum numeric day (e.g., starts at 4) -> shift so min becomes Day 1
-      const mins = valid.length ? Math.min(...valid) : null;
-      if(mins !== null && isFinite(mins)){
-        for(let i=0;i<arr.length;i++){
-          const d = arr[i];
-          const n = nums[i];
-          if(!d || !n) continue;
-          const shifted = (((n - mins) % 7) + 7) % 7; // 0..6
-          byDay.set(shifted + 1, d);
-        }
-        // fill any missing by index order as fallback
-        for(let i=0;i<7;i++){
-          const dayNum = i + 1;
-          if(!byDay.has(dayNum) && arr[i]) byDay.set(dayNum, arr[i]);
-        }
-        return byDay;
-      }
-
-      // Case D: absolute fallback: array order
-      for(let i=0;i<7;i++){
-        const d = arr[i] || null;
-        if(d) byDay.set(i + 1, d);
-      }
-      return byDay;
     }
 
     function renderCwlContent(){
@@ -1696,8 +2555,11 @@
 
       const payload = cwlSelectedPayload || (cwlSelected === "current" ? cwlCurrent : null);
 
-      setText("cwl-title", payload?.title || "CWL");
-      setText("cwl-league-name", payload?.leagueName || "—");
+      const title = payload?.title || "CWL";
+      setText("cwl-title", title);
+
+      const leagueName = payload?.leagueName || "—";
+      setText("cwl-league-name", leagueName);
 
       const state = payload?.state || (cwlSelected === "current" ? "loading" : "—");
       const stateNice =
@@ -1708,6 +2570,7 @@
         "LOADING";
       setText("cwl-state", stateNice);
 
+      // League overview (no Bonus column)
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
         const rows = Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : [];
@@ -1717,10 +2580,9 @@
           leagueBody.innerHTML = rows.map(r => {
             const rank = fmtNum(r.rank, "—");
             const name = escapeHtml(r.name || "—");
+
             const wins = pickNum(r, ["wins"]) ?? 0;
-
             const starsPlusBonus = getStarsWithBonus(r);
-
             const destr = pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]);
             const destrOut = (destr === null) ? "—" : fmt1(destr, "—");
 
@@ -1737,6 +2599,7 @@
         }
       }
 
+      // Member overview
       const memberBody = document.getElementById("cwl-memberoverview-body");
       if(memberBody){
         const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
@@ -1744,6 +2607,7 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
+          // ✅ Sort
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
@@ -1790,6 +2654,7 @@
           });
 
           memberBody.innerHTML = sorted.map(m => {
+            // ✅ decimals to tenth
             const avgRkVal = pickNum(m, ["avgRankAttacked","avgRank","avg_rank_attacked","avg_rank"]);
             const avgRk = (avgRkVal === null) ? "—" : fmt1(avgRkVal, "—");
 
@@ -1799,16 +2664,27 @@
             const totDes = pickNum(m, ["totalDestruction","totalPct","totalPercent","total_destruction"]) ?? 0;
 
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
+            // ✅ CWL is 7 days/7 attacks possible
             const atkFrac = `${fmtNum(atkMade,"0")}/7`;
 
-            const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]);
+            const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]) ;
             const avgStars = (avgStarsVal === null) ? "—" : fmt1(avgStarsVal, "—");
 
             const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
             const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
 
+            // days normalization
             const days = Array.isArray(m.days) ? m.days : [];
-            const byDay = buildDayMap(days);
+
+            const byDay = new Map();
+            for(let idx=0; idx<days.length; idx++){
+              const d = days[idx];
+              if(!d) continue;
+              const dayNum = toDayNumber(d, idx);
+              if(dayNum && dayNum >= 1 && dayNum <= 7 && !byDay.has(dayNum)){
+                byDay.set(dayNum, d);
+              }
+            }
 
             const dayCells = [];
             for(let i=1;i<=7;i++){
@@ -1821,9 +2697,12 @@
               const s = (sVal === null || !isFinite(sVal)) ? "—" : fmtNum(sVal, "—");
               const p = (pVal === null || !isFinite(pVal)) ? "—" : fmt1(pVal, "—");
 
-              dayCells.push(`<td class="left mono cwl-day-start" title="${opp}">${opp}</td>`);
+              const startCls = "cwl-day-start";
+              const endCls = "cwl-day-end";
+
+              dayCells.push(`<td class="left mono ${startCls}" title="${opp}">${opp}</td>`);
               dayCells.push(`<td class="mono">${s}</td>`);
-              dayCells.push(`<td class="mono cwl-day-end">${p}</td>`);
+              dayCells.push(`<td class="mono ${endCls}">${p}</td>`);
             }
 
             return `
@@ -1848,13 +2727,47 @@
     // =========================
     // Loops per route
     // =========================
+    function startHomeLoop(){
+      clearIntervals(homeIntervals);
+      membersSortMode = "role";
+      fetchClanStats();
+      fetchMembersData();
+      homeIntervals.push(setInterval(fetchClanStats, 5000));
+      homeIntervals.push(setInterval(fetchMembersData, 10000));
+    }
+
+    function startWarLoop(){
+      clearIntervals(warIntervals);
+      warFetched = false;
+      warDetailFetched = false;
+
+      fetchClanStats();
+      fetchWarData();
+      fetchWarDetail();
+
+      warIntervals.push(setInterval(fetchClanStats, 5000));
+      warIntervals.push(setInterval(fetchWarData, 5000));
+      warIntervals.push(setInterval(fetchWarDetail, 5000));
+      warIntervals.push(setInterval(renderWarSection, 1000));
+    }
+
+    function startMoreLoop(){
+      clearIntervals(moreIntervals);
+      updateRecurringTimers();
+      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
+    }
+
     function startCwlLoop(){
       clearIntervals(cwlIntervals);
+
+      // ✅ default CWL member sort to Rank on page entry
       cwlMembersSortMode = "rank";
 
+      fetchClanStats();
       fetchCwlIndex();
       fetchCwlCurrent();
 
+      cwlIntervals.push(setInterval(fetchClanStats, 15000));
       cwlIntervals.push(setInterval(fetchCwlCurrent, 5000));
       cwlIntervals.push(setInterval(fetchCwlIndex, 60000));
 
@@ -1864,6 +2777,55 @@
         cwlSelectedPayload = cwlCurrent;
         renderCwlContent();
       }
+    }
+
+    // =========================
+    // More page timers
+    // =========================
+    function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
+
+    function getNextRaidWeekendEnd(now){
+      const day = now.getUTCDay();
+      const diffToFriday = (5 - day + 7) % 7;
+      let fridayStart = makeUTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToFriday, 7);
+      let mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      if(now >= fridayStart && now <= mondayEnd) return mondayEnd;
+      if(now > mondayEnd){
+        fridayStart = new Date(fridayStart.getTime() + 7*24*60*60*1000);
+        mondayEnd = new Date(fridayStart.getTime() + 3*24*60*60*1000);
+      }
+      return mondayEnd;
+    }
+    function getNextClanGamesEnd(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      const start = makeUTC(y,m,22,8);
+      const end   = makeUTC(y,m,28,8);
+      if(now < start) return end;
+      if(now <= end) return end;
+      const nextMonth = new Date(Date.UTC(y, m+1, 1));
+      return makeUTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth(), 28, 8);
+    }
+    function getNextSeasonEnd(now){ return makeUTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1, 8); }
+    function getNextLeagueReset(now){
+      const y=now.getUTCFullYear(), m=now.getUTCMonth();
+      let first = makeUTC(y,m,1,5);
+      const diffToMonday = (1 - first.getUTCDay() + 7) % 7;
+      let reset = makeUTC(y,m,1+diffToMonday,5);
+      if(now > reset){
+        const nm = new Date(Date.UTC(y, m+1, 1));
+        let firstNext = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1, 5);
+        const diffNext = (1 - firstNext.getUTCDay() + 7) % 7;
+        reset = makeUTC(nm.getUTCFullYear(), nm.getUTCMonth(), 1+diffNext, 5);
+      }
+      return reset;
+    }
+    function updateRecurringTimers(){
+      if(!document.getElementById("raid-timer")) return;
+      const now = new Date();
+      setText("raid-timer", formatCountdown(getNextRaidWeekendEnd(now) - now));
+      setText("clan-games-timer", formatCountdown(getNextClanGamesEnd(now) - now));
+      setText("season-end-timer", formatCountdown(getNextSeasonEnd(now) - now));
+      setText("league-reset-timer", formatCountdown(getNextLeagueReset(now) - now));
     }
 
     // =========================
@@ -1897,20 +2859,39 @@
 
       enableDragScrollEverywhere();
 
-      if(route === "cwl") startCwlLoop();
+      if(route === "home") startHomeLoop();
+      if(route === "war")  startWarLoop();
+      if(route === "more") startMoreLoop();
+      if(route === "cwl")  startCwlLoop();
 
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
-
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
     window.addEventListener("pageshow", renderRoute);
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible") renderRoute();
+    });
+
+    window.addEventListener("error", (e) => {
+      const mount = document.getElementById("war-chart-mount");
+      if(mount){
+        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
+          JS Error: ${escapeHtml(e.message || "unknown")}
+        </div>`;
+      }
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const mount = document.getElementById("war-chart-mount");
+      if(mount){
+        mount.innerHTML = `<div class="muted" style="text-align:center;font-family:monospace;font-size:12px;">
+          Promise Error: ${escapeHtml(String(e.reason || "unknown"))}
+        </div>`;
+      }
     });
   </script>
 </body>
