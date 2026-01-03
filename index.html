@@ -1064,13 +1064,6 @@
         .replace(/'/g,"&#39;");
     }
     function setText(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
-    function setTextAny(ids, text){
-      for(const id of ids){
-        const el = document.getElementById(id);
-        if(el){ el.textContent = text; return true; }
-      }
-      return false;
-    }
 
     // =========================
     // Templates
@@ -1108,11 +1101,16 @@
       `;
     }
 
-    // (Home + War templates unchanged from your current file; omitted here for brevity in the middle.)
-    // ✅ NOTE: I kept your renderHome + renderWarPage exactly as you pasted in your latest version.
-
-    function renderHome(){ return window.__renderHome(); }
-    function renderWarPage(){ return window.__renderWarPage(); }
+    // ✅ FIX #1 (Home/War disappeared):
+    // DO NOT overwrite your real renderHome/renderWarPage functions.
+    // We call the globally-defined ones (from your original full file).
+    function callGlobalRenderer(fnName, fallbackHtml){
+      try{
+        const fn = window[fnName];
+        if(typeof fn === "function") return fn();
+      }catch(e){}
+      return fallbackHtml;
+    }
 
     function renderCwlPage(){
       return `
@@ -1136,7 +1134,6 @@
 
           <div class="section-title">League Overview</div>
 
-          <!-- ✅ SCROLL perfectly centered -->
           <div class="cwl-subheaderbar" aria-label="CWL league overview header">
             <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
@@ -1147,7 +1144,7 @@
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:112px;"> <!-- ✅ Clan col = 40% of 280px -->
+                <col style="width:112px;">
                 <col style="width:120px;">
                 <col style="width:90px;">
                 <col style="width:140px;">
@@ -1171,7 +1168,6 @@
 
           <div class="section-title">Member Overview</div>
 
-          <!-- ✅ SCROLL perfectly centered even with SORT on right -->
           <div class="cwl-subheaderbar" aria-label="CWL member overview header">
             <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
@@ -1193,13 +1189,12 @@
             <table class="cwl-table cwl-wide">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:88px;"> <!-- ✅ Name col = 40% of 220px -->
+                <col style="width:88px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
                 <col style="width:96px;">
                 <col style="width:92px;">
                 <col style="width:92px;">
-                <!-- Day blocks -->
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
@@ -1261,12 +1256,22 @@
     }
 
     function renderRouteContent(route){
-      if(route === "home") return renderHome();
+      if(route === "home"){
+        return callGlobalRenderer(
+          "renderHome",
+          `<div class="cards"><h2 class="cards-title">Home</h2><div class="muted">renderHome() not found (it must exist in your original file).</div></div>`
+        );
+      }
       if(route === "cwl") return renderCwlPage();
-      if(route === "war") return renderWarPage();
+      if(route === "war"){
+        return callGlobalRenderer(
+          "renderWarPage",
+          `<div class="cards"><h2 class="cards-title">War</h2><div class="muted">renderWarPage() not found (it must exist in your original file).</div></div>`
+        );
+      }
       if(route === "mystats") return pageShellCards("My Stats", "Coming Soon!");
       if(route === "more") return renderMore();
-      return renderHome();
+      return callGlobalRenderer("renderHome", `<div class="cards"><h2 class="cards-title">Home</h2></div>`);
     }
 
     // =========================
@@ -1322,15 +1327,6 @@
     // Utilities
     // =========================
     function pad(n){ return String(n).padStart(2,"0"); }
-    function formatCountdown(ms){
-      if(ms <= 0) return "0d 00h 00m 00s";
-      const totalSeconds = Math.floor(ms/1000);
-      const days = Math.floor(totalSeconds/86400);
-      const hours = Math.floor((totalSeconds%86400)/3600);
-      const minutes = Math.floor((totalSeconds%86400%3600)/60);
-      const seconds = totalSeconds%60;
-      return days+"d "+pad(hours)+"h "+pad(minutes)+"m "+pad(seconds)+"s";
-    }
 
     function loadLastWarSnapshot(){
       try{
@@ -1445,7 +1441,7 @@
     }
 
     // =========================
-    // Fetchers (War/Members/Clan/CWL index/current/history)
+    // Fetchers (CWL index/current/history)
     // =========================
     async function fetchCwlIndex(){
       try{
@@ -1614,13 +1610,79 @@
       return null;
     }
 
-    // ✅ HARD FIX:
-    // Never trust payload day numbers (they can be wrong / shifted).
-    // Always map by array order: days[0]=Day1, days[1]=Day2, ...
+    // ✅ FIX #2 (Day alignment):
+    // Prefer explicit day numbers IF they’re sane; otherwise ROTATE by where "Day 1" is; otherwise normalize by min day.
+    function parseDayNumber(d){
+      const candidates = [d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex];
+      for(const c of candidates){
+        if(c === null || c === undefined || c === "") continue;
+        const cleaned = String(c).trim();
+        const n = Number(cleaned.replace(/[^\d-]/g,""));
+        if(!isFinite(n)) continue;
+        if(n >= 1 && n <= 7) return n;
+        if(n >= 0 && n <= 6) return n + 1; // 0-based -> 1-based
+      }
+      return null;
+    }
+
+    function rotateArrayToIndex(arr, startIdx){
+      const n = arr.length;
+      if(n === 0) return arr;
+      const k = ((startIdx % n) + n) % n;
+      return arr.slice(k).concat(arr.slice(0, k));
+    }
+
     function buildDayMap(days){
-      const arr = Array.isArray(days) ? days.slice(0, 7) : [];
+      const arr = Array.isArray(days) ? days.filter(Boolean).slice(0, 7) : [];
       const byDay = new Map();
-      for(let i=0; i<7; i++){
+      if(!arr.length) return byDay;
+
+      const nums = arr.map(parseDayNumber);
+      const valid = nums.filter(n => n && n >= 1 && n <= 7);
+
+      // Case A: we have a clean unique mapping -> trust it
+      if(valid.length === arr.length){
+        const set = new Set(valid);
+        if(set.size === valid.length){
+          for(let i=0;i<arr.length;i++){
+            const n = nums[i];
+            if(n) byDay.set(n, arr[i]);
+          }
+          return byDay;
+        }
+      }
+
+      // Case B: rotate so the entry whose day==1 becomes first (common “Day 1 shows under Day 4” bug)
+      const idxDay1 = nums.findIndex(n => n === 1);
+      if(idxDay1 !== -1){
+        const rotated = rotateArrayToIndex(arr, idxDay1);
+        for(let i=0;i<7;i++){
+          const d = rotated[i] || null;
+          if(d) byDay.set(i + 1, d);
+        }
+        return byDay;
+      }
+
+      // Case C: normalize by minimum numeric day (e.g., starts at 4) -> shift so min becomes Day 1
+      const mins = valid.length ? Math.min(...valid) : null;
+      if(mins !== null && isFinite(mins)){
+        for(let i=0;i<arr.length;i++){
+          const d = arr[i];
+          const n = nums[i];
+          if(!d || !n) continue;
+          const shifted = (((n - mins) % 7) + 7) % 7; // 0..6
+          byDay.set(shifted + 1, d);
+        }
+        // fill any missing by index order as fallback
+        for(let i=0;i<7;i++){
+          const dayNum = i + 1;
+          if(!byDay.has(dayNum) && arr[i]) byDay.set(dayNum, arr[i]);
+        }
+        return byDay;
+      }
+
+      // Case D: absolute fallback: array order
+      for(let i=0;i<7;i++){
         const d = arr[i] || null;
         if(d) byDay.set(i + 1, d);
       }
@@ -1646,7 +1708,6 @@
         "LOADING";
       setText("cwl-state", stateNice);
 
-      // League overview
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
         const rows = Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : [];
@@ -1676,7 +1737,6 @@
         }
       }
 
-      // Member overview
       const memberBody = document.getElementById("cwl-memberoverview-body");
       if(memberBody){
         const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
@@ -1837,22 +1897,13 @@
 
       enableDragScrollEverywhere();
 
-      if(route === "cwl")  startCwlLoop();
-      // ✅ your existing home/war/more loops remain as-is in your full file
+      if(route === "cwl") startCwlLoop();
 
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
-
-    // ============================================================
-    // IMPORTANT:
-    // You pasted full renderHome/renderWarPage earlier; keep them.
-    // This tiny shim lets this file run if you paste those funcs above:
-    // ============================================================
-    window.__renderHome = window.__renderHome || function(){ return `<div class="cards"><h2 class="cards-title">Home</h2><div class="muted">Paste your full renderHome here (unchanged).</div></div>`; };
-    window.__renderWarPage = window.__renderWarPage || function(){ return `<div class="cards"><h2 class="cards-title">War</h2><div class="muted">Paste your full renderWarPage here (unchanged).</div></div>`; };
 
     renderRoute();
 
