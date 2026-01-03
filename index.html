@@ -24,9 +24,57 @@
       --m-name-col: 102px;
 
       --cards-max: 680px;
+
+      /* ✅ UI colors used for scrollbar + dividers */
+      --card-bg: #0b1829;
+      --card-border: #2b3b55;
+      --scroll-track: rgba(0,0,0,0.22);
+      --scroll-thumb: var(--card-border);
+
+      --sep-strong: rgba(255,255,255,0.16);
+      --sep-soft: rgba(255,255,255,0.10);
     }
 
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
+
+    /* ✅ Non-PWA scrollbar styling (safe to apply globally; mobile/PWA mostly ignores) */
+    html, body{
+      scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+      scrollbar-width: thin;
+    }
+    /* WebKit scrollbars */
+    ::-webkit-scrollbar{ width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track{ background: var(--scroll-track); }
+    ::-webkit-scrollbar-thumb{
+      background: var(--scroll-thumb);
+      border-radius: 999px;
+      border: 2px solid var(--scroll-track);
+    }
+    ::-webkit-scrollbar-thumb:hover{ filter: brightness(1.08); }
+
+    /* Scroll containers */
+    .members-wrap::-webkit-scrollbar,
+    .cwl-table-wrap::-webkit-scrollbar,
+    .war-chart-wrap::-webkit-scrollbar,
+    .dragscroll::-webkit-scrollbar{
+      height: 10px;
+    }
+    .members-wrap::-webkit-scrollbar-track,
+    .cwl-table-wrap::-webkit-scrollbar-track,
+    .war-chart-wrap::-webkit-scrollbar-track,
+    .dragscroll::-webkit-scrollbar-track{
+      background: var(--scroll-track);
+      border-radius: 999px;
+    }
+    .members-wrap::-webkit-scrollbar-thumb,
+    .cwl-table-wrap::-webkit-scrollbar-thumb,
+    .war-chart-wrap::-webkit-scrollbar-thumb,
+    .dragscroll::-webkit-scrollbar-thumb{
+      background: var(--scroll-thumb);
+      border-radius: 999px;
+      border: 2px solid var(--scroll-track);
+    }
+
     .topnav{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .topnav::-webkit-scrollbar{ display:none; }
     .topnav a{ flex: 0 0 auto; }
@@ -108,8 +156,8 @@
       margin-bottom:24px;
       padding:12px 16px;
       border-radius:12px;
-      background:#0b1829;
-      border:1px solid #2b3b55;
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
       box-sizing:border-box;
       text-align:left;
       display:flex;
@@ -320,7 +368,7 @@
       }
     }
 
-    /* Members (unchanged styling) */
+    /* Members */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
@@ -370,6 +418,7 @@
       text-transform: uppercase;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
     }
     .sort-btn select{
       position:absolute;
@@ -567,7 +616,7 @@
     .pwa-tabbar a.active{ opacity: 1; }
 
     /* =========================
-       ✅ CWL (NEW)
+       ✅ CWL
        ========================= */
     .cwl-headerbar{
       display:flex;
@@ -663,7 +712,7 @@
     .cwl-table .muted{ opacity:.70; }
 
     .cwl-wide{ min-width: 1220px; }
-    .cwl-league{ min-width: 640px; }
+    .cwl-league{ min-width: 560px; }
 
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
@@ -699,6 +748,48 @@
       text-align:center;
       padding: 6px 0 2px;
     }
+
+    /* ✅ CWL: headerbar that mimics Members (scroll text + sort) */
+    .cwl-subheaderbar{
+      background: transparent; border:none; border-radius:0;
+      padding:0; margin:0 0 8px;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto;
+      column-gap: 12px;
+      align-items:center;
+    }
+    .cwl-scroll-inline{
+      grid-column:1/2;
+      display:flex;
+      justify-content:center;
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      white-space: nowrap;
+      line-height: 1;
+      pointer-events:none;
+      padding: 2px 0 0;
+    }
+    .cwl-sortbtn-wrap{
+      grid-column:2/3;
+      justify-self:end;
+      align-self:center;
+    }
+
+    /* ✅ CWL: visual separators */
+    .cwl-general-sep{
+      border-right: 2px solid var(--sep-strong) !important;
+    }
+    .cwl-day-start{
+      border-left: 2px solid var(--sep-strong) !important;
+    }
+    .cwl-day-end{
+      border-right: 2px solid var(--sep-strong) !important;
+    }
+
+    /* League Overview: keep compact, but show day-style separators not needed */
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -737,9 +828,6 @@
   <script>
     // ============================================================
     // ✅ REAL "never updates" fix:
-    // 1) Unregister any old Service Workers
-    // 2) Clear CacheStorage (where old JSON/assets often remain)
-    // 3) Do it ONCE per version, then reload
     // ============================================================
     (async function purgePwaCachesOnce(){
       const KEY = "based_pwa_cache_purged_v2";
@@ -1148,14 +1236,20 @@
           <div class="divider"></div>
 
           <div class="section-title">League Overview</div>
+
+          <!-- ✅ Add same SCROLL line above chart -->
+          <div class="cwl-subheaderbar" aria-label="CWL league overview header">
+            <div class="cwl-scroll-inline">← SCROLL →</div>
+            <div></div>
+          </div>
+
           <div class="cwl-table-wrap dragscroll" aria-label="CWL league overview">
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:260px;">
+                <col style="width:280px;">
                 <col style="width:120px;">
                 <col style="width:90px;">
-                <col style="width:110px;">
                 <col style="width:140px;">
               </colgroup>
               <thead>
@@ -1164,12 +1258,11 @@
                   <th class="left">Clan</th>
                   <th>Stars+Bonus</th>
                   <th>Wins</th>
-                  <th>Bonus</th>
                   <th>Destruction</th>
                 </tr>
               </thead>
               <tbody id="cwl-leagueoverview-body">
-                <tr><td colspan="6" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                <tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1177,7 +1270,23 @@
           <div class="divider"></div>
 
           <div class="section-title">Member Overview</div>
-          <div id="cwl-member-note" class="cwl-note">Scroll → for war days</div>
+
+          <!-- ✅ Replace note with Members-style scroll + add sort button -->
+          <div class="cwl-subheaderbar" aria-label="CWL member overview header">
+            <div class="cwl-scroll-inline">← SCROLL →</div>
+            <div class="cwl-sortbtn-wrap">
+              <div class="sort-btn">
+                SORT
+                <select id="cwlMembersSortSelect" aria-label="Sort CWL members">
+                  <option value="rank">Rank</option>
+                  <option value="totalStars">Total Stars</option>
+                  <option value="totalPct">Total %</option>
+                  <option value="avgStars">AVG Stars</option>
+                  <option value="avgPct">Avg %</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
             <table class="cwl-table cwl-wide">
@@ -1198,6 +1307,7 @@
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
               </colgroup>
+
               <thead id="cwl-members-head">
                 <tr>
                   <th class="sticky-1">Avg Rk</th>
@@ -1206,7 +1316,7 @@
                   <th>Total%</th>
                   <th>Atk</th>
                   <th>Avg★</th>
-                  <th>Avg%</th>
+                  <th class="cwl-general-sep">Avg%</th>
 
                   <th class="cwl-dayhead" colspan="3">Day 1</th>
                   <th class="cwl-dayhead" colspan="3">Day 2</th>
@@ -1216,24 +1326,27 @@
                   <th class="cwl-dayhead" colspan="3">Day 6</th>
                   <th class="cwl-dayhead" colspan="3">Day 7</th>
                 </tr>
-                <tr>
-                  <th class="sticky-1 muted">—</th>
-                  <th class="sticky-2 muted">—</th>
-                  <th class="muted">—</th>
-                  <th class="muted">—</th>
-                  <th class="muted">—</th>
-                  <th class="muted">—</th>
-                  <th class="muted">—</th>
 
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
-                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                <!-- ✅ Fix styling: no more "-" spam; keep subtle row labels only -->
+                <tr>
+                  <th class="sticky-1 muted">&nbsp;</th>
+                  <th class="sticky-2 muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted cwl-general-sep">&nbsp;</th>
+
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
                 </tr>
               </thead>
+
               <tbody id="cwl-memberoverview-body">
                 <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
@@ -1315,18 +1428,16 @@
     const RAW_CLAN_URL_BASE       = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE    = "./members.json";
 
-    // ✅ NEW: CWL endpoints
+    // CWL endpoints
     const RAW_CWL_CURRENT_URL_BASE = "./cwl_current.json";
     const RAW_CWL_INDEX_URL_BASE   = "./cwl_index.json";
 
-    // ✅ Fallbacks (often update faster than GitHub Pages CDN)
+    // Fallbacks
     const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/cocbased/based/main/";
     const RAW_WAR_FALLBACK         = RAW_FALLBACK_BASE + "war.json";
     const RAW_WAR_DETAIL_FALLBACK  = RAW_FALLBACK_BASE + "war_detail.json";
     const RAW_CLAN_FALLBACK        = RAW_FALLBACK_BASE + "clan_stats.json";
     const RAW_MEMBERS_FALLBACK     = RAW_FALLBACK_BASE + "members.json";
-
-    // ✅ NEW: CWL fallbacks
     const RAW_CWL_CURRENT_FALLBACK = RAW_FALLBACK_BASE + "cwl_current.json";
     const RAW_CWL_INDEX_FALLBACK   = RAW_FALLBACK_BASE + "cwl_index.json";
 
@@ -1352,12 +1463,15 @@
     let membersData = null;
     let membersSortMode = "role";
 
-    // ✅ CWL state
+    // CWL state
     const CWL_SELECTED_KEY = "based_cwl_selected_season";
     let cwlIndex = null;
     let cwlCurrent = null;
-    let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current"); // "current" or "YYYY-MM"
-    let cwlSelectedPayload = null; // currently displayed payload (current or history)
+    let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current");
+    let cwlSelectedPayload = null;
+
+    // ✅ CWL Member Overview sort state (default: Rank ascending)
+    let cwlMembersSortMode = "rank";
 
     // =========================
     // Utilities
@@ -1478,7 +1592,7 @@
     }
 
     // =========================
-    // ✅ Robust JSON fetch + real "did it change?" diagnostics
+    // Robust JSON fetch + meta diagnostics
     // =========================
     const endpointState = new Map(); // key => { lastHash, unchangedStreak }
 
@@ -1607,7 +1721,7 @@
     }
 
     // =========================
-    // ✅ More tolerant schema helpers
+    // More tolerant schema helpers
     // =========================
     function pick(obj, keys){
       for(const k of keys){
@@ -1708,7 +1822,7 @@
     }
 
     // =========================
-    // ✅ CWL fetchers (NEW)
+    // CWL fetchers
     // =========================
     async function fetchCwlIndex(){
       try{
@@ -1732,12 +1846,10 @@
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
 
-      // If viewing "current", render from this payload.
       if(cwlSelected === "current"){
         cwlSelectedPayload = cwlCurrent;
         renderCwlContent();
       } else {
-        // Keep dropdown label/title up-to-date, but do not override history view.
         renderCwlSeasonSelect();
       }
     }
@@ -1850,7 +1962,7 @@
     }
 
     // =========================
-    // War chart
+    // War chart (unchanged)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1909,7 +2021,7 @@
       const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(b.mapPosition)||9999)-(Number(a.mapPosition)||9999)); // doesn't matter, but keep stable
+      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
       function buildLookup(members){
         const byTag = new Map();
@@ -2304,7 +2416,7 @@
     }
 
     // =========================
-    // ✅ CWL render (NEW)
+    // CWL render
     // =========================
     function ensureCwlSelectBound(){
       const sel = document.getElementById("cwlSeasonSelect");
@@ -2329,6 +2441,20 @@
       sel.dataset.bound = "1";
     }
 
+    function ensureCwlMembersSortBound(){
+      const sel = document.getElementById("cwlMembersSortSelect");
+      if(!sel) return;
+
+      sel.value = cwlMembersSortMode;
+
+      if(sel.dataset.bound === "1") return;
+      sel.addEventListener("change", () => {
+        cwlMembersSortMode = sel.value || "rank";
+        renderCwlContent();
+      });
+      sel.dataset.bound = "1";
+    }
+
     function renderCwlSeasonSelect(){
       const sel = document.getElementById("cwlSeasonSelect");
       if(!sel) return;
@@ -2347,7 +2473,6 @@
         opts.push({ value:key, label:title });
       }
 
-      // de-dupe by value
       const seen = new Set();
       const finalOpts = [];
       for(const o of opts){
@@ -2358,14 +2483,12 @@
 
       sel.innerHTML = finalOpts.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join("");
 
-      // Keep selection if possible
       const wanted = cwlSelected || "current";
       const hasWanted = finalOpts.some(o => o.value === wanted);
       sel.value = hasWanted ? wanted : "current";
 
       setText("cwl-season-label", (sel.value === "current") ? "CURRENT" : sel.value);
 
-      // If we're on CWL page and selection is current, ensure view payload is current.
       if(document.getElementById("cwl-title")){
         if(sel.value === "current"){
           cwlSelectedPayload = cwlCurrent;
@@ -2384,19 +2507,54 @@
       const x = Number(n);
       return isFinite(x) ? `${x}%` : fallback;
     }
-    function fmt2(n, fallback="—"){
+    // ✅ CWL decimals to tenth (NOT hundredth)
+    function fmt1(n, fallback="—"){
       if(n === null || n === undefined || n === "") return fallback;
       const x = Number(n);
-      return isFinite(x) ? x.toFixed(2) : fallback;
+      return isFinite(x) ? x.toFixed(1) : fallback;
+    }
+
+    function toDayNumber(d, idx){
+      // ✅ Fix "Day 1 appearing in Day 4" by being tolerant:
+      // - accept multiple keys
+      // - if missing, use array index+1
+      // - if 0-based, convert to 1-based
+      const candidates = [
+        d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex
+      ];
+      for(const c of candidates){
+        if(c === null || c === undefined || c === "") continue;
+        const n = Number(String(c).replace(/[^\d-]/g,""));
+        if(isFinite(n)){
+          if(n >= 1 && n <= 7) return n;
+          if(n >= 0 && n <= 6) return n + 1;
+        }
+      }
+      return (idx >= 0 && idx < 7) ? (idx + 1) : null;
+    }
+
+    function getStarsWithBonus(r){
+      // ✅ Hide Bonus column; compute Stars+Bonus if needed.
+      const sWB = pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]);
+      if(sWB !== null) return sWB;
+
+      const starsBase = pickNum(r, ["stars","starsNoBonus","stars_without_bonus","starsWithoutBonus"]);
+      const wins = pickNum(r, ["wins"]) ?? 0;
+
+      const bonus = pickNum(r, ["bonusStars","bonus","bonus_points","bonus_points_stars"]);
+      if(starsBase !== null && bonus !== null) return starsBase + bonus;
+
+      if(starsBase !== null) return starsBase + (wins * 10); // your requested rule
+      return null;
     }
 
     function renderCwlContent(){
-      // only render if CWL page exists
       if(!document.getElementById("cwl-title")) return;
+
+      ensureCwlMembersSortBound();
 
       const payload = cwlSelectedPayload || (cwlSelected === "current" ? cwlCurrent : null);
 
-      // title/league/state
       const title = payload?.title || "CWL";
       setText("cwl-title", title);
 
@@ -2412,29 +2570,29 @@
         "LOADING";
       setText("cwl-state", stateNice);
 
-      // League overview
+      // League overview (no Bonus column)
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
         const rows = Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : [];
         if(!rows.length){
-          leagueBody.innerHTML = `<tr><td colspan="6" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
+          leagueBody.innerHTML = `<tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
         } else {
           leagueBody.innerHTML = rows.map(r => {
             const rank = fmtNum(r.rank, "—");
             const name = escapeHtml(r.name || "—");
-            const starsWithBonus = fmtNum(r.starsWithBonus, "—");
-            const wins = fmtNum(r.wins, "0");
-            const bonus = fmtNum(r.bonusStars, "0");
-            const destr = fmt2(r.destructionTotal, "—");
+
+            const wins = pickNum(r, ["wins"]) ?? 0;
+            const starsPlusBonus = getStarsWithBonus(r);
+            const destr = pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]);
+            const destrOut = (destr === null) ? "—" : fmt1(destr, "—");
 
             return `
               <tr>
                 <td class="mono">${rank}</td>
                 <td class="left" title="${name}">${name}</td>
-                <td class="mono bold">${starsWithBonus}</td>
-                <td class="mono">${wins}</td>
-                <td class="mono">${bonus}</td>
-                <td class="mono">${destr}</td>
+                <td class="mono bold">${starsPlusBonus === null ? "—" : fmtNum(starsPlusBonus, "—")}</td>
+                <td class="mono">${fmtNum(wins, "0")}</td>
+                <td class="mono">${destrOut}</td>
               </tr>
             `;
           }).join("");
@@ -2449,46 +2607,113 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-          memberBody.innerHTML = members.map(m => {
-            const avgRk = (m.avgRankAttacked === null || m.avgRankAttacked === undefined) ? "—" : fmt2(m.avgRankAttacked, "—");
-            const nm = escapeHtml(m.name || "—");
-            const totStars = fmtNum(m.totalStars, "0");
-            const totDes = fmtNum(m.totalDestruction, "0");
-            const atkMade = fmtNum(m.attacksMade, "0");
-            const atkPossible = fmtNum(m.attacksPossible, "0");
-            const atkFrac = `${atkMade}/${atkPossible}`;
-            const avgStars = (m.avgStars === null || m.avgStars === undefined) ? "—" : fmt2(m.avgStars, "—");
-            const avgDes = (m.avgDestruction === null || m.avgDestruction === undefined) ? "—" : fmt2(m.avgDestruction, "—");
+          // ✅ Sort
+          const sorted = members.slice().sort((a,b)=>{
+            const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
+            const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
 
+            const aTotalStars = Number(a?.totalStars ?? 0);
+            const bTotalStars = Number(b?.totalStars ?? 0);
+
+            const aTotalPct = Number(a?.totalDestruction ?? a?.totalPct ?? a?.totalPercent ?? 0);
+            const bTotalPct = Number(b?.totalDestruction ?? b?.totalPct ?? b?.totalPercent ?? 0);
+
+            const aAvgStars = Number(a?.avgStars ?? 0);
+            const bAvgStars = Number(b?.avgStars ?? 0);
+
+            const aAvgPct = Number(a?.avgDestruction ?? a?.avgPct ?? a?.avgPercent ?? 0);
+            const bAvgPct = Number(b?.avgDestruction ?? b?.avgPct ?? b?.avgPercent ?? 0);
+
+            if(cwlMembersSortMode === "rank"){
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return String(a?.name||"").localeCompare(String(b?.name||""));
+            }
+            if(cwlMembersSortMode === "totalStars"){
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return String(a?.name||"").localeCompare(String(b?.name||""));
+            }
+            if(cwlMembersSortMode === "totalPct"){
+              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return String(a?.name||"").localeCompare(String(b?.name||""));
+            }
+            if(cwlMembersSortMode === "avgStars"){
+              if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return String(a?.name||"").localeCompare(String(b?.name||""));
+            }
+            if(cwlMembersSortMode === "avgPct"){
+              if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return String(a?.name||"").localeCompare(String(b?.name||""));
+            }
+
+            if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+            return String(a?.name||"").localeCompare(String(b?.name||""));
+          });
+
+          memberBody.innerHTML = sorted.map(m => {
+            // ✅ decimals to tenth
+            const avgRkVal = pickNum(m, ["avgRankAttacked","avgRank","avg_rank_attacked","avg_rank"]);
+            const avgRk = (avgRkVal === null) ? "—" : fmt1(avgRkVal, "—");
+
+            const nm = escapeHtml(m.name || "—");
+
+            const totStars = pickNum(m, ["totalStars","starsTotal","total_stars"]) ?? 0;
+            const totDes = pickNum(m, ["totalDestruction","totalPct","totalPercent","total_destruction"]) ?? 0;
+
+            const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
+            // ✅ CWL is 7 days/7 attacks possible
+            const atkFrac = `${fmtNum(atkMade,"0")}/7`;
+
+            const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]) ;
+            const avgStars = (avgStarsVal === null) ? "—" : fmt1(avgStarsVal, "—");
+
+            const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
+            const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
+
+            // days normalization
             const days = Array.isArray(m.days) ? m.days : [];
-            // normalize to 7 days
+
             const byDay = new Map();
-            for(const d of days){
+            for(let idx=0; idx<days.length; idx++){
+              const d = days[idx];
               if(!d) continue;
-              const dayNum = Number(d.day);
-              if(isFinite(dayNum)) byDay.set(dayNum, d);
+              const dayNum = toDayNumber(d, idx);
+              if(dayNum && dayNum >= 1 && dayNum <= 7 && !byDay.has(dayNum)){
+                byDay.set(dayNum, d);
+              }
             }
 
             const dayCells = [];
             for(let i=1;i<=7;i++){
               const d = byDay.get(i) || null;
-              const opp = escapeHtml(d?.defender || "—");
-              const s = (d?.stars === null || d?.stars === undefined) ? "—" : fmtNum(d.stars, "—");
-              const p = (d?.destruction === null || d?.destruction === undefined) ? "—" : fmtNum(d.destruction, "—");
-              dayCells.push(`<td class="left mono" title="${opp}">${opp}</td>`);
+              const opp = escapeHtml(d?.defender || d?.opponent || d?.target || "—");
+
+              const sVal = (d?.stars === null || d?.stars === undefined) ? null : Number(d.stars);
+              const pVal = (d?.destruction === null || d?.destruction === undefined) ? null : Number(d.destruction);
+
+              const s = (sVal === null || !isFinite(sVal)) ? "—" : fmtNum(sVal, "—");
+              const p = (pVal === null || !isFinite(pVal)) ? "—" : fmt1(pVal, "—");
+
+              const startCls = "cwl-day-start";
+              const endCls = "cwl-day-end";
+
+              dayCells.push(`<td class="left mono ${startCls}" title="${opp}">${opp}</td>`);
               dayCells.push(`<td class="mono">${s}</td>`);
-              dayCells.push(`<td class="mono">${p}</td>`);
+              dayCells.push(`<td class="mono ${endCls}">${p}</td>`);
             }
 
             return `
               <tr>
                 <td class="sticky-1 mono">${avgRk}</td>
                 <td class="sticky-2 left" title="${nm}">${nm}</td>
-                <td class="mono bold">${totStars}</td>
-                <td class="mono">${totDes}</td>
+                <td class="mono bold">${fmtNum(totStars, "0")}</td>
+                <td class="mono">${fmt1(totDes, "0.0")}</td>
                 <td class="mono">${escapeHtml(atkFrac)}</td>
                 <td class="mono">${avgStars}</td>
-                <td class="mono">${avgDes}</td>
+                <td class="mono cwl-general-sep">${avgDes}</td>
                 ${dayCells.join("")}
               </tr>
             `;
@@ -2535,21 +2760,17 @@
     function startCwlLoop(){
       clearIntervals(cwlIntervals);
 
-      // always fetch clan stats (for the footer status line)
+      // ✅ default CWL member sort to Rank on page entry
+      cwlMembersSortMode = "rank";
+
       fetchClanStats();
-
-      // build/select seasons
       fetchCwlIndex();
-
-      // always keep current updating in background
       fetchCwlCurrent();
 
-      // refresh cadence
       cwlIntervals.push(setInterval(fetchClanStats, 15000));
       cwlIntervals.push(setInterval(fetchCwlCurrent, 5000));
       cwlIntervals.push(setInterval(fetchCwlIndex, 60000));
 
-      // If user last selected a historical season, load it once
       if(cwlSelected && cwlSelected !== "current"){
         fetchCwlHistory(cwlSelected);
       } else {
