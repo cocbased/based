@@ -565,6 +565,140 @@
     }
     .pwa-tabbar a .label{ font-size: 11px; line-height: 1; opacity: 0.95; transform: translateY(-2px); font-weight: 500; }
     .pwa-tabbar a.active{ opacity: 1; }
+
+    /* =========================
+       ✅ CWL (NEW)
+       ========================= */
+    .cwl-headerbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin: 6px 0 6px;
+    }
+    .cwl-headerbar .left{
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.85;
+      white-space:nowrap;
+    }
+    .cwl-pill{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 140px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.06);
+      color:#fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      white-space:nowrap;
+    }
+    .cwl-pill select{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      opacity:0;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .cwl-pill select option{ background:#0b1829; color:#fff; }
+
+    .cwl-table-wrap{
+      width:100%;
+      overflow-x:auto;
+      overflow-y:visible;
+      -webkit-overflow-scrolling: touch;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+    }
+    .cwl-table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size:12.5px;
+      table-layout: fixed;
+    }
+    .cwl-table thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #0b1829;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 10px;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.85;
+      white-space: nowrap;
+      text-align:center;
+    }
+    .cwl-table tbody td{
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align:center;
+      font-family: monospace;
+    }
+    .cwl-table tbody tr:last-child td{ border-bottom:none; }
+
+    .cwl-table .left{ text-align:left; font-family: inherit; }
+    .cwl-table .right{ text-align:right; }
+    .cwl-table .mono{ font-family: monospace; }
+    .cwl-table .bold{ font-weight:900; }
+    .cwl-table .muted{ opacity:.70; }
+
+    .cwl-wide{ min-width: 1220px; }
+    .cwl-league{ min-width: 640px; }
+
+    .cwl-table th.sticky-1,
+    .cwl-table td.sticky-1{
+      position: sticky;
+      left: 0;
+      z-index: 7;
+      background: #0b1829;
+      text-align:center;
+      font-family: monospace;
+    }
+    .cwl-table th.sticky-2,
+    .cwl-table td.sticky-2{
+      position: sticky;
+      left: 64px;
+      z-index: 6;
+      background: #0b1829;
+      text-align:left;
+      font-family: inherit;
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    .cwl-table thead th.sticky-1{ z-index: 9; }
+    .cwl-table thead th.sticky-2{ z-index: 8; }
+
+    .cwl-dayhead{
+      background: rgba(255,255,255,0.03);
+      border-left: 1px solid rgba(255,255,255,0.08);
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .cwl-note{
+      opacity:.75;
+      font-size:13px;
+      text-align:center;
+      padding: 6px 0 2px;
+    }
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -612,7 +746,6 @@
       try{
         if(localStorage.getItem(KEY) === "1") return;
 
-        // Clear CacheStorage
         if("caches" in window){
           try{
             const keys = await caches.keys();
@@ -620,7 +753,6 @@
           }catch(e){}
         }
 
-        // Unregister SW
         if("serviceWorker" in navigator){
           try{
             const regs = await navigator.serviceWorker.getRegistrations();
@@ -629,7 +761,6 @@
         }
 
         localStorage.setItem(KEY, "1");
-        // Hard reload
         location.reload();
       }catch(e){}
     })();
@@ -990,7 +1121,6 @@
             </table>
           </div>
 
-          <!-- ✅ NEW: show whether JSON is actually changing -->
           <div id="clan-fetch-status" class="tiny-status">Clan stats fetch: —</div>
           <div id="members-fetch-status" class="tiny-status">Members fetch: —</div>
         </div>
@@ -1000,17 +1130,118 @@
     function renderCwlPage(){
       return `
         <div class="cards">
-          <h2 class="cards-title">CWL</h2>
+          <h2 class="cards-title" id="cwl-title">CWL</h2>
 
-          <div class="row"><span class="row-label">CWL League</span><span id="cwl-league-cwlpage" class="row-value">Loading…</span></div>
-          <div class="row"><span class="row-label">Last CWL Finish</span><span id="cwl-finish-cwlpage" class="row-value">Loading…</span></div>
+          <div class="cwl-headerbar">
+            <div class="left">Season</div>
+            <div class="cwl-pill">
+              <span id="cwl-season-label">CURRENT</span>
+              <select id="cwlSeasonSelect" aria-label="Select CWL season">
+                <option value="current">Current</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row"><span class="row-label">League</span><span id="cwl-league-name" class="row-value">Loading…</span></div>
+          <div class="row"><span class="row-label">Status</span><span id="cwl-state" class="row-value">Loading…</span></div>
 
           <div class="divider"></div>
 
-          <div style="opacity:.75; font-size:13px; text-align:center; padding:6px 0 2px;">
-            More CWL details coming soon.
+          <div class="section-title">League Overview</div>
+          <div class="cwl-table-wrap dragscroll" aria-label="CWL league overview">
+            <table class="cwl-table cwl-league">
+              <colgroup>
+                <col style="width:64px;">
+                <col style="width:260px;">
+                <col style="width:120px;">
+                <col style="width:90px;">
+                <col style="width:110px;">
+                <col style="width:140px;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th class="left">Clan</th>
+                  <th>Stars+Bonus</th>
+                  <th>Wins</th>
+                  <th>Bonus</th>
+                  <th>Destruction</th>
+                </tr>
+              </thead>
+              <tbody id="cwl-leagueoverview-body">
+                <tr><td colspan="6" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+              </tbody>
+            </table>
           </div>
 
+          <div class="divider"></div>
+
+          <div class="section-title">Member Overview</div>
+          <div id="cwl-member-note" class="cwl-note">Scroll → for war days</div>
+
+          <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
+            <table class="cwl-table cwl-wide">
+              <colgroup>
+                <col style="width:64px;">
+                <col style="width:220px;">
+                <col style="width:86px;">
+                <col style="width:110px;">
+                <col style="width:96px;">
+                <col style="width:92px;">
+                <col style="width:92px;">
+                <!-- Day blocks -->
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:220px;"><col style="width:70px;"><col style="width:80px;">
+              </colgroup>
+              <thead id="cwl-members-head">
+                <tr>
+                  <th class="sticky-1">Avg Rk</th>
+                  <th class="sticky-2">Name</th>
+                  <th>Total★</th>
+                  <th>Total%</th>
+                  <th>Atk</th>
+                  <th>Avg★</th>
+                  <th>Avg%</th>
+
+                  <th class="cwl-dayhead" colspan="3">Day 1</th>
+                  <th class="cwl-dayhead" colspan="3">Day 2</th>
+                  <th class="cwl-dayhead" colspan="3">Day 3</th>
+                  <th class="cwl-dayhead" colspan="3">Day 4</th>
+                  <th class="cwl-dayhead" colspan="3">Day 5</th>
+                  <th class="cwl-dayhead" colspan="3">Day 6</th>
+                  <th class="cwl-dayhead" colspan="3">Day 7</th>
+                </tr>
+                <tr>
+                  <th class="sticky-1 muted">—</th>
+                  <th class="sticky-2 muted">—</th>
+                  <th class="muted">—</th>
+                  <th class="muted">—</th>
+                  <th class="muted">—</th>
+                  <th class="muted">—</th>
+                  <th class="muted">—</th>
+
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                  <th class="left muted">Opp</th><th class="muted">★</th><th class="muted">%</th>
+                </tr>
+              </thead>
+              <tbody id="cwl-memberoverview-body">
+                <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="cwl-fetch-status" class="tiny-status">CWL fetch: —</div>
+          <div id="cwl-index-status" class="tiny-status">CWL index fetch: —</div>
           <div id="clan-fetch-status-cwl" class="tiny-status">Clan stats fetch: —</div>
         </div>
       `;
@@ -1084,13 +1315,20 @@
     const RAW_CLAN_URL_BASE       = "./clan_stats.json";
     const RAW_MEMBERS_URL_BASE    = "./members.json";
 
+    // ✅ NEW: CWL endpoints
+    const RAW_CWL_CURRENT_URL_BASE = "./cwl_current.json";
+    const RAW_CWL_INDEX_URL_BASE   = "./cwl_index.json";
+
     // ✅ Fallbacks (often update faster than GitHub Pages CDN)
-    // If your repo/branch differs, it’ll just fail silently and keep using Pages.
     const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/cocbased/based/main/";
-    const RAW_WAR_FALLBACK        = RAW_FALLBACK_BASE + "war.json";
-    const RAW_WAR_DETAIL_FALLBACK = RAW_FALLBACK_BASE + "war_detail.json";
-    const RAW_CLAN_FALLBACK       = RAW_FALLBACK_BASE + "clan_stats.json";
-    const RAW_MEMBERS_FALLBACK    = RAW_FALLBACK_BASE + "members.json";
+    const RAW_WAR_FALLBACK         = RAW_FALLBACK_BASE + "war.json";
+    const RAW_WAR_DETAIL_FALLBACK  = RAW_FALLBACK_BASE + "war_detail.json";
+    const RAW_CLAN_FALLBACK        = RAW_FALLBACK_BASE + "clan_stats.json";
+    const RAW_MEMBERS_FALLBACK     = RAW_FALLBACK_BASE + "members.json";
+
+    // ✅ NEW: CWL fallbacks
+    const RAW_CWL_CURRENT_FALLBACK = RAW_FALLBACK_BASE + "cwl_current.json";
+    const RAW_CWL_INDEX_FALLBACK   = RAW_FALLBACK_BASE + "cwl_index.json";
 
     // =========================
     // State + intervals
@@ -1098,6 +1336,7 @@
     let homeIntervals = [];
     let warIntervals  = [];
     let moreIntervals = [];
+    let cwlIntervals  = [];
     function clearIntervals(arr){ arr.forEach(id => clearInterval(id)); arr.length = 0; }
 
     let warData = null;
@@ -1112,6 +1351,13 @@
     let clanStats = null;
     let membersData = null;
     let membersSortMode = "role";
+
+    // ✅ CWL state
+    const CWL_SELECTED_KEY = "based_cwl_selected_season";
+    let cwlIndex = null;
+    let cwlCurrent = null;
+    let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current"); // "current" or "YYYY-MM"
+    let cwlSelectedPayload = null; // currently displayed payload (current or history)
 
     // =========================
     // Utilities
@@ -1295,10 +1541,8 @@
     }
 
     async function fetchJsonSmart(pagesUrl, rawFallbackUrl, stateKey){
-      // Primary: GitHub Pages
       const primary = await fetchJsonWithMeta(pagesUrl, stateKey || pagesUrl);
 
-      // If Pages is repeatedly unchanged, try raw fallback once in a while
       if(rawFallbackUrl){
         const st = endpointState.get(stateKey || pagesUrl);
         const shouldTryFallback = primary.meta.unchanged && st && st.unchangedStreak >= 3;
@@ -1306,14 +1550,11 @@
         if(shouldTryFallback){
           try{
             const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
-            // If raw differs, use it (this is the real-world “Pages CDN is stale” fix)
             if(fb.meta.hash !== primary.meta.hash){
               fb.meta.via = "raw";
               return fb;
             }
-          }catch(e){
-            // ignore fallback errors
-          }
+          }catch(e){}
         }
       }
 
@@ -1366,7 +1607,7 @@
     }
 
     // =========================
-    // ✅ More tolerant schema helpers (so UI doesn't "freeze" if backend changed)
+    // ✅ More tolerant schema helpers
     // =========================
     function pick(obj, keys){
       for(const k of keys){
@@ -1406,7 +1647,6 @@
         pickNum(capital, ["capitalHallLevel","hallLevel","capital_hall_level"]) ??
         pickNum(raw, ["capitalHallLevel","capitalHall","capital_hall_level"]);
 
-      // War stats could be nested or flattened
       const war =
         pickObj(raw, ["war","warStats","war_stats","warRecord","war_record"]) || {};
 
@@ -1465,6 +1705,58 @@
         setTextAny(["clan-fetch-status","clan-fetch-status-war","clan-fetch-status-cwl"], line);
       }
       renderClanStats();
+    }
+
+    // =========================
+    // ✅ CWL fetchers (NEW)
+    // =========================
+    async function fetchCwlIndex(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
+        cwlIndex = data;
+        setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
+      }catch(e){
+        cwlIndex = null;
+        setText("cwl-index-status", `CWL index fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      renderCwlSeasonSelect();
+    }
+
+    async function fetchCwlCurrent(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_CURRENT_URL_BASE, RAW_CWL_CURRENT_FALLBACK, "cwl_current.json");
+        cwlCurrent = data;
+        setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+      }catch(e){
+        cwlCurrent = null;
+        setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+
+      // If viewing "current", render from this payload.
+      if(cwlSelected === "current"){
+        cwlSelectedPayload = cwlCurrent;
+        renderCwlContent();
+      } else {
+        // Keep dropdown label/title up-to-date, but do not override history view.
+        renderCwlSeasonSelect();
+      }
+    }
+
+    async function fetchCwlHistory(seasonKey){
+      if(!seasonKey || seasonKey === "current") return;
+
+      const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
+      const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
+
+      try{
+        const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}`);
+        cwlSelectedPayload = data;
+        setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+      }catch(e){
+        cwlSelectedPayload = null;
+        setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      renderCwlContent();
     }
 
     // =========================
@@ -1617,7 +1909,7 @@
       const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
       ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      oppMembers.sort((a,b)=>(Number(b.mapPosition)||9999)-(Number(a.mapPosition)||9999)); // doesn't matter, but keep stable
 
       function buildLookup(members){
         const byTag = new Map();
@@ -1828,7 +2120,6 @@
 
       ensureSortDropdownBound();
 
-      // Accept multiple shapes: {members:[...]}, {items:[...]}, or [...]
       let list = null;
       if(membersData){
         if(Array.isArray(membersData.members)) list = membersData.members;
@@ -1944,8 +2235,6 @@
       const cwlFinish = clanStats?.cwl?.lastFinish || "—";
       setText("cwl-league", cwlLeague);
       setText("cwl-finish", cwlFinish);
-      setText("cwl-league-cwlpage", cwlLeague);
-      setText("cwl-finish-cwlpage", cwlFinish);
 
       const hall = clanStats?.clanCapital?.capitalHallLevel;
       setText("capital-hall-level", (typeof hall === "number") ? String(hall) : "—");
@@ -2015,6 +2304,261 @@
     }
 
     // =========================
+    // ✅ CWL render (NEW)
+    // =========================
+    function ensureCwlSelectBound(){
+      const sel = document.getElementById("cwlSeasonSelect");
+      if(!sel) return;
+      if(sel.dataset.bound === "1") return;
+
+      sel.addEventListener("change", async () => {
+        const v = sel.value || "current";
+        cwlSelected = v;
+        try{ localStorage.setItem(CWL_SELECTED_KEY, cwlSelected); }catch(e){}
+
+        setText("cwl-season-label", (v === "current") ? "CURRENT" : v);
+
+        if(v === "current"){
+          cwlSelectedPayload = cwlCurrent;
+          renderCwlContent();
+        } else {
+          await fetchCwlHistory(v);
+        }
+      });
+
+      sel.dataset.bound = "1";
+    }
+
+    function renderCwlSeasonSelect(){
+      const sel = document.getElementById("cwlSeasonSelect");
+      if(!sel) return;
+
+      ensureCwlSelectBound();
+
+      const seasons = Array.isArray(cwlIndex?.seasons) ? cwlIndex.seasons : [];
+      const opts = [];
+      opts.push({ value:"current", label:"Current" });
+
+      for(const s of seasons){
+        if(!s || typeof s !== "object") continue;
+        const key = String(s.seasonKey || "").trim();
+        const title = String(s.title || key || "").trim();
+        if(!key) continue;
+        opts.push({ value:key, label:title });
+      }
+
+      // de-dupe by value
+      const seen = new Set();
+      const finalOpts = [];
+      for(const o of opts){
+        if(seen.has(o.value)) continue;
+        seen.add(o.value);
+        finalOpts.push(o);
+      }
+
+      sel.innerHTML = finalOpts.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join("");
+
+      // Keep selection if possible
+      const wanted = cwlSelected || "current";
+      const hasWanted = finalOpts.some(o => o.value === wanted);
+      sel.value = hasWanted ? wanted : "current";
+
+      setText("cwl-season-label", (sel.value === "current") ? "CURRENT" : sel.value);
+
+      // If we're on CWL page and selection is current, ensure view payload is current.
+      if(document.getElementById("cwl-title")){
+        if(sel.value === "current"){
+          cwlSelectedPayload = cwlCurrent;
+          renderCwlContent();
+        }
+      }
+    }
+
+    function fmtNum(n, fallback="—"){
+      if(n === null || n === undefined || n === "") return fallback;
+      const x = Number(n);
+      return isFinite(x) ? String(x) : fallback;
+    }
+    function fmtPct(n, fallback="—"){
+      if(n === null || n === undefined || n === "") return fallback;
+      const x = Number(n);
+      return isFinite(x) ? `${x}%` : fallback;
+    }
+    function fmt2(n, fallback="—"){
+      if(n === null || n === undefined || n === "") return fallback;
+      const x = Number(n);
+      return isFinite(x) ? x.toFixed(2) : fallback;
+    }
+
+    function renderCwlContent(){
+      // only render if CWL page exists
+      if(!document.getElementById("cwl-title")) return;
+
+      const payload = cwlSelectedPayload || (cwlSelected === "current" ? cwlCurrent : null);
+
+      // title/league/state
+      const title = payload?.title || "CWL";
+      setText("cwl-title", title);
+
+      const leagueName = payload?.leagueName || "—";
+      setText("cwl-league-name", leagueName);
+
+      const state = payload?.state || (cwlSelected === "current" ? "loading" : "—");
+      const stateNice =
+        state === "active" ? "ACTIVE" :
+        state === "ended" ? "ENDED" :
+        state === "notInCwl" ? "NOT IN CWL" :
+        state === "error" ? "ERROR" :
+        "LOADING";
+      setText("cwl-state", stateNice);
+
+      // League overview
+      const leagueBody = document.getElementById("cwl-leagueoverview-body");
+      if(leagueBody){
+        const rows = Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : [];
+        if(!rows.length){
+          leagueBody.innerHTML = `<tr><td colspan="6" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
+        } else {
+          leagueBody.innerHTML = rows.map(r => {
+            const rank = fmtNum(r.rank, "—");
+            const name = escapeHtml(r.name || "—");
+            const starsWithBonus = fmtNum(r.starsWithBonus, "—");
+            const wins = fmtNum(r.wins, "0");
+            const bonus = fmtNum(r.bonusStars, "0");
+            const destr = fmt2(r.destructionTotal, "—");
+
+            return `
+              <tr>
+                <td class="mono">${rank}</td>
+                <td class="left" title="${name}">${name}</td>
+                <td class="mono bold">${starsWithBonus}</td>
+                <td class="mono">${wins}</td>
+                <td class="mono">${bonus}</td>
+                <td class="mono">${destr}</td>
+              </tr>
+            `;
+          }).join("");
+        }
+      }
+
+      // Member overview
+      const memberBody = document.getElementById("cwl-memberoverview-body");
+      if(memberBody){
+        const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
+        if(!members.length){
+          const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
+          memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
+        } else {
+          memberBody.innerHTML = members.map(m => {
+            const avgRk = (m.avgRankAttacked === null || m.avgRankAttacked === undefined) ? "—" : fmt2(m.avgRankAttacked, "—");
+            const nm = escapeHtml(m.name || "—");
+            const totStars = fmtNum(m.totalStars, "0");
+            const totDes = fmtNum(m.totalDestruction, "0");
+            const atkMade = fmtNum(m.attacksMade, "0");
+            const atkPossible = fmtNum(m.attacksPossible, "0");
+            const atkFrac = `${atkMade}/${atkPossible}`;
+            const avgStars = (m.avgStars === null || m.avgStars === undefined) ? "—" : fmt2(m.avgStars, "—");
+            const avgDes = (m.avgDestruction === null || m.avgDestruction === undefined) ? "—" : fmt2(m.avgDestruction, "—");
+
+            const days = Array.isArray(m.days) ? m.days : [];
+            // normalize to 7 days
+            const byDay = new Map();
+            for(const d of days){
+              if(!d) continue;
+              const dayNum = Number(d.day);
+              if(isFinite(dayNum)) byDay.set(dayNum, d);
+            }
+
+            const dayCells = [];
+            for(let i=1;i<=7;i++){
+              const d = byDay.get(i) || null;
+              const opp = escapeHtml(d?.defender || "—");
+              const s = (d?.stars === null || d?.stars === undefined) ? "—" : fmtNum(d.stars, "—");
+              const p = (d?.destruction === null || d?.destruction === undefined) ? "—" : fmtNum(d.destruction, "—");
+              dayCells.push(`<td class="left mono" title="${opp}">${opp}</td>`);
+              dayCells.push(`<td class="mono">${s}</td>`);
+              dayCells.push(`<td class="mono">${p}</td>`);
+            }
+
+            return `
+              <tr>
+                <td class="sticky-1 mono">${avgRk}</td>
+                <td class="sticky-2 left" title="${nm}">${nm}</td>
+                <td class="mono bold">${totStars}</td>
+                <td class="mono">${totDes}</td>
+                <td class="mono">${escapeHtml(atkFrac)}</td>
+                <td class="mono">${avgStars}</td>
+                <td class="mono">${avgDes}</td>
+                ${dayCells.join("")}
+              </tr>
+            `;
+          }).join("");
+        }
+      }
+
+      enableDragScrollEverywhere();
+    }
+
+    // =========================
+    // Loops per route
+    // =========================
+    function startHomeLoop(){
+      clearIntervals(homeIntervals);
+      membersSortMode = "role";
+      fetchClanStats();
+      fetchMembersData();
+      homeIntervals.push(setInterval(fetchClanStats, 5000));
+      homeIntervals.push(setInterval(fetchMembersData, 10000));
+    }
+
+    function startWarLoop(){
+      clearIntervals(warIntervals);
+      warFetched = false;
+      warDetailFetched = false;
+
+      fetchClanStats();
+      fetchWarData();
+      fetchWarDetail();
+
+      warIntervals.push(setInterval(fetchClanStats, 5000));
+      warIntervals.push(setInterval(fetchWarData, 5000));
+      warIntervals.push(setInterval(fetchWarDetail, 5000));
+      warIntervals.push(setInterval(renderWarSection, 1000));
+    }
+
+    function startMoreLoop(){
+      clearIntervals(moreIntervals);
+      updateRecurringTimers();
+      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
+    }
+
+    function startCwlLoop(){
+      clearIntervals(cwlIntervals);
+
+      // always fetch clan stats (for the footer status line)
+      fetchClanStats();
+
+      // build/select seasons
+      fetchCwlIndex();
+
+      // always keep current updating in background
+      fetchCwlCurrent();
+
+      // refresh cadence
+      cwlIntervals.push(setInterval(fetchClanStats, 15000));
+      cwlIntervals.push(setInterval(fetchCwlCurrent, 5000));
+      cwlIntervals.push(setInterval(fetchCwlIndex, 60000));
+
+      // If user last selected a historical season, load it once
+      if(cwlSelected && cwlSelected !== "current"){
+        fetchCwlHistory(cwlSelected);
+      } else {
+        cwlSelectedPayload = cwlCurrent;
+        renderCwlContent();
+      }
+    }
+
+    // =========================
     // More page timers
     // =========================
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
@@ -2064,39 +2608,6 @@
     }
 
     // =========================
-    // Loops per route
-    // =========================
-    function startHomeLoop(){
-      clearIntervals(homeIntervals);
-      membersSortMode = "role";
-      fetchClanStats();
-      fetchMembersData();
-      homeIntervals.push(setInterval(fetchClanStats, 5000));
-      homeIntervals.push(setInterval(fetchMembersData, 10000));
-    }
-
-    function startWarLoop(){
-      clearIntervals(warIntervals);
-      warFetched = false;
-      warDetailFetched = false;
-
-      fetchClanStats();
-      fetchWarData();
-      fetchWarDetail();
-
-      warIntervals.push(setInterval(fetchClanStats, 5000));
-      warIntervals.push(setInterval(fetchWarData, 5000));
-      warIntervals.push(setInterval(fetchWarDetail, 5000));
-      warIntervals.push(setInterval(renderWarSection, 1000));
-    }
-
-    function startMoreLoop(){
-      clearIntervals(moreIntervals);
-      updateRecurringTimers();
-      moreIntervals.push(setInterval(updateRecurringTimers, 1000));
-    }
-
-    // =========================
     // Router
     // =========================
     function setDocTitle(route){
@@ -2121,6 +2632,7 @@
       clearIntervals(homeIntervals);
       clearIntervals(warIntervals);
       clearIntervals(moreIntervals);
+      clearIntervals(cwlIntervals);
 
       app.innerHTML = renderRouteContent(route);
 
@@ -2129,10 +2641,7 @@
       if(route === "home") startHomeLoop();
       if(route === "war")  startWarLoop();
       if(route === "more") startMoreLoop();
-      if(route === "cwl"){
-        fetchClanStats();
-        homeIntervals.push(setInterval(fetchClanStats, 5000));
-      }
+      if(route === "cwl")  startCwlLoop();
 
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
