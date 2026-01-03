@@ -1147,7 +1147,7 @@
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:280px;">
+                <col style="width:112px;"> <!-- ✅ Clan col = 40% of 280px -->
                 <col style="width:120px;">
                 <col style="width:90px;">
                 <col style="width:140px;">
@@ -1193,7 +1193,7 @@
             <table class="cwl-table cwl-wide">
               <colgroup>
                 <col style="width:64px;">
-                <col style="width:220px;">
+                <col style="width:88px;"> <!-- ✅ Name col = 40% of 220px -->
                 <col style="width:86px;">
                 <col style="width:110px;">
                 <col style="width:96px;">
@@ -1614,56 +1614,15 @@
       return null;
     }
 
-    // ✅ Day mapping fix: if the feed's day numbers are unreliable (ex: first entry says "4"),
-    // we ignore them and map strictly by array index (Day1 = days[0], Day2 = days[1], ...).
-    function parseDayCandidate(d){
-      const candidates = [d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex];
-      for(const c of candidates){
-        if(c === null || c === undefined || c === "") continue;
-        const cleaned = String(c).trim();
-        const n = Number(cleaned.replace(/[^\d-]/g,""));
-        if(!isFinite(n)) continue;
-        if(n >= 1 && n <= 7) return n;
-        if(n >= 0 && n <= 6) return n + 1; // 0-based -> 1-based
-      }
-      return null;
-    }
-
+    // ✅ HARD FIX:
+    // Never trust payload day numbers (they can be wrong / shifted).
+    // Always map by array order: days[0]=Day1, days[1]=Day2, ...
     function buildDayMap(days){
       const arr = Array.isArray(days) ? days.slice(0, 7) : [];
-      const parsed = arr.map(parseDayCandidate);
-      const valid = parsed.filter(n => n && n >= 1 && n <= 7);
-
-      const unique = new Set(valid);
-      const allNonNullDaysCount = arr.filter(Boolean).length;
-
-      // "Trust" the day field only if:
-      // - every non-null entry produced a valid 1..7
-      // - no duplicates
-      // - includes Day 1
-      const looksValid =
-        (valid.length === allNonNullDaysCount) &&
-        (unique.size === valid.length) &&
-        unique.has(1);
-
       const byDay = new Map();
-
-      if(looksValid){
-        for(let i=0;i<arr.length;i++){
-          const d = arr[i];
-          const dayNum = parsed[i];
-          if(!d || !dayNum) continue;
-          if(!byDay.has(dayNum)) byDay.set(dayNum, d);
-        }
-        return byDay;
-      }
-
-      // Fallback: STRICT array order -> fixes "Day 1 showing up in Day 4"
-      for(let i=0;i<arr.length;i++){
-        const d = arr[i];
-        const dayNum = i + 1;
-        if(!d) continue;
-        if(!byDay.has(dayNum)) byDay.set(dayNum, d);
+      for(let i=0; i<7; i++){
+        const d = arr[i] || null;
+        if(d) byDay.set(i + 1, d);
       }
       return byDay;
     }
