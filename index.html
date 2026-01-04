@@ -33,6 +33,10 @@
 
       --sep-strong: rgba(255,255,255,0.16);
       --sep-soft: rgba(255,255,255,0.10);
+
+      /* ✅ CWL "War" column tint (darker hue of same blue) */
+      --cwl-war-bg: rgba(7, 18, 33, 0.72);
+      --cwl-war-bg-soft: rgba(7, 18, 33, 0.52);
     }
 
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
@@ -748,11 +752,18 @@
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
 
-    .cwl-dayhead{
-      background: rgba(255,255,255,0.03);
-      border-left: 1px solid rgba(255,255,255,0.08);
-      border-right: 1px solid rgba(255,255,255,0.08);
+    /* ✅ War group headers + war column tint */
+    .cwl-warhead{
+      background: var(--cwl-war-bg) !important;
+      border-left: 1px solid rgba(255,255,255,0.10);
+      border-right: 1px solid rgba(255,255,255,0.10);
     }
+    .cwl-warcell{
+      background: var(--cwl-war-bg-soft);
+    }
+
+    /* (compat alias, in case anything still uses old class name) */
+    .cwl-dayhead{ background: var(--cwl-war-bg) !important; }
 
     .cwl-note{
       opacity:.75;
@@ -1307,9 +1318,10 @@
                 <col style="width:88px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
+                <!-- ✅ re-ordered: Avg★, Avg%, Atk (Atk moved AFTER Avg%) -->
+                <col style="width:92px;">
+                <col style="width:92px;">
                 <col style="width:96px;">
-                <col style="width:92px;">
-                <col style="width:92px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
@@ -1325,17 +1337,18 @@
                   <th class="sticky-2">Name</th>
                   <th>Total★</th>
                   <th>Total%</th>
-                  <th>Atk</th>
                   <th>Avg★</th>
-                  <th class="cwl-general-sep">Avg%</th>
+                  <th>Avg%</th>
+                  <th class="cwl-general-sep">Atk</th>
 
-                  <th class="cwl-dayhead" colspan="3">Day 1</th>
-                  <th class="cwl-dayhead" colspan="3">Day 2</th>
-                  <th class="cwl-dayhead" colspan="3">Day 3</th>
-                  <th class="cwl-dayhead" colspan="3">Day 4</th>
-                  <th class="cwl-dayhead" colspan="3">Day 5</th>
-                  <th class="cwl-dayhead" colspan="3">Day 6</th>
-                  <th class="cwl-dayhead" colspan="3">Day 7</th>
+                  <!-- ✅ renamed Day -> War -->
+                  <th class="cwl-warhead" colspan="3">War 1</th>
+                  <th class="cwl-warhead" colspan="3">War 2</th>
+                  <th class="cwl-warhead" colspan="3">War 3</th>
+                  <th class="cwl-warhead" colspan="3">War 4</th>
+                  <th class="cwl-warhead" colspan="3">War 5</th>
+                  <th class="cwl-warhead" colspan="3">War 6</th>
+                  <th class="cwl-warhead" colspan="3">War 7</th>
                 </tr>
 
                 <tr>
@@ -1347,13 +1360,13 @@
                   <th class="muted">&nbsp;</th>
                   <th class="muted cwl-general-sep">&nbsp;</th>
 
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
-                  <th class="left muted cwl-day-start">Opp</th><th class="muted">★</th><th class="muted cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
                 </tr>
               </thead>
 
@@ -2572,7 +2585,7 @@
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
-    // ✅ FIX #1: compute “day shift” so earliest day becomes Day 1 column
+    // ✅ compute “war shift” so earliest war becomes War 1 column
     function getRawCwlDayNum(d){
       if(!d || typeof d !== "object") return null;
       const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
@@ -2673,7 +2686,7 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-          // ✅ compute global shift once per payload
+          // ✅ compute global shift once per payload (ensures first war goes into War 1)
           const dayShift = computeCwlDayShiftFromMembers(members);
 
           const sorted = members.slice().sort((a,b)=>{
@@ -2730,16 +2743,18 @@
             const totStars = pickNum(m, ["totalStars","starsTotal","total_stars"]) ?? 0;
             const totDes = pickNum(m, ["totalDestruction","totalPct","totalPercent","total_destruction"]) ?? 0;
 
-            const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
-            const atkFrac = `${fmtNum(atkMade,"0")}/7`;
-
             const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]) ;
             const avgStars = (avgStarsVal === null) ? "—" : fmt1(avgStarsVal, "—");
 
             const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
             const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
 
+            const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
+
             const days = Array.isArray(m.days) ? m.days : [];
+            // ✅ ATK denominator = wars they were in (so missed attacks show as 4/5, etc.), not always /7
+            const warsIn = Math.min(7, days.length || 0);
+            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(warsIn,"0")}`;
 
             const byDay = new Map();
 
@@ -2747,13 +2762,13 @@
               const d = days[idx];
               if(!d) continue;
 
-              // raw day number from json (preferred)
+              // raw war number from json (preferred)
               let rawDay = getRawCwlDayNum(d);
 
               // fallback: use array order if json doesn't provide it
               if(rawDay == null && idx >= 0 && idx < 7) rawDay = idx + 1;
 
-              // ✅ normalize so earliest day becomes Day 1 column
+              // ✅ normalize so earliest war becomes War 1 column
               const dayNum = (rawDay != null) ? (rawDay - dayShift) : null;
 
               if(dayNum && dayNum >= 1 && dayNum <= 7 && !byDay.has(dayNum)){
@@ -2775,9 +2790,9 @@
               const startCls = "cwl-day-start";
               const endCls = "cwl-day-end";
 
-              dayCells.push(`<td class="left mono ${startCls}" title="${opp}">${opp}</td>`);
-              dayCells.push(`<td class="mono">${s}</td>`);
-              dayCells.push(`<td class="mono ${endCls}">${p}</td>`);
+              dayCells.push(`<td class="left mono cwl-warcell ${startCls}" title="${opp}">${opp}</td>`);
+              dayCells.push(`<td class="mono cwl-warcell">${s}</td>`);
+              dayCells.push(`<td class="mono cwl-warcell ${endCls}">${p}</td>`);
             }
 
             return `
@@ -2786,9 +2801,9 @@
                 <td class="sticky-2 left" title="${nm}">${nm}</td>
                 <td class="mono bold">${fmtNum(totStars, "0")}</td>
                 <td class="mono">${fmt1(totDes, "0.0")}</td>
-                <td class="mono">${escapeHtml(atkFrac)}</td>
                 <td class="mono">${avgStars}</td>
-                <td class="mono cwl-general-sep">${avgDes}</td>
+                <td class="mono">${avgDes}</td>
+                <td class="mono cwl-general-sep">${escapeHtml(atkFrac)}</td>
                 ${dayCells.join("")}
               </tr>
             `;
