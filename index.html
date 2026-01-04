@@ -803,8 +803,6 @@
     .cwl-day-end{
       border-right: 2px solid var(--sep-strong) !important;
     }
-
-    /* League Overview: keep compact, but show day-style separators not needed */
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -1260,9 +1258,7 @@
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
-                <!-- ✅ Clan column 40% of 280px => 112px -->
                 <col style="width:112px;">
-                <!-- ✅ tighter columns -->
                 <col style="width:90px;">
                 <col style="width:70px;">
                 <col style="width:110px;">
@@ -1271,7 +1267,6 @@
                 <tr>
                   <th>Rank</th>
                   <th class="left">Clan</th>
-                  <!-- ✅ remove “+Bonus” from title -->
                   <th>Stars</th>
                   <th>Wins</th>
                   <th>Destruction</th>
@@ -1309,15 +1304,12 @@
             <table class="cwl-table cwl-wide">
               <colgroup>
                 <col style="width:64px;">
-                <!-- ✅ Name column 40% of 220px => 88px -->
                 <col style="width:88px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
                 <col style="width:96px;">
                 <col style="width:92px;">
                 <col style="width:92px;">
-                <!-- Day blocks -->
-                <!-- ✅ OPP columns 40% of 220px => 88px (7x) -->
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
@@ -1980,7 +1972,7 @@
     }
 
     // =========================
-    // War chart (unchanged)
+    // War chart helpers
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -2017,6 +2009,54 @@
       return "";
     }
 
+    // ✅ FIX #2: canonicalize positions so display is always 1..teamSize
+    function canonicalizeWarPositions(members, teamSize){
+      const list = (Array.isArray(members) ? members.slice() : []);
+      const used = new Set();
+
+      // pass 1: keep valid unique positions
+      for(const m of list){
+        const raw = m?.mapPosition;
+        const pos = (raw === null || raw === undefined || raw === "") ? null : Number(raw);
+        if(pos && isFinite(pos) && pos >= 1 && pos <= teamSize && !used.has(pos)){
+          m.__pos = pos;
+          used.add(pos);
+        } else {
+          m.__pos = null;
+        }
+      }
+
+      // helper: next missing slot
+      let next = 1;
+      function nextSlot(){
+        while(next <= teamSize && used.has(next)) next++;
+        if(next <= teamSize){
+          used.add(next);
+          return next++;
+        }
+        return null;
+      }
+
+      // pass 2: fill gaps
+      for(const m of list){
+        if(m.__pos != null) continue;
+        m.__pos = nextSlot();
+      }
+
+      // stable sort by canonical pos, then name
+      list.sort((a,b)=>{
+        const ap = (a.__pos == null ? 999999 : a.__pos);
+        const bp = (b.__pos == null ? 999999 : b.__pos);
+        if(ap !== bp) return ap - bp;
+        return String(a?.name||"").localeCompare(String(b?.name||""));
+      });
+
+      return list;
+    }
+
+    // =========================
+    // War chart render
+    // =========================
     function renderWarChart(){
       const mount = document.getElementById("war-chart-mount");
       if(!mount) return;
@@ -2035,18 +2075,23 @@
       const our = warDetail.our || warDetail.clan || {};
       const opp = warDetail.opponent || {};
 
-      const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
-      const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
+      const teamSize =
+        Number(warDetail?.teamSize || our?.teamSize || opp?.teamSize || 0) ||
+        (Array.isArray(our?.members) ? our.members.length : 0) ||
+        0;
 
-      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
-      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      const ourMembersRaw = Array.isArray(our?.members) ? our.members : [];
+      const oppMembersRaw = Array.isArray(opp?.members) ? opp.members : [];
+
+      const ourMembers = canonicalizeWarPositions(ourMembersRaw, teamSize || ourMembersRaw.length || 0);
+      const oppMembers = canonicalizeWarPositions(oppMembersRaw, teamSize || oppMembersRaw.length || 0);
 
       function buildLookup(members){
         const byTag = new Map();
-        const byPos = new Map();
+        const byPos = new Map(); // canonical pos (1..teamSize)
         for(const m of (members||[])){
           const tag = m?.tag ? String(m.tag) : "";
-          const pos = (m?.mapPosition != null) ? Number(m.mapPosition) : null;
+          const pos = (m?.__pos != null) ? Number(m.__pos) : null;
           if(tag) byTag.set(tag, m);
           if(pos != null && isFinite(pos)) byPos.set(pos, m);
         }
@@ -2063,7 +2108,7 @@
 
         if(dTag && defenderSideLU?.byTag?.has(String(dTag))){
           const m = defenderSideLU.byTag.get(String(dTag));
-          const pos = (m?.mapPosition != null) ? m.mapPosition : (dPos != null ? dPos : "—");
+          const pos = (m?.__pos != null) ? m.__pos : (dPos != null ? dPos : "—");
           const nm  = m?.name || dName || "—";
           return `${pos}. ${nm}`;
         }
@@ -2081,7 +2126,8 @@
 
       function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
-        const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
+        const mp = (member?.__pos != null) ? member.__pos : "—";
+
         const atks = Array.isArray(member?.attacks) ? member.attacks : [];
         const a1 = atks[0] || null;
         const a2 = atks[1] || null;
@@ -2434,7 +2480,7 @@
     }
 
     // =========================
-    // CWL render
+    // CWL render helpers
     // =========================
     function ensureCwlSelectBound(){
       const sel = document.getElementById("cwlSeasonSelect");
@@ -2520,31 +2566,38 @@
       const x = Number(n);
       return isFinite(x) ? String(x) : fallback;
     }
-    function fmtPct(n, fallback="—"){
-      if(n === null || n === undefined || n === "") return fallback;
-      const x = Number(n);
-      return isFinite(x) ? `${x}%` : fallback;
-    }
-    // ✅ CWL decimals to tenth (NOT hundredth)
     function fmt1(n, fallback="—"){
       if(n === null || n === undefined || n === "") return fallback;
       const x = Number(n);
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
-    function toDayNumber(d, idx){
-      const candidates = [
-        d?.day, d?.dayNumber, d?.round, d?.warDay, d?.matchDay, d?.dayIndex
-      ];
+    // ✅ FIX #1: compute “day shift” so earliest day becomes Day 1 column
+    function getRawCwlDayNum(d){
+      if(!d || typeof d !== "object") return null;
+      const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
       for(const c of candidates){
         if(c === null || c === undefined || c === "") continue;
         const n = Number(String(c).replace(/[^\d-]/g,""));
-        if(isFinite(n)){
-          if(n >= 1 && n <= 7) return n;
-          if(n >= 0 && n <= 6) return n + 1;
+        if(!isFinite(n)) continue;
+        // accept 1..7 or 0..6
+        if(n >= 1 && n <= 7) return n;
+        if(n >= 0 && n <= 6) return n + 1;
+      }
+      return null;
+    }
+    function computeCwlDayShiftFromMembers(members){
+      const mins = [];
+      for(const m of (members||[])){
+        const days = Array.isArray(m?.days) ? m.days : [];
+        for(const d of days){
+          const raw = getRawCwlDayNum(d);
+          if(raw != null && raw >= 1 && raw <= 7) mins.push(raw);
         }
       }
-      return (idx >= 0 && idx < 7) ? (idx + 1) : null;
+      if(!mins.length) return 0;
+      const minDay = Math.min(...mins);
+      return (minDay > 1 && minDay <= 7) ? (minDay - 1) : 0;
     }
 
     function getStarsWithBonus(r){
@@ -2620,6 +2673,9 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
+          // ✅ compute global shift once per payload
+          const dayShift = computeCwlDayShiftFromMembers(members);
+
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
@@ -2686,10 +2742,20 @@
             const days = Array.isArray(m.days) ? m.days : [];
 
             const byDay = new Map();
+
             for(let idx=0; idx<days.length; idx++){
               const d = days[idx];
               if(!d) continue;
-              const dayNum = toDayNumber(d, idx);
+
+              // raw day number from json (preferred)
+              let rawDay = getRawCwlDayNum(d);
+
+              // fallback: use array order if json doesn't provide it
+              if(rawDay == null && idx >= 0 && idx < 7) rawDay = idx + 1;
+
+              // ✅ normalize so earliest day becomes Day 1 column
+              const dayNum = (rawDay != null) ? (rawDay - dayShift) : null;
+
               if(dayNum && dayNum >= 1 && dayNum <= 7 && !byDay.has(dayNum)){
                 byDay.set(dayNum, d);
               }
