@@ -1318,7 +1318,6 @@
                 <col style="width:88px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
-                <!-- ✅ re-ordered: Avg★, Avg%, Atk (Atk moved AFTER Avg%) -->
                 <col style="width:92px;">
                 <col style="width:92px;">
                 <col style="width:96px;">
@@ -1341,7 +1340,6 @@
                   <th>Avg%</th>
                   <th class="cwl-general-sep">Atk</th>
 
-                  <!-- ✅ renamed Day -> War -->
                   <th class="cwl-warhead" colspan="3">War 1</th>
                   <th class="cwl-warhead" colspan="3">War 2</th>
                   <th class="cwl-warhead" colspan="3">War 3</th>
@@ -2585,7 +2583,10 @@
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
-    // ✅ compute “war shift” so earliest war becomes War 1 column
+    // =========================
+    // ✅ CWL: WAR-BASED MAPPING HELPERS
+    // (NO "day shift" — maps actual CWL rounds your clan is on -> War 1..7)
+    // =========================
     function getRawCwlDayNum(d){
       if(!d || typeof d !== "object") return null;
       const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
@@ -2593,24 +2594,67 @@
         if(c === null || c === undefined || c === "") continue;
         const n = Number(String(c).replace(/[^\d-]/g,""));
         if(!isFinite(n)) continue;
-        // accept 1..7 or 0..6
         if(n >= 1 && n <= 7) return n;
         if(n >= 0 && n <= 6) return n + 1;
       }
       return null;
     }
-    function computeCwlDayShiftFromMembers(members){
-      const mins = [];
+
+    function isMeaningfulCwlEntry(d){
+      if(!d || typeof d !== "object") return false;
+
+      const opp = String(d.defender || d.opponent || d.target || "").trim();
+      const hasOpp = !!opp && opp !== "—";
+
+      const stars = (d.stars === null || d.stars === undefined) ? null : Number(d.stars);
+      const destr = (d.destruction === null || d.destruction === undefined) ? null : Number(d.destruction);
+
+      const hasStars = (stars !== null && isFinite(stars));
+      const hasDestr = (destr !== null && isFinite(destr));
+
+      return hasOpp || hasStars || hasDestr;
+    }
+
+    function getPayloadRawRound(payload){
+      if(!payload || typeof payload !== "object") return null;
+
+      const candidates = [
+        payload.currentRound,
+        payload.currentDay,
+        payload.currentWarDay,
+        payload.round,
+        payload.day,
+        payload.warDay,
+        payload.matchDay,
+        payload.dayIndex
+      ];
+
+      for(const c of candidates){
+        if(c === null || c === undefined || c === "") continue;
+        const n = Number(String(c).replace(/[^\d-]/g,""));
+        if(!isFinite(n)) continue;
+        if(n >= 1 && n <= 7) return n;
+        if(n >= 0 && n <= 6) return n + 1;
+      }
+      return null;
+    }
+
+    function buildWarOrdinalMapFromMembers(members){
+      const rawSet = new Set();
+
       for(const m of (members||[])){
         const days = Array.isArray(m?.days) ? m.days : [];
         for(const d of days){
+          if(!isMeaningfulCwlEntry(d)) continue;
           const raw = getRawCwlDayNum(d);
-          if(raw != null && raw >= 1 && raw <= 7) mins.push(raw);
+          if(raw != null && raw >= 1 && raw <= 7) rawSet.add(raw);
         }
       }
-      if(!mins.length) return 0;
-      const minDay = Math.min(...mins);
-      return (minDay > 1 && minDay <= 7) ? (minDay - 1) : 0;
+
+      const rawList = Array.from(rawSet).sort((a,b)=>a-b);
+      const map = new Map();
+      rawList.forEach((raw, i) => map.set(raw, i + 1)); // raw -> War#
+      return { map, rawList };
     }
 
     function getStarsWithBonus(r){
@@ -2686,8 +2730,15 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-          // ✅ compute global shift once per payload (ensures first war goes into War 1)
-          const dayShift = computeCwlDayShiftFromMembers(members);
+          // ✅ WAR-based mapping (actual war order for this season)
+          const { map: rawToWar, rawList: warsRawList } = buildWarOrdinalMapFromMembers(members);
+          const payloadRawRound = getPayloadRawRound(payload);
+
+          let warsStarted = warsRawList.length;
+          if(payloadRawRound != null){
+            warsStarted = warsRawList.filter(r => r <= payloadRawRound).length;
+          }
+          warsStarted = Math.max(1, Math.min(7, warsStarted));
 
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
@@ -2751,34 +2802,38 @@
 
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
 
-            const days = Array.isArray(m.days) ? m.days : [];
-            // ✅ ATK denominator = wars they were in (so missed attacks show as 4/5, etc.), not always /7
-            const warsIn = Math.min(7, days.length || 0);
-            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(warsIn,"0")}`;
+            // ✅ ATK denominator = current WAR period (e.g., War 2 => /2), not /7 and not per-member days.length
+            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(warsStarted,"0")}`;
 
-            const byDay = new Map();
+            const days = Array.isArray(m.days) ? m.days : [];
+            const byWar = new Map();
 
             for(let idx=0; idx<days.length; idx++){
               const d = days[idx];
               if(!d) continue;
 
-              // raw war number from json (preferred)
-              let rawDay = getRawCwlDayNum(d);
+              // ✅ skip placeholders so they don't force wrong columns
+              if(!isMeaningfulCwlEntry(d)) continue;
 
-              // fallback: use array order if json doesn't provide it
-              if(rawDay == null && idx >= 0 && idx < 7) rawDay = idx + 1;
+              // raw round/day from JSON (preferred)
+              let raw = getRawCwlDayNum(d);
 
-              // ✅ normalize so earliest war becomes War 1 column
-              const dayNum = (rawDay != null) ? (rawDay - dayShift) : null;
+              // fallback: use array order if JSON doesn't provide it
+              if(raw == null && idx >= 0 && idx < 7) raw = idx + 1;
 
-              if(dayNum && dayNum >= 1 && dayNum <= 7 && !byDay.has(dayNum)){
-                byDay.set(dayNum, d);
+              if(raw == null) continue;
+
+              // ✅ map raw CWL round -> season-local War 1..7
+              const warNum = rawToWar.get(raw) || null;
+
+              if(warNum && warNum >= 1 && warNum <= 7 && !byWar.has(warNum)){
+                byWar.set(warNum, d);
               }
             }
 
-            const dayCells = [];
+            const warCells = [];
             for(let i=1;i<=7;i++){
-              const d = byDay.get(i) || null;
+              const d = byWar.get(i) || null;
               const opp = escapeHtml(d?.defender || d?.opponent || d?.target || "—");
 
               const sVal = (d?.stars === null || d?.stars === undefined) ? null : Number(d.stars);
@@ -2790,9 +2845,9 @@
               const startCls = "cwl-day-start";
               const endCls = "cwl-day-end";
 
-              dayCells.push(`<td class="left mono cwl-warcell ${startCls}" title="${opp}">${opp}</td>`);
-              dayCells.push(`<td class="mono cwl-warcell">${s}</td>`);
-              dayCells.push(`<td class="mono cwl-warcell ${endCls}">${p}</td>`);
+              warCells.push(`<td class="left mono cwl-warcell ${startCls}" title="${opp}">${opp}</td>`);
+              warCells.push(`<td class="mono cwl-warcell">${s}</td>`);
+              warCells.push(`<td class="mono cwl-warcell ${endCls}">${p}</td>`);
             }
 
             return `
@@ -2804,7 +2859,7 @@
                 <td class="mono">${avgStars}</td>
                 <td class="mono">${avgDes}</td>
                 <td class="mono cwl-general-sep">${escapeHtml(atkFrac)}</td>
-                ${dayCells.join("")}
+                ${warCells.join("")}
               </tr>
             `;
           }).join("");
