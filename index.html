@@ -257,7 +257,6 @@
     .war-sheet-row{
       display:grid;
       grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 40px 64px 36px;
-      grid-auto-flow: column; /* ✅ harden placement so cells never “shift” columns */
       align-items: stretch;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       min-height: 38px;
@@ -625,7 +624,7 @@
     .pwa-tabbar a.active{ opacity: 1; }
 
     /* =========================
-       ✅ CWL (unchanged)
+       ✅ CWL
        ========================= */
     .cwl-headerbar{
       display:flex;
@@ -723,6 +722,7 @@
     .cwl-wide{ min-width: 1220px; }
     .cwl-league{ min-width: 560px; }
 
+    /* ✅ tighter League Overview columns (padding tighter only for this table) */
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
 
@@ -761,10 +761,12 @@
       padding: 6px 0 2px;
     }
 
+    /* ✅ CWL: headerbar that centers scroll text perfectly */
     .cwl-subheaderbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
 
+      /* ✅ center column ensures perfect centering even with a right-side sort button */
       display:grid;
       grid-template-columns: 1fr auto 1fr;
       grid-template-rows: auto;
@@ -791,6 +793,7 @@
       align-self:center;
     }
 
+    /* ✅ CWL: visual separators */
     .cwl-general-sep{
       border-right: 2px solid var(--sep-strong) !important;
     }
@@ -800,6 +803,8 @@
     .cwl-day-end{
       border-right: 2px solid var(--sep-strong) !important;
     }
+
+    /* League Overview: keep compact, but show day-style separators not needed */
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -1222,10 +1227,11 @@
       `;
     }
 
-    function renderCwlPage(){ /* unchanged (kept as-is) */
+    function renderCwlPage(){
       return `
         <div class="cards">
           <h2 class="cards-title" id="cwl-title">CWL</h2>
+
           <div class="cwl-headerbar">
             <div class="left">Season</div>
             <div class="cwl-pill">
@@ -1243,6 +1249,7 @@
 
           <div class="section-title">League Overview</div>
 
+          <!-- ✅ perfectly centered SCROLL line -->
           <div class="cwl-subheaderbar" aria-label="CWL league overview header">
             <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
@@ -1253,7 +1260,9 @@
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:64px;">
+                <!-- ✅ Clan column 40% of 280px => 112px -->
                 <col style="width:112px;">
+                <!-- ✅ tighter columns -->
                 <col style="width:90px;">
                 <col style="width:70px;">
                 <col style="width:110px;">
@@ -1262,6 +1271,7 @@
                 <tr>
                   <th>Rank</th>
                   <th class="left">Clan</th>
+                  <!-- ✅ remove “+Bonus” from title -->
                   <th>Stars</th>
                   <th>Wins</th>
                   <th>Destruction</th>
@@ -1277,6 +1287,7 @@
 
           <div class="section-title">Member Overview</div>
 
+          <!-- ✅ perfectly centered SCROLL + sort -->
           <div class="cwl-subheaderbar" aria-label="CWL member overview header">
             <div></div>
             <div class="cwl-scroll-inline">← SCROLL →</div>
@@ -1298,12 +1309,15 @@
             <table class="cwl-table cwl-wide">
               <colgroup>
                 <col style="width:64px;">
+                <!-- ✅ Name column 40% of 220px => 88px -->
                 <col style="width:88px;">
                 <col style="width:86px;">
                 <col style="width:110px;">
                 <col style="width:96px;">
                 <col style="width:92px;">
                 <col style="width:92px;">
+                <!-- Day blocks -->
+                <!-- ✅ OPP columns 40% of 220px => 88px (7x) -->
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
                 <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
@@ -1474,6 +1488,7 @@
     let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current");
     let cwlSelectedPayload = null;
 
+    // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
 
     // =========================
@@ -1825,7 +1840,57 @@
     }
 
     // =========================
-    // Render: Current War section (unchanged)
+    // CWL fetchers
+    // =========================
+    async function fetchCwlIndex(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
+        cwlIndex = data;
+        setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
+      }catch(e){
+        cwlIndex = null;
+        setText("cwl-index-status", `CWL index fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      renderCwlSeasonSelect();
+    }
+
+    async function fetchCwlCurrent(){
+      try{
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_CURRENT_URL_BASE, RAW_CWL_CURRENT_FALLBACK, "cwl_current.json");
+        cwlCurrent = data;
+        setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+      }catch(e){
+        cwlCurrent = null;
+        setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+
+      if(cwlSelected === "current"){
+        cwlSelectedPayload = cwlCurrent;
+        renderCwlContent();
+      } else {
+        renderCwlSeasonSelect();
+      }
+    }
+
+    async function fetchCwlHistory(seasonKey){
+      if(!seasonKey || seasonKey === "current") return;
+
+      const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
+      const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
+
+      try{
+        const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}`);
+        cwlSelectedPayload = data;
+        setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+      }catch(e){
+        cwlSelectedPayload = null;
+        setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+      }
+      renderCwlContent();
+    }
+
+    // =========================
+    // Render: Current War section
     // =========================
     function renderWarSection(){
       if(!document.getElementById("war-timer")) return;
@@ -1915,7 +1980,7 @@
     }
 
     // =========================
-    // War chart (✅ FIXED: stable 1..teamSize ranking + clamped defender ranks)
+    // War chart (unchanged)
     // =========================
     function starsHTML(n){
       const s = Number(n || 0);
@@ -1970,97 +2035,53 @@
       const our = warDetail.our || warDetail.clan || {};
       const opp = warDetail.opponent || {};
 
-      const rawOurMembers = Array.isArray(our?.members) ? our.members.slice() : [];
-      const rawOppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
+      const ourMembers = Array.isArray(our?.members) ? our.members.slice() : [];
+      const oppMembers = Array.isArray(opp?.members) ? opp.members.slice() : [];
 
-      // ✅ teamSize: prefer war.json (fast-updating), fallback to war_detail.json
-      const teamSizeEffective =
-        Number(warData?.teamSize || warData?.size || 0) ||
-        Number(warDetail?.teamSize || 0) ||
-        Math.max(rawOurMembers.length, rawOppMembers.length) ||
-        0;
-
-      function isValidPos(p){
-        const n = Number(p);
-        return isFinite(n) && n >= 1 && n <= teamSizeEffective;
-      }
-
-      function normalizeSideMembers(members){
-        const list = (members||[]).slice();
-
-        // sort by valid mapPosition first, then name
-        list.sort((a,b)=>{
-          const ap = isValidPos(a?.mapPosition) ? Number(a.mapPosition) : 999999;
-          const bp = isValidPos(b?.mapPosition) ? Number(b.mapPosition) : 999999;
-          if(ap !== bp) return ap - bp;
-          return String(a?.name||"").localeCompare(String(b?.name||""), undefined, { sensitivity:"base" });
-        });
-
-        // clamp to team size (prevents showing 21 in a 15v15 if stale data slips through)
-        const clamped = teamSizeEffective ? list.slice(0, teamSizeEffective) : list;
-
-        // assign stable 1..teamSize rank for UI
-        for(let i=0;i<clamped.length;i++){
-          clamped[i].__displayPos = i + 1;
-        }
-        return clamped;
-      }
-
-      const ourMembers = normalizeSideMembers(rawOurMembers);
-      const oppMembers = normalizeSideMembers(rawOppMembers);
+      ourMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
+      oppMembers.sort((a,b)=>(Number(a.mapPosition)||9999)-(Number(b.mapPosition)||9999));
 
       function buildLookup(members){
-        const byTag = new Map();  // tag => { member, pos }
-        const byPos = new Map();  // displayPos => { member, pos }
+        const byTag = new Map();
+        const byPos = new Map();
         for(const m of (members||[])){
           const tag = m?.tag ? String(m.tag) : "";
-          const pos = (m?.__displayPos != null) ? Number(m.__displayPos) : null;
-          if(tag) byTag.set(tag, { member:m, pos });
-          if(pos != null && isFinite(pos)) byPos.set(pos, { member:m, pos });
+          const pos = (m?.mapPosition != null) ? Number(m.mapPosition) : null;
+          if(tag) byTag.set(tag, m);
+          if(pos != null && isFinite(pos)) byPos.set(pos, m);
         }
         return { byTag, byPos };
       }
       const ourLU = buildLookup(ourMembers);
       const oppLU = buildLookup(oppMembers);
 
-      function clampPos(n){
-        const x = Number(n);
-        if(!isFinite(x)) return null;
-        if(teamSizeEffective && (x < 1 || x > teamSizeEffective)) return null;
-        return x;
-      }
-
       function formatDefenderFromAttack(a, defenderSideLU){
         if(!a) return "—";
-
         const dName = readFirst(a, ["defenderName","defender","targetName","defenderPlayerName","defender_name"]);
         const dTag  = readFirst(a, ["defenderTag","defender_tag","targetTag","defenderPlayerTag"]);
-        const dPosRaw  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
+        const dPos  = readFirst(a, ["defenderMapPosition","defenderPosition","defenderPos","targetMapPosition","defender_mapPosition","targetPosition"]);
 
-        // 1) best: tag lookup (uses our computed display pos)
         if(dTag && defenderSideLU?.byTag?.has(String(dTag))){
-          const hit = defenderSideLU.byTag.get(String(dTag));
-          const pos = hit?.pos ?? null;
-          const nm  = hit?.member?.name || dName || "—";
-          return (pos ? `${pos}. ${nm}` : String(nm));
+          const m = defenderSideLU.byTag.get(String(dTag));
+          const pos = (m?.mapPosition != null) ? m.mapPosition : (dPos != null ? dPos : "—");
+          const nm  = m?.name || dName || "—";
+          return `${pos}. ${nm}`;
         }
 
-        // 2) next: numeric position if it maps
-        const dPos = clampPos(dPosRaw);
-        if(dPos && defenderSideLU?.byPos?.has(dPos)){
-          const hit = defenderSideLU.byPos.get(dPos);
-          const nm = hit?.member?.name || dName || "—";
-          return `${dPos}. ${nm}`;
+        const posNum = (dPos != null && dPos !== "") ? Number(dPos) : null;
+        if(posNum != null && isFinite(posNum) && defenderSideLU?.byPos?.has(posNum)){
+          const m = defenderSideLU.byPos.get(posNum);
+          const nm = m?.name || dName || "—";
+          return `${posNum}. ${nm}`;
         }
 
-        // 3) fallback: if name exists, just show it
         if(dName) return String(dName);
         return "—";
       }
 
       function rowHTML(member, defenderSideLU){
         const name = member?.name || "—";
-        const mp = (member?.__displayPos != null) ? member.__displayPos : (member?.mapPosition ?? "—");
+        const mp = (member?.mapPosition != null) ? member.mapPosition : "—";
         const atks = Array.isArray(member?.attacks) ? member.attacks : [];
         const a1 = atks[0] || null;
         const a2 = atks[1] || null;
