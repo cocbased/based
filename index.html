@@ -761,6 +761,10 @@
     .cwl-warcell{
       background: var(--cwl-war-bg-soft);
     }
+    
+    .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-warcell{
+      background: var(--cwl-war-bg) !important;
+    }
 
     .cwl-note{
       opacity:.75;
@@ -2614,6 +2618,20 @@
       return null;
     }
 
+    function getActiveWarLimit(payload){
+      // Try common keys your generator might output
+      const n =
+        pickNum(payload, ["activeWarDay","currentWarDay","warDay","day","round","currentRound","matchDay"]) ??
+        pickNum(payload?.meta, ["activeWarDay","currentWarDay","warDay","day","round"]) ??
+        null;
+    
+      if(n === null || !isFinite(n)) return null;
+    
+      // normalize 0-based to 1-based
+      const v = (n >= 0 && n <= 6) ? (n + 1) : n;
+      return Math.max(1, Math.min(7, Math.floor(v)));
+    }
+
     // =========================
     // ✅ CWL render
     // =========================
@@ -2642,32 +2660,80 @@
       // League overview
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
-        const rows = Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : [];
+      
+        // ✅ accept multiple schema shapes
+        const rows =
+          (Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : null) ||
+          (Array.isArray(payload?.league_overview) ? payload.league_overview : null) ||
+          (Array.isArray(payload?.league?.clans) ? payload.league.clans : null) ||
+          (Array.isArray(payload?.clans) ? payload.clans : null) ||
+          [];
+      
+        function normLeagueRow(r){
+          if(!r || typeof r !== "object") return { rank:null, name:"—", wins:0, stars:null, destr:null };
+      
+          const rank = pickNum(r, ["rank","position","place"]) ?? null;
+      
+          const name =
+            pick(r, ["name","clanName","clan_name"]) ||
+            pick(r?.clan, ["name","clanName"]) ||
+            "—";
+      
+          // wins can be nested or differently named
+          const wins =
+            pickNum(r, ["wins","warWins","matchWins","roundWins","won"]) ??
+            pickNum(r?.stats, ["wins","warWins"]) ??
+            0;
+      
+          // stars often come in these variants
+          const stars =
+            pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]) ??
+            pickNum(r, ["stars","totalStars","starsTotal","stars_no_bonus","starsNoBonus","starsWithoutBonus","stars_without_bonus"]) ??
+            pickNum(r?.stats, ["stars","starsWithBonus","totalStars"]) ??
+            null;
+      
+          // destruction often comes as a total or percentage
+          const destr =
+            pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]) ??
+            pickNum(r?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
+            null;
+      
+          return { rank, name, wins, stars, destr };
+        }
+      
         if(!rows.length){
           leagueBody.innerHTML = `<tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
         } else {
-          leagueBody.innerHTML = rows.map(r => {
-            const rank = fmtNum(r.rank, "—");
-            const name = escapeHtml(r.name || "—");
-
-            const wins = pickNum(r, ["wins"]) ?? 0;
-            const starsPlusBonus = getStarsWithBonus(r);
-            const destr = pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]);
-            const destrOut = (destr === null) ? "—" : fmt1(destr, "—");
-
+          leagueBody.innerHTML = rows.map(rr => {
+            const r = normLeagueRow(rr);
+      
+            const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
+            const nameOut = escapeHtml(r.name || "—");
+            const winsOut = fmtNum(r.wins, "0");
+      
+            // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
+            // (keeps backward compatibility)
+            let starsOut = r.stars;
+            if(starsOut === null){
+              const fallbackStarsWithBonus = getStarsWithBonus(rr);
+              starsOut = (fallbackStarsWithBonus === null ? null : fallbackStarsWithBonus);
+            }
+      
+            const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
+      
             return `
               <tr>
-                <td class="mono">${rank}</td>
-                <td class="left" title="${name}">${name}</td>
-                <td class="mono">${fmtNum(wins, "0")}</td>
-                <td class="mono bold">${starsPlusBonus === null ? "—" : fmtNum(starsPlusBonus, "—")}</td>
+                <td class="mono">${rankOut}</td>
+                <td class="left" title="${nameOut}">${nameOut}</td>
+                <td class="mono">${winsOut}</td>
+                <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
                 <td class="mono">${destrOut}</td>
               </tr>
             `;
-
           }).join("");
         }
       }
+
 
       // Member overview
       const memberBody = document.getElementById("cwl-memberoverview-body");
@@ -2816,14 +2882,28 @@
             // ✅ ATK denominator (BEST): trust warsInLineup if Python provides it
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
             const warsInLineup = pickNum(m, ["warsInLineup","wars_in_lineup"]) ?? null;
+
+            // ✅ do NOT count future/prep wars in denominator
+            const warLimit = getActiveWarLimit(payload); // 1..7 or null
+            const byWarCountUpToLimit = (() => {
+              if(!warLimit) return byWar.size;
+              let c = 0;
+              for(const k of byWar.keys()){
+                if(k <= warLimit) c++;
+              }
+              return c;
+            })();
             
             let denom;
             if(warsInLineup !== null && isFinite(warsInLineup) && warsInLineup >= 0){
-              denom = Math.max(warsInLineup, atkMade);
+              // if warsInLineup includes future war, clamp it too
+              denom = warsInLineup;
+              if(warLimit) denom = Math.min(denom, warLimit);
+              denom = Math.max(denom, atkMade);
             } else {
-              // fallback: count wars present
-              denom = Math.max(byWar.size, atkMade);
+              denom = Math.max(byWarCountUpToLimit, atkMade);
             }
+
             const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(denom,"0")}`;
             
             // War cells
@@ -2831,7 +2911,13 @@
             for(let i=1;i<=7;i++){
               const e = byWar.get(i) || null;
             
-              const oppText = e ? String(e.opp || "—") : "—";
+              let oppText = "—";
+              if(e){
+                const oppName = String(e.opp || "—");
+                const rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.min(15, Math.round(e.oppRank))) : null;
+                oppText = (rk !== null) ? `${rk}. ${oppName}` : oppName;
+              }
+
             
               const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
               const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
