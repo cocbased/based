@@ -2855,46 +2855,56 @@
             // normalize an entry into one shape we can render
             function normCwlEntry(e, idx){
               if(!e || typeof e !== "object") return null;
-
+            
               // NEW schema prefers "war"
               let warNum = (e.war != null) ? Number(e.war) : null;
-
+            
               // OLD schema fallback: "day"
               if(warNum == null && e.day != null) warNum = Number(e.day);
-
+            
               // last resort: array order
               if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
-
+            
               if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
-
+            
               const opp = pick(e, [
-                // common
                 "opponentName","opponent","defender","target",
-                // very common alternates
                 "enemy","enemyName","enemy_name",
                 "defenderName","defender_name",
                 "targetName","target_name",
                 "oppName","opp_name",
-                "opponent_player","opponentPlayer","opponent_player_name","opponentPlayerName",
-                // sometimes nested
+                "opponent_player","opponentPlayer","opponent_player_name","opponentPlayerName"
               ]) || pick(e?.opponent, ["name"]) || pick(e?.defender, ["name"]) || "—";
-              
-              let oppRank =
-                pickNum(e, [
-                  "opponentRank","opponent_rank",
-                  "defenderRank","defender_rank",
-                  "targetRank","target_rank",
-                  // many generators store map position instead of "rank"
-                  "opponentMapPosition","opponent_map_position",
-                  "defenderMapPosition","defender_map_position",
-                  "targetMapPosition","target_map_position",
-                  "opponentPos","oppPos","targetPos","defenderPos",
-                  "position","mapPosition","map_position"
-                ]);
-              
+            
+              let oppRank = pickNum(e, [
+                "opponentRank","opponent_rank",
+                "defenderRank","defender_rank",
+                "targetRank","target_rank",
+            
+                // often mapPosition is what you really want
+                "opponentMapPosition","opponent_map_position",
+                "defenderMapPosition","defender_map_position",
+                "targetMapPosition","target_map_position",
+                "opponentPos","oppPos","targetPos","defenderPos",
+                "position","mapPosition","map_position"
+              ]);
+            
               if(oppRank !== null && isFinite(oppRank)){
                 oppRank = Math.max(1, Math.min(15, Math.round(oppRank)));
               }
+            
+              const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
+              const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
+            
+              return {
+                warNum,
+                opp,
+                oppRank,
+                stars: (stars !== null && isFinite(stars)) ? stars : null,
+                destruction: (destruction !== null && isFinite(destruction)) ? destruction : null
+              };
+            }
+
 
             const entries = [];
             for(let idx=0; idx<entriesRaw.length; idx++){
