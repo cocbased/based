@@ -2671,35 +2671,45 @@
       
         function normLeagueRow(r){
           if(!r || typeof r !== "object") return { rank:null, name:"—", wins:0, stars:null, destr:null };
-      
-          const rank = pickNum(r, ["rank","position","place"]) ?? null;
-      
+        
+          const rank =
+            pickNum(r, ["rank","position","place"]) ??
+            pickNum(r?.clan, ["rank","position","place"]) ??
+            null;
+        
           const name =
             pick(r, ["name","clanName","clan_name"]) ||
-            pick(r?.clan, ["name","clanName"]) ||
+            pick(r?.clan, ["name","clanName","clan_name"]) ||
             "—";
-      
-          // wins can be nested or differently named
+        
           const wins =
             pickNum(r, ["wins","warWins","matchWins","roundWins","won"]) ??
-            pickNum(r?.stats, ["wins","warWins"]) ??
+            pickNum(r?.stats, ["wins","warWins","matchWins"]) ??
+            pickNum(r?.warStats, ["wins"]) ??
+            pickNum(r?.clan?.stats, ["wins","warWins","matchWins"]) ??
             0;
-      
-          // stars often come in these variants
-          const stars =
+        
+          // Stars can be stored as total, with bonus, or nested
+          let stars =
             pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]) ??
-            pickNum(r, ["stars","totalStars","starsTotal","stars_no_bonus","starsNoBonus","starsWithoutBonus","stars_without_bonus"]) ??
-            pickNum(r?.stats, ["stars","starsWithBonus","totalStars"]) ??
+            pickNum(r?.stats, ["starsWithBonus","starsPlusBonus"]) ??
+            pickNum(r?.warStats, ["starsWithBonus","starsPlusBonus"]) ??
+            pickNum(r, ["stars","totalStars","starsTotal","starsNoBonus","starsWithoutBonus"]) ??
+            pickNum(r?.stats, ["stars","totalStars","starsTotal"]) ??
+            pickNum(r?.clan?.stats, ["stars","totalStars","starsTotal"]) ??
             null;
-      
-          // destruction often comes as a total or percentage
+        
+          // Destruction can be stored as a total (sum) or as pct
           const destr =
             pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]) ??
             pickNum(r?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
+            pickNum(r?.warStats, ["destructionTotal","destruction","destructionPercentage"]) ??
+            pickNum(r?.clan?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
             null;
-      
+        
           return { rank, name, wins, stars, destr };
         }
+
       
         if(!rows.length){
           leagueBody.innerHTML = `<tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
@@ -2857,15 +2867,34 @@
 
               if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
 
-              const opp = (e.opponentName ?? e.opponent ?? e.defender ?? e.target ?? "—");
-
-              const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
-              const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
-
-              const oppRank = (e.opponentRank === null || e.opponentRank === undefined) ? null : Number(e.opponentRank);
-
-              return { warNum, opp, oppRank, stars, destruction };
-            }
+              const opp = pick(e, [
+                // common
+                "opponentName","opponent","defender","target",
+                // very common alternates
+                "enemy","enemyName","enemy_name",
+                "defenderName","defender_name",
+                "targetName","target_name",
+                "oppName","opp_name",
+                "opponent_player","opponentPlayer","opponent_player_name","opponentPlayerName",
+                // sometimes nested
+              ]) || pick(e?.opponent, ["name"]) || pick(e?.defender, ["name"]) || "—";
+              
+              let oppRank =
+                pickNum(e, [
+                  "opponentRank","opponent_rank",
+                  "defenderRank","defender_rank",
+                  "targetRank","target_rank",
+                  // many generators store map position instead of "rank"
+                  "opponentMapPosition","opponent_map_position",
+                  "defenderMapPosition","defender_map_position",
+                  "targetMapPosition","target_map_position",
+                  "opponentPos","oppPos","targetPos","defenderPos",
+                  "position","mapPosition","map_position"
+                ]);
+              
+              if(oppRank !== null && isFinite(oppRank)){
+                oppRank = Math.max(1, Math.min(15, Math.round(oppRank)));
+              }
 
             const entries = [];
             for(let idx=0; idx<entriesRaw.length; idx++){
