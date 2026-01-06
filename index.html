@@ -2768,9 +2768,7 @@
 
             const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
             const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
-
-            const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
-
+        
             // ✅ accept BOTH schemas:
             // - NEW: m.wars = [{war:1..7, opponentName/opponent/defender, stars, destruction, opponentRank, ...}]
             // - OLD: m.days = [{day:1..7, defender, stars, destruction}]
