@@ -35,8 +35,8 @@
       --sep-soft: rgba(255,255,255,0.10);
 
       /* ✅ CWL "War" column tint (darker hue of same blue) */
-      --cwl-war-bg: rgba(7, 18, 33, 0.72);
-      --cwl-war-bg-soft: rgba(7, 18, 33, 0.52);
+      --cwl-war-bg: rgba(22, 22, 22, 0.92);
+      --cwl-war-bg-soft: rgba(18, 18, 18, 0.72);
     }
 
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
@@ -724,7 +724,7 @@
     .cwl-table .muted{ opacity:.70; }
 
     .cwl-wide{ min-width: 1220px; }
-    .cwl-league{ min-width: 560px; }
+    .cwl-league{ min-width: 0; width: 100%; }
 
     /* ✅ tighter League Overview columns (padding tighter only for this table) */
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
@@ -806,13 +806,13 @@
 
     /* ✅ CWL: visual separators */
     .cwl-general-sep{
-      border-right: 2px solid var(--sep-strong) !important;
+      border-right: 1px solid var(--sep-strong) !important;
     }
     .cwl-day-start{
-      border-left: 2px solid var(--sep-strong) !important;
+      border-left: 1px solid var(--sep-strong) !important;
     }
     .cwl-day-end{
-      border-right: 2px solid var(--sep-strong) !important;
+      border-right: 1px solid var(--sep-strong) !important;
     }
   </style>
 
@@ -1257,30 +1257,23 @@
           <div class="divider"></div>
 
           <div class="section-title">League Overview</div>
-
-          <!-- ✅ perfectly centered SCROLL line -->
-          <div class="cwl-subheaderbar" aria-label="CWL league overview header">
-            <div></div>
-            <div class="cwl-scroll-inline">← SCROLL →</div>
-            <div></div>
-          </div>
-
-          <div class="cwl-table-wrap dragscroll" aria-label="CWL league overview">
+         
+          <div class="cwl-table-wrap" aria-label="CWL league overview" style="overflow-x:hidden;">
             <table class="cwl-table cwl-league">
               <colgroup>
-                <col style="width:64px;">
-                <col style="width:112px;">
-                <col style="width:90px;">
-                <col style="width:70px;">
-                <col style="width:110px;">
+                <col style="width:52px;">
+                <col>
+                <col style="width:52px;">
+                <col style="width:44px;">
+                <col style="width:52px;">
               </colgroup>
               <thead>
                 <tr>
                   <th>Rank</th>
                   <th class="left">Clan</th>
-                  <th>Stars</th>
+                  <th>⭐</th>
                   <th>Wins</th>
-                  <th>Destruction</th>
+                  <th>%</th>
                 </tr>
               </thead>
               <tbody id="cwl-leagueoverview-body">
@@ -1321,13 +1314,13 @@
                 <col style="width:92px;">
                 <col style="width:92px;">
                 <col style="width:96px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
-                <col style="width:88px;"><col style="width:70px;"><col style="width:80px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
               </colgroup>
 
               <thead id="cwl-members-head">
@@ -2707,8 +2700,7 @@
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
           // ✅ WAR-based mapping (actual war order for this season)
-          const { map: rawToWar } = buildWarOrdinalMapFromMembers(members);
-
+         
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
@@ -2789,18 +2781,34 @@
 
               if(raw == null) continue;
 
-              // ✅ map raw CWL round -> season-local War 1..7
-              const warNum = rawToWar.get(raw) || null;
+              // ✅ Map raw CWL day directly to War 1..7 (prevents missing War 3/4)
+              const warNum = raw;
+
 
               if(warNum && warNum >= 1 && warNum <= 7 && !byWar.has(warNum)){
                 byWar.set(warNum, d);
               }
             }
 
-            // ✅ FIX: ATK denominator = number of wars THIS member was in the lineup (has a meaningful war entry),
-            // not a global value like /2 or /7.
-            const lineupWars = byWar.size; // e.g., most members will be 4 if 4 wars have included them
-            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(lineupWars,"0")}`;
+            // ✅ ATK denominator = total wars this member was in the lineup (unique war-days present),
+            // and it should NEVER be lower than the numerator.
+            const lineupRawDays = new Set();
+
+            for (let idx = 0; idx < days.length; idx++) {
+              const d = days[idx];
+              if (!d) continue;
+
+              // Prefer explicit day/round in JSON; fallback to array order
+              let raw = getRawCwlDayNum(d);
+              if (raw == null && idx >= 0 && idx < 7) raw = idx + 1;
+
+              if (raw != null && raw >= 1 && raw <= 7) lineupRawDays.add(raw);
+            }
+
+            const lineupWars = lineupRawDays.size;              // e.g. most members should be 4 after 4 wars
+            const denom = Math.max(lineupWars, atkMade);        // never lower than numerator
+            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(denom,"0")}`;
+
 
             const warCells = [];
             for(let i=1;i<=7;i++){
