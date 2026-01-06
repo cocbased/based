@@ -1280,7 +1280,7 @@
 
           <div class="section-title">League Overview</div>
          
-          <div class="cwl-table-wrap" aria-label="CWL league overview" style="overflow-x:hidden;">
+          <div class="cwl-table-wrap" aria-label="CWL league overview">
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:52px;">
@@ -2868,26 +2868,37 @@
               if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
             
               const opp = pick(e, [
-                "opponentName","opponent","defender","target",
+                // ✅ NEW schema
+                "defenderName",
+                "defender",
+              
+                // common
+                "opponentName","opponent","target",
+              
+                // your generator also writes this (fallback only)
+                "opponentClan",
+              
+                // alternates
                 "enemy","enemyName","enemy_name",
-                "defenderName","defender_name",
                 "targetName","target_name",
                 "oppName","opp_name",
-                "opponent_player","opponentPlayer","opponent_player_name","opponentPlayerName"
-              ]) || pick(e?.opponent, ["name"]) || pick(e?.defender, ["name"]) || "—";
+              ]) || "—";
+
             
-              let oppRank = pickNum(e, [
-                "opponentRank","opponent_rank",
-                "defenderRank","defender_rank",
-                "targetRank","target_rank",
-            
-                // often mapPosition is what you really want
-                "opponentMapPosition","opponent_map_position",
-                "defenderMapPosition","defender_map_position",
-                "targetMapPosition","target_map_position",
-                "opponentPos","oppPos","targetPos","defenderPos",
-                "position","mapPosition","map_position"
-              ]);
+              let oppRank =
+                pickNum(e, [
+                  // ✅ NEW schema
+                  "defenderPos",
+              
+                  // others
+                  "opponentRank","opponent_rank",
+                  "defenderRank","defender_rank",
+                  "targetRank","target_rank",
+                  "defenderMapPosition","defenderMapPos",
+                  "targetMapPosition",
+                  "position","mapPosition","map_position"
+                ]);
+
             
               if(oppRank !== null && isFinite(oppRank)){
                 oppRank = Math.max(1, Math.min(15, Math.round(oppRank)));
