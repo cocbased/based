@@ -872,7 +872,7 @@
     // ✅ REAL "never updates" fix:
     // ============================================================
     (async function purgePwaCachesOnce(){
-      const KEY = "based_pwa_cache_purged_v2";
+      const KEY = "based_pwa_cache_purged_v3";
       try{
         if(localStorage.getItem(KEY) === "1") return;
 
@@ -1366,7 +1366,7 @@
                 <!-- Row 2: ALL column headers live here -->
                 <tr>
                   <th class="sticky-1">Avg Rk</th>
-                  <th class="sticky-2">Name</th>
+                  <th class="sticky-2">&nbsp;</th>
 
                   <th>Total★</th>
                   <th>Total%</th>
@@ -2771,64 +2771,82 @@
 
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
 
-            const days = Array.isArray(m.days) ? m.days : [];
+            // ✅ accept BOTH schemas:
+            // - NEW: m.wars = [{war:1..7, opponentName/opponent/defender, stars, destruction, opponentRank, ...}]
+            // - OLD: m.days = [{day:1..7, defender, stars, destruction}]
+            const entriesRaw = Array.isArray(m.wars)
+              ? m.wars
+              : (Array.isArray(m.days) ? m.days : []);
+
+            // normalize an entry into one shape we can render
+            function normCwlEntry(e, idx){
+              if(!e || typeof e !== "object") return null;
+
+              // NEW schema prefers "war"
+              let warNum = (e.war != null) ? Number(e.war) : null;
+
+              // OLD schema fallback: "day"
+              if(warNum == null && e.day != null) warNum = Number(e.day);
+
+              // last resort: array order
+              if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
+
+              if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
+
+              const opp = (e.opponentName ?? e.opponent ?? e.defender ?? e.target ?? "—");
+
+              const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
+              const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
+
+              const oppRank = (e.opponentRank === null || e.opponentRank === undefined) ? null : Number(e.opponentRank);
+
+              return { warNum, opp, oppRank, stars, destruction };
+            }
+
+            const entries = [];
+            for(let idx=0; idx<entriesRaw.length; idx++){
+              const n = normCwlEntry(entriesRaw[idx], idx);
+              if(n) entries.push(n);
+            }
+
+            // Build byWar (first entry wins)
             const byWar = new Map();
-
-            for(let idx=0; idx<days.length; idx++){
-              const d = days[idx];
-              if(!d) continue;
-
-              // ✅ skip placeholders so they don't force wrong columns
-              if(!isMeaningfulCwlEntry(d)) continue;
-
-              // raw round/day from JSON (preferred)
-              let raw = getRawCwlDayNum(d);
-
-              // fallback: use array order if JSON doesn't provide it
-              if(raw == null && idx >= 0 && idx < 7) raw = idx + 1;
-
-              if(raw == null) continue;
-
-              // ✅ Map raw CWL day directly to War 1..7
-              const warNum = raw;
-
-              if(warNum && warNum >= 1 && warNum <= 7 && !byWar.has(warNum)){
-                byWar.set(warNum, d);
-              }
+            for(const e of entries){
+              if(!byWar.has(e.warNum)) byWar.set(e.warNum, e);
             }
-
-            // ✅ ATK denominator = total wars this member was in the lineup (unique war-days present),
-            // and it should NEVER be lower than the numerator.
-            const lineupRawDays = new Set();
-            for (let idx = 0; idx < days.length; idx++) {
-              const d = days[idx];
-              if (!d) continue;
-
-              let raw = getRawCwlDayNum(d);
-              if (raw == null && idx >= 0 && idx < 7) raw = idx + 1;
-
-              if (raw != null && raw >= 1 && raw <= 7) lineupRawDays.add(raw);
+            
+            // ✅ ATK denominator (BEST): trust warsInLineup if Python provides it
+            const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
+            const warsInLineup = pickNum(m, ["warsInLineup","wars_in_lineup"]) ?? null;
+            
+            let denom;
+            if(warsInLineup !== null && isFinite(warsInLineup) && warsInLineup >= 0){
+              denom = Math.max(warsInLineup, atkMade);
+            } else {
+              // fallback: count wars present
+              denom = Math.max(byWar.size, atkMade);
             }
-
-            const lineupWars = lineupRawDays.size;
-            const denom = Math.max(lineupWars, atkMade);
             const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(denom,"0")}`;
-
+            
+            // War cells
             const warCells = [];
             for(let i=1;i<=7;i++){
-              const d = byWar.get(i) || null;
-              const opp = escapeHtml(d?.defender || d?.opponent || d?.target || "—");
-
-              const sVal = (d?.stars === null || d?.stars === undefined) ? null : Number(d.stars);
-              const pVal = (d?.destruction === null || d?.destruction === undefined) ? null : Number(d.destruction);
-
-              const s = (sVal === null || !isFinite(sVal)) ? "—" : fmtNum(sVal, "—");
-              const p = (pVal === null || !isFinite(pVal)) ? "—" : fmt1(pVal, "—");
-
+              const e = byWar.get(i) || null;
+            
+              const oppText = e ? String(e.opp || "—") : "—";
+            
+              const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
+              const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
+            
+              const opp = escapeHtml(oppText);
+              const s = (sVal === null) ? "—" : fmtNum(sVal, "—");
+              const p = (pVal === null) ? "—" : fmt1(pVal, "—");
+            
               warCells.push(`<td class="left mono cwl-warcell cwl-day-start" title="${opp}">${opp}</td>`);
               warCells.push(`<td class="mono cwl-warcell">${s}</td>`);
               warCells.push(`<td class="mono cwl-warcell cwl-day-end">${p}</td>`);
             }
+
 
             return `
               <tr>
