@@ -1263,16 +1263,16 @@
               <colgroup>
                 <col style="width:52px;">
                 <col>
-                <col style="width:52px;">
                 <col style="width:44px;">
+                <col style="width:64px;">
                 <col style="width:52px;">
               </colgroup>
               <thead>
                 <tr>
                   <th>Rank</th>
                   <th class="left">Clan</th>
-                  <th>⭐</th>
                   <th>Wins</th>
+                  <th>⭐</th>
                   <th>%</th>
                 </tr>
               </thead>
@@ -1324,14 +1324,15 @@
               </colgroup>
 
               <thead id="cwl-members-head">
+                <!-- Row 1: keep War group headers, but make the left side visually "blank" -->
                 <tr>
-                  <th class="sticky-1">Avg Rk</th>
-                  <th class="sticky-2">Name</th>
-                  <th>Total★</th>
-                  <th>Total%</th>
-                  <th>Avg★</th>
-                  <th>Avg%</th>
-                  <th class="cwl-general-sep">Atk</th>
+                  <th class="sticky-1 muted">&nbsp;</th>
+                  <th class="sticky-2 muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted cwl-general-sep">&nbsp;</th>
 
                   <th class="cwl-warhead" colspan="3">War 1</th>
                   <th class="cwl-warhead" colspan="3">War 2</th>
@@ -1342,24 +1343,29 @@
                   <th class="cwl-warhead" colspan="3">War 7</th>
                 </tr>
 
+                <!-- Row 2: ALL column headers live here (including AVG RK, totals, etc.) -->
                 <tr>
-                  <th class="sticky-1 muted">&nbsp;</th>
-                  <th class="sticky-2 muted">&nbsp;</th>
-                  <th class="muted">&nbsp;</th>
-                  <th class="muted">&nbsp;</th>
-                  <th class="muted">&nbsp;</th>
-                  <th class="muted">&nbsp;</th>
-                  <th class="muted cwl-general-sep">&nbsp;</th>
+                  <th class="sticky-1">Avg Rk</th>
+                  <!-- keep the sticky name column, but NO "Name" header text -->
+                  <th class="sticky-2">&nbsp;</th>
 
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
-                  <th class="left muted cwl-warcell cwl-day-start">Opp</th><th class="muted cwl-warcell">★</th><th class="muted cwl-warcell cwl-day-end">%</th>
+                  <th>Total★</th>
+                  <th>Total%</th>
+                  <th>Avg★</th>
+                  <th>Avg%</th>
+                  <th class="cwl-general-sep">Atk</th>
+
+                  <!-- War subheaders MUST be the same grey -->
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
                 </tr>
               </thead>
+
 
               <tbody id="cwl-memberoverview-body">
                 <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
@@ -2682,11 +2688,12 @@
               <tr>
                 <td class="mono">${rank}</td>
                 <td class="left" title="${name}">${name}</td>
-                <td class="mono bold">${starsPlusBonus === null ? "—" : fmtNum(starsPlusBonus, "—")}</td>
                 <td class="mono">${fmtNum(wins, "0")}</td>
+                <td class="mono bold">${starsPlusBonus === null ? "—" : fmtNum(starsPlusBonus, "—")}</td>
                 <td class="mono">${destrOut}</td>
               </tr>
             `;
+
           }).join("");
         }
       }
