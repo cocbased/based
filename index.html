@@ -34,7 +34,7 @@
       --sep-strong: rgba(255,255,255,0.16);
       --sep-soft: rgba(255,255,255,0.10);
 
-      /* ✅ CWL "War" column tint (darker hue of same blue) */
+      /* ✅ CWL "War" column tint (dark grey) */
       --cwl-war-bg: rgba(22, 22, 22, 0.92);
       --cwl-war-bg-soft: rgba(18, 18, 18, 0.72);
     }
@@ -762,9 +762,6 @@
       background: var(--cwl-war-bg-soft);
     }
 
-    /* (compat alias, in case anything still uses old class name) */
-    .cwl-dayhead{ background: var(--cwl-war-bg) !important; }
-
     .cwl-note{
       opacity:.75;
       font-size:13px;
@@ -816,26 +813,25 @@
     }
 
     /* =========================
-   FIX: Hide header vertical borders in CWL Member Overview
-   ========================= */
+       FIX: Hide header borders only for the LEFT "general" section in CWL Member Overview
+       ========================= */
 
-  /* Remove vertical borders in the MEMBER OVERVIEW header rows */
-    .cwl-table.cwl-wide thead th{
+    /* Remove vertical borders for the first 7 header cells only (Avg Rk..Atk), both header rows */
+    .cwl-table.cwl-wide thead tr th:nth-child(-n+7){
       border-left: none !important;
-      border-right: none !important;
-    }    
-
-  /* Specifically kill the separator line bleeding through ATK → WAR boundary */
-    .cwl-table.cwl-wide thead th.cwl-general-sep{
       border-right: none !important;
     }
 
-  /* Also prevent sticky headers from reintroducing borders */
-    .cwl-table.cwl-wide thead th.sticky-1,
-    .cwl-table.cwl-wide thead th.sticky-2{
-      border-right: none !important;
-    }  
+    /* Hide the horizontal divider between header row 1 & row 2 only on the blank (muted) left cells */
+    .cwl-table.cwl-wide thead tr:first-child th.muted{
+      border-bottom: none !important;
+    }
 
+    /* Ensure war group header borders still show (even with the rule above) */
+    .cwl-table.cwl-wide thead tr:first-child th.cwl-warhead{
+      border-left: 1px solid rgba(255,255,255,0.10) !important;
+      border-right: 1px solid rgba(255,255,255,0.10) !important;
+    }
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -1336,13 +1332,15 @@
                 <col style="width:92px;">
                 <col style="width:92px;">
                 <col style="width:96px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
-                <col style="width:110px;"><col style="width:44px;"><col style="width:56px;">
+
+                <!-- War cols: Opp widest, Stars tight, % medium -->
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
               </colgroup>
 
               <thead id="cwl-members-head">
@@ -1365,11 +1363,10 @@
                   <th class="cwl-warhead" colspan="3">War 7</th>
                 </tr>
 
-                <!-- Row 2: ALL column headers live here (including AVG RK, totals, etc.) -->
+                <!-- Row 2: ALL column headers live here -->
                 <tr>
                   <th class="sticky-1">Avg Rk</th>
-                  <!-- keep the sticky name column, but NO "Name" header text -->
-                  <th class="sticky-2">&nbsp;</th>
+                  <th class="sticky-2">Name</th>
 
                   <th>Total★</th>
                   <th>Total%</th>
@@ -1377,17 +1374,16 @@
                   <th>Avg%</th>
                   <th class="cwl-general-sep">Atk</th>
 
-                  <!-- War subheaders MUST be the same grey -->
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
-                  <th class="left cwl-warcell cwl-day-start">Opp</th><th class="cwl-warcell">★</th><th class="cwl-warcell cwl-day-end">%</th>
+                  <!-- War subheaders: ⚔️ / ⭐ / 🎯 -->
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
                 </tr>
               </thead>
-
 
               <tbody id="cwl-memberoverview-body">
                 <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
@@ -1962,7 +1958,7 @@
       setText("war-destr-opp", (oppDes == null) ? "—" : `${Number(oppDes)}%`);
 
       const ourAtkUsed = (display?.ourAttacksUsed ?? warDetail?.clan?.attacks ?? warDetail?.our?.attacks ?? null);
-      const oppAtkUsed = (display?.oppAttacksUsed ?? warDetail?.opponent?.attacks ?? null);
+      const oppAtkUsed = (display?.oppAtkUsed ?? warDetail?.opponent?.attacks ?? null);
 
       setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
       setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
@@ -2604,56 +2600,6 @@
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
-    // =========================
-    // ✅ CWL: WAR-BASED MAPPING HELPERS
-    // (NO "day shift" — maps actual CWL rounds your clan is on -> War 1..7)
-    // =========================
-    function getRawCwlDayNum(d){
-      if(!d || typeof d !== "object") return null;
-      const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
-      for(const c of candidates){
-        if(c === null || c === undefined || c === "") continue;
-        const n = Number(String(c).replace(/[^\d-]/g,""));
-        if(!isFinite(n)) continue;
-        if(n >= 1 && n <= 7) return n;
-        if(n >= 0 && n <= 6) return n + 1;
-      }
-      return null;
-    }
-
-    function isMeaningfulCwlEntry(d){
-      if(!d || typeof d !== "object") return false;
-
-      const opp = String(d.defender || d.opponent || d.target || "").trim();
-      const hasOpp = !!opp && opp !== "—";
-
-      const stars = (d.stars === null || d.stars === undefined) ? null : Number(d.stars);
-      const destr = (d.destruction === null || d.destruction === undefined) ? null : Number(d.destruction);
-
-      const hasStars = (stars !== null && isFinite(stars));
-      const hasDestr = (destr !== null && isFinite(destr));
-
-      return hasOpp || hasStars || hasDestr;
-    }
-
-    function buildWarOrdinalMapFromMembers(members){
-      const rawSet = new Set();
-
-      for(const m of (members||[])){
-        const days = Array.isArray(m?.days) ? m.days : [];
-        for(const d of days){
-          if(!isMeaningfulCwlEntry(d)) continue;
-          const raw = getRawCwlDayNum(d);
-          if(raw != null && raw >= 1 && raw <= 7) rawSet.add(raw);
-        }
-      }
-
-      const rawList = Array.from(rawSet).sort((a,b)=>a-b);
-      const map = new Map();
-      rawList.forEach((raw, i) => map.set(raw, i + 1)); // raw -> War#
-      return { map, rawList };
-    }
-
     function getStarsWithBonus(r){
       const sWB = pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]);
       if(sWB !== null) return sWB;
@@ -2668,6 +2614,9 @@
       return null;
     }
 
+    // =========================
+    // ✅ CWL render
+    // =========================
     function renderCwlContent(){
       if(!document.getElementById("cwl-title")) return;
 
@@ -2728,8 +2677,6 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-          // ✅ WAR-based mapping (actual war order for this season)
-         
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
@@ -2775,8 +2722,40 @@
             return String(a?.name||"").localeCompare(String(b?.name||""));
           });
 
+          function getRawCwlDayNum(d){
+            if(!d || typeof d !== "object") return null;
+            const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
+            for(const c of candidates){
+              if(c === null || c === undefined || c === "") continue;
+              const n = Number(String(c).replace(/[^\d-]/g,""));
+              if(!isFinite(n)) continue;
+              if(n >= 1 && n <= 7) return n;
+              if(n >= 0 && n <= 6) return n + 1;
+            }
+            return null;
+          }
+
+          function isMeaningfulCwlEntry(d){
+            if(!d || typeof d !== "object") return false;
+
+            const opp = String(d.defender || d.opponent || d.target || "").trim();
+            const hasOpp = !!opp && opp !== "—";
+
+            const stars = (d.stars === null || d.stars === undefined) ? null : Number(d.stars);
+            const destr = (d.destruction === null || d.destruction === undefined) ? null : Number(d.destruction);
+
+            const hasStars = (stars !== null && isFinite(stars));
+            const hasDestr = (destr !== null && isFinite(destr));
+
+            return hasOpp || hasStars || hasDestr;
+          }
+
           memberBody.innerHTML = sorted.map(m => {
-            const avgRkVal = pickNum(m, ["avgRankAttacked","avgRank","avg_rank_attacked","avg_rank"]);
+            // ✅ Clamp Avg Rk display to 1..15 (prevents nonsense like 28+ showing)
+            let avgRkVal = pickNum(m, ["avgRankAttacked","avgRank","avg_rank_attacked","avg_rank"]);
+            if(avgRkVal !== null && isFinite(avgRkVal)){
+              avgRkVal = Math.min(15, Math.max(1, avgRkVal));
+            }
             const avgRk = (avgRkVal === null) ? "—" : fmt1(avgRkVal, "—");
 
             const nm = escapeHtml(m.name || "—");
@@ -2810,9 +2789,8 @@
 
               if(raw == null) continue;
 
-              // ✅ Map raw CWL day directly to War 1..7 (prevents missing War 3/4)
+              // ✅ Map raw CWL day directly to War 1..7
               const warNum = raw;
-
 
               if(warNum && warNum >= 1 && warNum <= 7 && !byWar.has(warNum)){
                 byWar.set(warNum, d);
@@ -2822,22 +2800,19 @@
             // ✅ ATK denominator = total wars this member was in the lineup (unique war-days present),
             // and it should NEVER be lower than the numerator.
             const lineupRawDays = new Set();
-
             for (let idx = 0; idx < days.length; idx++) {
               const d = days[idx];
               if (!d) continue;
 
-              // Prefer explicit day/round in JSON; fallback to array order
               let raw = getRawCwlDayNum(d);
               if (raw == null && idx >= 0 && idx < 7) raw = idx + 1;
 
               if (raw != null && raw >= 1 && raw <= 7) lineupRawDays.add(raw);
             }
 
-            const lineupWars = lineupRawDays.size;              // e.g. most members should be 4 after 4 wars
-            const denom = Math.max(lineupWars, atkMade);        // never lower than numerator
+            const lineupWars = lineupRawDays.size;
+            const denom = Math.max(lineupWars, atkMade);
             const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(denom,"0")}`;
-
 
             const warCells = [];
             for(let i=1;i<=7;i++){
@@ -2850,12 +2825,9 @@
               const s = (sVal === null || !isFinite(sVal)) ? "—" : fmtNum(sVal, "—");
               const p = (pVal === null || !isFinite(pVal)) ? "—" : fmt1(pVal, "—");
 
-              const startCls = "cwl-day-start";
-              const endCls = "cwl-day-end";
-
-              warCells.push(`<td class="left mono cwl-warcell ${startCls}" title="${opp}">${opp}</td>`);
+              warCells.push(`<td class="left mono cwl-warcell cwl-day-start" title="${opp}">${opp}</td>`);
               warCells.push(`<td class="mono cwl-warcell">${s}</td>`);
-              warCells.push(`<td class="mono cwl-warcell ${endCls}">${p}</td>`);
+              warCells.push(`<td class="mono cwl-warcell cwl-day-end">${p}</td>`);
             }
 
             return `
