@@ -814,6 +814,28 @@
     .cwl-day-end{
       border-right: 1px solid var(--sep-strong) !important;
     }
+
+    /* =========================
+   FIX: Hide header vertical borders in CWL Member Overview
+   ========================= */
+
+  /* Remove vertical borders in the MEMBER OVERVIEW header rows */
+    .cwl-table.cwl-wide thead th{
+      border-left: none !important;
+      border-right: none !important;
+    }    
+
+  /* Specifically kill the separator line bleeding through ATK → WAR boundary */
+    .cwl-table.cwl-wide thead th.cwl-general-sep{
+      border-right: none !important;
+    }
+
+  /* Also prevent sticky headers from reintroducing borders */
+    .cwl-table.cwl-wide thead th.sticky-1,
+    .cwl-table.cwl-wide thead th.sticky-2{
+      border-right: none !important;
+    }  
+
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
