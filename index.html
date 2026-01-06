@@ -2615,30 +2615,6 @@
       return hasOpp || hasStars || hasDestr;
     }
 
-    function getPayloadRawRound(payload){
-      if(!payload || typeof payload !== "object") return null;
-
-      const candidates = [
-        payload.currentRound,
-        payload.currentDay,
-        payload.currentWarDay,
-        payload.round,
-        payload.day,
-        payload.warDay,
-        payload.matchDay,
-        payload.dayIndex
-      ];
-
-      for(const c of candidates){
-        if(c === null || c === undefined || c === "") continue;
-        const n = Number(String(c).replace(/[^\d-]/g,""));
-        if(!isFinite(n)) continue;
-        if(n >= 1 && n <= 7) return n;
-        if(n >= 0 && n <= 6) return n + 1;
-      }
-      return null;
-    }
-
     function buildWarOrdinalMapFromMembers(members){
       const rawSet = new Set();
 
@@ -2731,14 +2707,7 @@
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
           // ✅ WAR-based mapping (actual war order for this season)
-          const { map: rawToWar, rawList: warsRawList } = buildWarOrdinalMapFromMembers(members);
-          const payloadRawRound = getPayloadRawRound(payload);
-
-          let warsStarted = warsRawList.length;
-          if(payloadRawRound != null){
-            warsStarted = warsRawList.filter(r => r <= payloadRawRound).length;
-          }
-          warsStarted = Math.max(1, Math.min(7, warsStarted));
+          const { map: rawToWar } = buildWarOrdinalMapFromMembers(members);
 
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
@@ -2802,9 +2771,6 @@
 
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
 
-            // ✅ ATK denominator = current WAR period (e.g., War 2 => /2), not /7 and not per-member days.length
-            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(warsStarted,"0")}`;
-
             const days = Array.isArray(m.days) ? m.days : [];
             const byWar = new Map();
 
@@ -2830,6 +2796,11 @@
                 byWar.set(warNum, d);
               }
             }
+
+            // ✅ FIX: ATK denominator = number of wars THIS member was in the lineup (has a meaningful war entry),
+            // not a global value like /2 or /7.
+            const lineupWars = byWar.size; // e.g., most members will be 4 if 4 wars have included them
+            const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(lineupWars,"0")}`;
 
             const warCells = [];
             for(let i=1;i<=7;i++){
