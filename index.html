@@ -3011,29 +3011,28 @@
             const warCells = [];
             for(let i=1;i<=7;i++){
               const e = byWar.get(i) || null;
-              // ✅ Do not show opponent info for wars beyond active warLimit (prep/future)
               const isActiveWarDay = (warLimit && i <= warLimit);
             
               let oppText = "—";
-
+            
               const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
               const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
-              
-              // ✅ only show opp/rank if an attack actually happened
+            
               const attacked = (sVal !== null) || (pVal !== null);
-              
-              if(e && isActiveWarDay){
-                if(e && isActiveWarDay && attacked){
-                const rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
-                if(rk !== null){
-                  oppText = `${rk}. ${String(e.defName || "—").trim() || "—"}`;
+            
+              // ✅ replacement block goes right here
+              if (e && isActiveWarDay && attacked) {
+                const rk =
+                  (e.oppRank !== null && isFinite(e.oppRank))
+                    ? Math.max(1, Math.round(e.oppRank))
+                    : null;
+            
+                const nm = String(e.defName || "—").trim() || "—";
+            
+                if (rk !== null && nm !== "—") {
+                  oppText = `${rk}. ${nm}`;
                 }
               }
-                  oppText = "—";
-                }
-              }
-
-        
             
               const opp = escapeHtml(oppText);
               const s = (sVal === null) ? "—" : fmtNum(sVal, "—");
