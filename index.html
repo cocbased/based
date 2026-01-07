@@ -2610,130 +2610,26 @@
     function normCwlEntry(e, idx){
       if(!e || typeof e !== "object") return null;
     
-      // NEW schema prefers "war"
       let warNum = (e.war != null) ? Number(e.war) : null;
-    
-      // OLD schema fallback: "day"
-      if(warNum == null && e.day != null) warNum = Number(e.day);
-    
-      // last resort: array order
       if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
-    
       if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
     
-      const opp = pick(e, [
-        "defenderName",
-        "defender",
-        "opponentName","opponent","target",
-        "opponentClan",
-        "enemy","enemyName","enemy_name",
-        "targetName","target_name",
-        "oppName","opp_name",
-      ]) || "—";
+      const defName = (typeof e.defenderName === "string" ? e.defenderName.trim() : "") || "—";
+      let oppRank = (e.defenderPos == null ? null : Number(e.defenderPos));
+      oppRank = (oppRank != null && isFinite(oppRank)) ? Math.max(1, Math.round(oppRank)) : null;
     
-      let oppRank =
-        (e.defenderPos !== null && isFinite(e.defenderPos))
-          ? Math.round(e.defenderPos)
-          : null;
-        
       const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
       const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
     
       return {
         warNum,
-        opp,
+        defName,
         oppRank,
         stars: (stars !== null && isFinite(stars)) ? stars : null,
         destruction: (destruction !== null && isFinite(destruction)) ? destruction : null
       };
     }
-
-    function inferTeamSizeFromPayload(payload){
-      // 1) If you ever add teamSize into the payload, this will use it.
-      const hinted =
-        pickNum(payload, ["teamSize","warSize","size","cwlWarSize"]) ??
-        pickNum(payload?.meta, ["teamSize","warSize","size"]) ??
-        null;
-      if(hinted && isFinite(hinted) && hinted > 0) return Math.round(hinted);
-    
-      // 2) Infer from actual attacked defender positions (max observed)
-      let maxPos = 0;
-      const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
-    
-      for(const m of members){
-        const raw = Array.isArray(m?.wars) ? m.wars : (Array.isArray(m?.days) ? m.days : []);
-        for(let i=0;i<raw.length;i++){
-          const e = normCwlEntry(raw[i], i);
-          if(!e) continue;
-    
-          // Only count real attacks
-          const attacked =
-            (e.stars !== null && isFinite(e.stars)) ||
-            (e.destruction !== null && isFinite(e.destruction));
-          if(!attacked) continue;
-    
-          if(e.oppRank !== null && isFinite(e.oppRank)){
-            maxPos = Math.max(maxPos, Math.round(e.oppRank));
-          }
-        }
-      }
-    
-      // CWL sizes are usually 15 or 30
-      if(maxPos > 15) return 30;
-      return 15;
-    }
-
-    // =========================
-    // ✅ CWL Rank Repair (15v15 / 30v30)
-    // =========================
-    function buildRankRepairMap(allEntriesForWar, teamSize){
-      const N = teamSize;
-    
-      // ranks used in 1..N
-      const used = new Set();
-      // ranks that are > N
-      const over = [];
-    
-      for(const e of allEntriesForWar){
-        const r = (e && e.oppRank != null && isFinite(e.oppRank)) ? Math.round(Number(e.oppRank)) : null;
-        if(!r || !isFinite(r)) continue;
-    
-        if(r >= 1 && r <= N) used.add(r);
-        else if(r > N) over.push(r);
-      }
-    
-      // missing ranks in 1..N (highest first)
-      const missing = [];
-      for(let i=1;i<=N;i++){
-        if(!used.has(i)) missing.push(i);
-      }
-      missing.sort((a,b)=>b-a);
-    
-      // over ranks (highest first)
-      over.sort((a,b)=>b-a);
-    
-      // map: overRank -> repairedRank
-      const map = new Map();
-    
-      // de-dupe over ranks while keeping order
-      const seen = new Set();
-      const overUnique = [];
-      for(const r of over){
-        if(seen.has(r)) continue;
-        seen.add(r);
-        overUnique.push(r);
-      }
-    
-      let idx = 0;
-      for(const r of overUnique){
-        const repl = (idx < missing.length) ? missing[idx] : N; // if run out, clamp to N
-        map.set(r, repl);
-        idx++;
-      }
-    
-      return map;
-    }
-
+  
     
     function getStarsWithBonus(r){
       const sWB = pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]);
@@ -3034,57 +2930,7 @@
             const entriesRaw = Array.isArray(m.wars)
               ? m.wars
               : (Array.isArray(m.days) ? m.days : []);
-
-            // normalize an entry into one shape we can render
-            function normCwlEntry(e, idx){
-              if(!e || typeof e !== "object") return null;
-            
-              // NEW schema prefers "war"
-              let warNum = (e.war != null) ? Number(e.war) : null;
-            
-              // OLD schema fallback: "day"
-              if(warNum == null && e.day != null) warNum = Number(e.day);
-            
-              // last resort: array order
-              if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
-            
-              if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
-            
-              const opp = pick(e, [
-                // ✅ NEW schema
-                "defenderName",
-                "defender",
-              
-                // common
-                "opponentName","opponent","target",
-              
-                // your generator also writes this (fallback only)
-                "opponentClan",
-              
-                // alternates
-                "enemy","enemyName","enemy_name",
-                "targetName","target_name",
-                "oppName","opp_name",
-              ]) || "—";
-
-            
-              let oppRank =
-                (e.defenderPos !== null && isFinite(e.defenderPos))
-                  ? Math.round(e.defenderPos)
-                  : null;
-            
-              const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
-              const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
-            
-              return {
-                warNum,
-                opp,
-                oppRank,
-                stars: (stars !== null && isFinite(stars)) ? stars : null,
-                destruction: (destruction !== null && isFinite(destruction)) ? destruction : null
-              };
-            }
-
+                       
 
             const entries = [];
             for(let idx=0; idx<entriesRaw.length; idx++){
@@ -3097,31 +2943,7 @@
             for(const e of entries){
               if(!byWar.has(e.warNum)) byWar.set(e.warNum, e);
             }
-
-            // ✅ Build rank-repair maps once per render (15v15 or 30v30 inferred)
-            const TEAM_SIZE = inferTeamSizeFromPayload(payload);
-
-            
-            if(!payload.__rankRepairCache){
-              payload.__rankRepairCache = new Map();
-            
-              const allMembers = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
-            
-              for(let warNum=1; warNum<=7; warNum++){
-                const allEntriesForWar = [];
-            
-                for(const mm of allMembers){
-                  const raw = Array.isArray(mm?.wars) ? mm.wars : (Array.isArray(mm?.days) ? mm.days : []);
-                  for(let j=0;j<raw.length;j++){
-                    const ne = normCwlEntry(raw[j], j);
-                    if(ne && ne.warNum === warNum) allEntriesForWar.push(ne);
-                  }
-                }
-            
-                payload.__rankRepairCache.set(warNum, buildRankRepairMap(allEntriesForWar, TEAM_SIZE));
-              }
-            }
-
+           
             
             // ✅ ATK denominator (BEST): trust warsInLineup if Python provides it
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
@@ -3148,14 +2970,8 @@
                 
                 let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
                 if(rk === null) continue;
-                
-                if(rk > TEAM_SIZE){
-                  const map = payload.__rankRepairCache?.get(warNum);
-                  if(map && map.has(rk)) rk = map.get(rk);
-                  else rk = TEAM_SIZE;
-                }
-                
-                if(rk >= 1 && rk <= TEAM_SIZE) repairedRanks.push(rk);
+                  
+                repairedRanks.push(rk);
 
               }
             
@@ -3207,25 +3023,12 @@
               const attacked = (sVal !== null) || (pVal !== null);
               
               if(e && isActiveWarDay){
-                const oppNameRaw = String(e.opp || "").trim();
-              
-                // ✅ Only show opponent/rank if it was a REAL attack
-                const attacked =
-                  (e.stars !== null && isFinite(e.stars)) ||
-                  (e.destruction !== null && isFinite(e.destruction));
-              
-                let rk = (e.oppRank !== null && isFinite(e.oppRank))
-                  ? Math.max(1, Math.round(e.oppRank))
-                  : null;
-              
-                if(attacked && rk !== null && oppNameRaw && oppNameRaw !== "—" && oppNameRaw !== "-"){
-                  if(rk > TEAM_SIZE){
-                    const map = payload.__rankRepairCache?.get(i);
-                    if(map && map.has(rk)) rk = map.get(rk);
-                    else rk = TEAM_SIZE;
-                  }
-                  oppText = `${rk}. ${oppNameRaw}`;
-                } else {
+                if(e && isActiveWarDay && attacked){
+                const rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
+                if(rk !== null){
+                  oppText = `${rk}. ${String(e.defName || "—").trim() || "—"}`;
+                }
+              }
                   oppText = "—";
                 }
               }
