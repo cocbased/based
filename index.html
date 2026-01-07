@@ -2632,24 +2632,10 @@
       ]) || "—";
     
       let oppRank =
-        pickNum(e, [
-          // ✅ NEW generator schema (most correct)
-          "defenderMapPosition",
-      
-          // older / alternate schema fallbacks
-          "defenderPos",
-          "opponentRank","opponent_rank",
-          "defenderRank","defender_rank",
-          "targetRank","target_rank",
-          "defenderMapPosition","defenderMapPos",
-          "targetMapPosition",
-          "position","mapPosition","map_position"
-        ]);
-    
-      if(oppRank !== null && isFinite(oppRank)){
-        oppRank = Math.max(1, Math.round(oppRank));
-      }
-    
+        (e.defenderPos !== null && isFinite(e.defenderPos))
+          ? Math.round(e.defenderPos)
+          : null;
+        
       const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
       const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
     
@@ -3083,25 +3069,9 @@
 
             
               let oppRank =
-                pickNum(e, [
-                  // ✅ NEW generator schema (most correct)
-                  "defenderMapPosition",
-              
-                  // older / alternate schema fallbacks
-                  "defenderPos",
-                  "opponentRank","opponent_rank",
-                  "defenderRank","defender_rank",
-                  "targetRank","target_rank",
-                  "defenderMapPosition","defenderMapPos",
-                  "targetMapPosition",
-                  "position","mapPosition","map_position"
-                ]);
-
-            
-              if(oppRank !== null && isFinite(oppRank)){
-                oppRank = Math.max(1, Math.round(oppRank));
-              }
-
+                (e.defenderPos !== null && isFinite(e.defenderPos))
+                  ? Math.round(e.defenderPos)
+                  : null;
             
               const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
               const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
