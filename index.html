@@ -3045,10 +3045,7 @@
               ? m.wars
               : (Array.isArray(m.days) ? m.days : []);
 
-            // normalize an entry into one shape we can render
-            function normCwlEntry(e, idx){
-              if(!e || typeof e !== "object") return null;
-            
+                       
               // NEW schema prefers "war"
               let warNum = (e.war != null) ? Number(e.war) : null;
             
@@ -3174,11 +3171,12 @@
                 let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
                 if(rk === null) continue;
                 
-                if(rk > 15){
+                if(rk > TEAM_SIZE){
                   const map = payload.__rankRepairCache?.get(warNum);
                   if(map && map.has(rk)) rk = map.get(rk);
-                  else rk = 15;
+                  else rk = TEAM_SIZE;
                 }
+
                 
                 if(rk >= 1 && rk <= TEAM_SIZE) repairedRanks.push(rk);
 
