@@ -1341,13 +1341,15 @@
             <table class="cwl-table cwl-league">
             <colgroup>
               <col style="width:52px;">    <!-- Rank -->
-              <col style="width:240px;">   <!-- Clan (bigger, NEVER collapses in PWA) -->
-              <col style="width:64px;">    <!-- Wins (narrower) -->
-              <col style="width:60px;">    <!-- total stars (slightly narrower) -->
-              <col style="width:52px;">    <!-- % -->
-              <col style="width:78px;">    <!-- AVG ⭐ (narrower) -->
-              <col style="width:84px;">    <!-- AVG 🛡️ (narrower) -->
+              <col style="width:96px;">    <!-- Clan (was 240px) -->
+              <col style="width:64px;">    <!-- Wins -->
+              <col style="width:60px;">    <!-- total stars -->
+              <col style="width:52px;">    <!-- % (total) -->
+              <col style="width:78px;">    <!-- AVG ⭐ -->
+              <col style="width:66px;">    <!-- AVG % (NEW) -->
+              <col style="width:84px;">    <!-- AVG 🛡️ -->
             </colgroup>
+
 
               <thead>
                 <tr>
@@ -1357,11 +1359,13 @@
                   <th>⭐</th>
                   <th>%</th>
                   <th>AVG ⭐</th>
+                  <th>AVG %</th>
                   <th>AVG 🛡️</th>
                 </tr>
               </thead>
+
               <tbody id="cwl-leagueoverview-body">
-                <tr><td colspan="7" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                <tr><td colspan="8" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -2907,6 +2911,15 @@
             }
           
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
+
+            // ✅ AVG % = total destruction / wars ended (1 decimal)
+            const avgPctVal = (warsEnded > 0 && r.destr !== null) ? (Number(r.destr) / warsEnded) : null;
+            const avgPctOut =
+              (avgPctVal === null || !isFinite(avgPctVal))
+                ? "—"
+                : avgPctVal.toFixed(1);
+
+            
             // prefer stars WITHOUT bonus for averages if present
             const starsNoBonus =
               pickNum(rr, ["starsNoBonus","starsWithoutBonus","stars_without_bonus","starsWithoutBonus"]) ??
@@ -2947,9 +2960,12 @@
                 <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
                 <td class="mono">${destrOut}</td>
                 <td class="mono">${avgStarsOut}</td>
+                <td class="mono">${avgPctOut}</td>
                 <td class="mono">${avgDefOut}</td>
               </tr>
             `;
+
+
           }).join("");
 
         }
