@@ -2604,6 +2604,58 @@
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
 
+    // =========================
+    // ✅ CWL Rank Repair (15v15)
+    // =========================
+    function buildRankRepairMap(allEntriesForWar, teamSize){
+      const N = teamSize;
+    
+      // ranks used in 1..N
+      const used = new Set();
+      // ranks that are > N
+      const over = [];
+    
+      for(const e of allEntriesForWar){
+        const r = (e && e.oppRank != null && isFinite(e.oppRank)) ? Math.round(Number(e.oppRank)) : null;
+        if(!r || !isFinite(r)) continue;
+    
+        if(r >= 1 && r <= N) used.add(r);
+        else if(r > N) over.push(r);
+      }
+    
+      // missing ranks in 1..N (highest first)
+      const missing = [];
+      for(let i=1;i<=N;i++){
+        if(!used.has(i)) missing.push(i);
+      }
+      missing.sort((a,b)=>b-a);
+    
+      // over ranks (highest first)
+      over.sort((a,b)=>b-a);
+    
+      // map: overRank -> repairedRank
+      const map = new Map();
+    
+      // de-dupe over ranks while keeping order
+      const seen = new Set();
+      const overUnique = [];
+      for(const r of over){
+        if(seen.has(r)) continue;
+        seen.add(r);
+        overUnique.push(r);
+      }
+    
+      let idx = 0;
+      for(const r of overUnique){
+        const repl = (idx < missing.length) ? missing[idx] : N; // if run out, clamp to N
+        map.set(r, repl);
+        idx++;
+      }
+    
+      return map;
+    }
+
+    
     function getStarsWithBonus(r){
       const sWB = pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]);
       if(sWB !== null) return sWB;
@@ -2927,6 +2979,30 @@
             for(const e of entries){
               if(!byWar.has(e.warNum)) byWar.set(e.warNum, e);
             }
+
+            // ✅ Build rank-repair maps once per render (15v15)
+            const TEAM_SIZE = 15;
+            
+            if(!payload.__rankRepairCache){
+              payload.__rankRepairCache = new Map();
+            
+              const allMembers = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
+            
+              for(let warNum=1; warNum<=7; warNum++){
+                const allEntriesForWar = [];
+            
+                for(const mm of allMembers){
+                  const raw = Array.isArray(mm?.wars) ? mm.wars : (Array.isArray(mm?.days) ? mm.days : []);
+                  for(let j=0;j<raw.length;j++){
+                    const ne = normCwlEntry(raw[j], j);
+                    if(ne && ne.warNum === warNum) allEntriesForWar.push(ne);
+                  }
+                }
+            
+                payload.__rankRepairCache.set(warNum, buildRankRepairMap(allEntriesForWar, TEAM_SIZE));
+              }
+            }
+
             
             // ✅ ATK denominator (BEST): trust warsInLineup if Python provides it
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
