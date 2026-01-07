@@ -2674,18 +2674,65 @@
     }
 
     function getActiveWarLimit(payload){
-      // Try common keys your generator might output
-      const n =
+      // 1) Try explicit keys first
+      let n =
         pickNum(payload, ["activeWarDay","currentWarDay","warDay","day","round","currentRound","matchDay"]) ??
         pickNum(payload?.meta, ["activeWarDay","currentWarDay","warDay","day","round"]) ??
         null;
     
-      if(n === null || !isFinite(n)) return null;
-    
-      // normalize 0-based to 1-based
-      const v = (n >= 0 && n <= 6) ? (n + 1) : n;
-      return Math.max(1, Math.min(7, Math.floor(v)));
+      let fromMeta = null;
+      if(n !== null && isFinite(n)){
+        // normalize 0-based to 1-based
+        fromMeta = (n >= 0 && n <= 6) ? (n + 1) : n;
+        fromMeta = Math.max(1, Math.min(7, Math.floor(fromMeta)));
+      }
+
+  // 2) Fallback: infer from whatever wars/days actually exist in memberOverview
+  let observedMax = null;
+  const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
+
+  function inferWarNum(e, idx){
+    let warNum = (e && e.war != null) ? Number(e.war) : null;
+    if((warNum == null || !isFinite(warNum)) && e && e.day != null) warNum = Number(e.day);
+    if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
+    if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
+    return Math.floor(warNum);
+  }
+
+  function isMeaningful(e){
+    if(!e || typeof e !== "object") return false;
+    const opp = String(
+      e.defenderName ?? e.defender ?? e.opponentName ?? e.opponent ?? e.target ?? e.oppName ?? ""
+    ).trim();
+    const hasOpp = opp && opp !== "—" && opp !== "-" && opp.toLowerCase() !== "n/a";
+
+    const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
+    const destr = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
+
+    const hasStars = (stars !== null && isFinite(stars));
+    const hasDestr = (destr !== null && isFinite(destr));
+
+    return hasOpp || hasStars || hasDestr;
+  }
+
+  for(const m of members){
+    const raw = Array.isArray(m?.wars) ? m.wars : (Array.isArray(m?.days) ? m.days : []);
+    for(let idx=0; idx<raw.length; idx++){
+      const e = raw[idx];
+      if(!isMeaningful(e)) continue;
+      const wn = inferWarNum(e, idx);
+      if(wn == null) continue;
+      observedMax = (observedMax == null) ? wn : Math.max(observedMax, wn);
     }
+  }
+
+  // 3) Final: prefer the larger of (meta limit) vs (observed limit)
+  if(fromMeta == null && observedMax == null) return null;
+  if(fromMeta == null) return observedMax;
+  if(observedMax == null) return fromMeta;
+  return Math.max(fromMeta, observedMax);
+}
+
 
     // =========================
     // ✅ CWL render
