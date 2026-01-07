@@ -696,16 +696,20 @@
       position: sticky;
       top: 0;
       z-index: 5;
-      background: #0b1829;
+      background: #0b1829;               /* solid */
       border-bottom: 1px solid rgba(255,255,255,0.12);
       padding: 10px 10px;
       font-size:11px;
       letter-spacing:.08em;
       text-transform:uppercase;
-      opacity:.85;
+    
+      /* ✅ instead of opacity (which makes background transparent), tint the text */
+      color: rgba(255,255,255,0.85);
+    
       white-space: nowrap;
       text-align:center;
     }
+
     .cwl-table tbody td{
       padding: 9px 10px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -725,7 +729,28 @@
     /* ✅ League Overview highlights */
     .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
     .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
+    /* ✅ Member Overview: perfect performance highlight */
+    .cwl-perfect td{
+      color: rgba(56, 209, 114, 0.95) !important;
+      font-weight: 800;
+    }
 
+    .cwl-war-sword{
+      display:inline-block;
+      margin-right:6px;
+    }
+    
+    /* appended opponent name; can ellipsis */
+    .cwl-war-oppname{
+      display:inline-block;
+      max-width: 88px;          /* adjust if you want */
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      vertical-align:bottom;
+      color: rgba(255,255,255,0.85);
+    }
+    
     .cwl-wide{ min-width: 1220px; }
     .cwl-league{ min-width: 0; width: 100%; }
 
@@ -767,6 +792,11 @@
     
     .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-warcell{
       background: var(--cwl-war-bg) !important;
+    }
+    
+    /* ✅ header row 2: make the ⚔️ header cells darker too */
+    .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-day-start{
+      background: rgba(10,10,10,0.92) !important;
     }
 
     .cwl-note{
@@ -814,7 +844,11 @@
     }
     .cwl-day-start{
       border-left: 1px solid var(--sep-strong) !important;
+    
+      /* ✅ darker start-of-war column */
+      background: rgba(10,10,10,0.78);
     }
+
     .cwl-day-end{
       border-right: 1px solid var(--sep-strong) !important;
     }
@@ -1088,6 +1122,15 @@
       document.querySelectorAll(".dragscroll").forEach(enableDragScroll);
     }
 
+    function setScrollHintIfScrollable(wrapId, hintId){
+      const wrap = document.getElementById(wrapId);
+      const hint = document.getElementById(hintId);
+      if(!wrap || !hint) return;
+    
+      const isScrollable = wrap.scrollWidth > (wrap.clientWidth + 2);
+      hint.style.display = isScrollable ? "flex" : "none";
+    }
+
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -1282,8 +1325,16 @@
           <div class="divider"></div>
 
           <div class="section-title">League Overview</div>
-         
-          <div class="cwl-table-wrap" aria-label="CWL league overview">
+
+          <!-- ✅ only shown when the table is actually scrollable -->
+          <div class="cwl-subheaderbar" style="margin:0 0 8px;" aria-label="CWL league overview header">
+            <div></div>
+            <div class="cwl-scroll-inline" id="cwl-league-scroll-inline">← SCROLL →</div>
+            <div></div>
+          </div>
+          
+          <div class="cwl-table-wrap dragscroll" id="cwl-league-wrap" aria-label="CWL league overview">
+
             <table class="cwl-table cwl-league">
               <colgroup>
                 <col style="width:52px;">
@@ -1299,10 +1350,12 @@
                   <th>Wins</th>
                   <th>⭐</th>
                   <th>%</th>
+                  <th>AVG ⭐</th>
+                  <th>AVG DEF</th>
                 </tr>
               </thead>
               <tbody id="cwl-leagueoverview-body">
-                <tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                <tr><td colspan="7" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1382,13 +1435,13 @@
                   <th class="cwl-general-sep">Atk</th>
 
                   <!-- War subheaders: ⚔️ / ⭐ / 🎯 -->
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                  <th class="left cwl-warcell cwl-day-start">⚔️</th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-1"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-2"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-3"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-4"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-5"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-6"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-7"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
                 </tr>
               </thead>
 
@@ -2645,6 +2698,41 @@
       return null;
     }
 
+    function getOurCwlOppNames(payload){
+      // returns ["", "", ...] length 7
+      const out = Array(7).fill("");
+    
+      // Try common shapes
+      const candidates =
+        (Array.isArray(payload?.warDays) ? payload.warDays : null) ||
+        (Array.isArray(payload?.days) ? payload.days : null) ||
+        (Array.isArray(payload?.wars) ? payload.wars : null) ||
+        (Array.isArray(payload?.rounds) ? payload.rounds : null) ||
+        null;
+    
+      if(candidates){
+        for(let i=0;i<Math.min(7, candidates.length);i++){
+          const d = candidates[i];
+          const nm =
+            pick(d, ["opponentName","oppName","opponent","enemy","enemyClan","clanOpponent","vs"]) ||
+            pick(d?.opponent, ["name"]) ||
+            "";
+          out[i] = String(nm || "").trim();
+        }
+      }
+    
+      // Also accept explicit array if you ever add it in python
+      const explicit = Array.isArray(payload?.warOpponents) ? payload.warOpponents : null;
+      if(explicit){
+        for(let i=0;i<Math.min(7, explicit.length);i++){
+          out[i] = String(explicit[i] || "").trim();
+        }
+      }
+    
+      return out;
+    }
+
+    
     function getActiveWarLimit(payload){
       // 1) Try explicit keys first
       let n =
@@ -2786,14 +2874,24 @@
 
       
         if(!rows.length){
-          leagueBody.innerHTML = `<tr><td colspan="5" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
+          leagueBody.innerHTML = `<tr><td colspan="7" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
         } else {
           leagueBody.innerHTML = rows.map(rr => {
             const r = normLeagueRow(rr);
-          
+            // wars ended = only wars that are actually active/ended
+            const warLimit = getActiveWarLimit(payload);        // 1..7 or null
+            const warsEnded = (payload?.state === "ended") ? 7 : (warLimit || 0);
+            
+            // stars available per war (best-effort)
+            const teamSize =
+              pickNum(payload, ["teamSize","size"]) ??
+              pickNum(payload?.meta, ["teamSize","size"]) ??
+              15;
+            const maxStarsPerWar = Math.max(0, (teamSize|0) * 3);
+
             const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
             const nameOut = escapeHtml(r.name || "—");
-            const winsOut = fmtNum(r.wins, "0");
+            const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsEnded, "0")}`;
           
             // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
             let starsOut = r.stars;
@@ -2803,7 +2901,32 @@
             }
           
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
-          
+            // prefer stars WITHOUT bonus for averages if present
+            const starsNoBonus =
+              pickNum(rr, ["starsNoBonus","starsWithoutBonus","stars_without_bonus","starsWithoutBonus"]) ??
+              pickNum(rr?.stats, ["starsNoBonus","starsWithoutBonus"]) ??
+              pickNum(rr?.warStats, ["starsNoBonus","starsWithoutBonus"]) ??
+              (starsOut === null ? null : Number(starsOut));
+            
+            const avgStarsVal = (warsEnded > 0 && starsNoBonus !== null) ? (Number(starsNoBonus) / warsEnded) : null;
+            const avgStarsOut =
+              (avgStarsVal === null || !isFinite(avgStarsVal))
+                ? "—"
+                : `${avgStarsVal.toFixed(1)}/${maxStarsPerWar}`;
+            
+            // opponent stars scored on that clan (best-effort keys)
+            const starsAgainst =
+              pickNum(rr, ["starsAgainst","opponentStars","starsConceded","starsLost","defStars","stars_against"]) ??
+              pickNum(rr?.stats, ["starsAgainst","opponentStars","starsConceded","starsLost"]) ??
+              pickNum(rr?.warStats, ["starsAgainst","opponentStars","starsConceded","starsLost"]) ??
+              null;
+            
+            const avgDefVal = (warsEnded > 0 && starsAgainst !== null) ? (Number(starsAgainst) / warsEnded) : null;
+            const avgDefOut =
+              (avgDefVal === null || !isFinite(avgDefVal))
+                ? "—"
+                : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
+
             // ✅ row color rules
             const rankNum = (r.rank === null) ? null : Number(r.rank);
             const rowClass =
@@ -2817,6 +2940,8 @@
                 <td class="mono">${winsOut}</td>
                 <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
                 <td class="mono">${destrOut}</td>
+                <td class="mono">${avgStarsOut}</td>
+                <td class="mono">${avgDefOut}</td>
               </tr>
             `;
           }).join("");
@@ -2836,22 +2961,66 @@
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
-
+          
             const aTotalStars = Number(a?.totalStars ?? 0);
             const bTotalStars = Number(b?.totalStars ?? 0);
-
+          
             const aTotalPct = Number(a?.totalDestruction ?? a?.totalPct ?? a?.totalPercent ?? 0);
             const bTotalPct = Number(b?.totalDestruction ?? b?.totalPct ?? b?.totalPercent ?? 0);
-
+          
             const aAvgStars = Number(a?.avgStars ?? 0);
             const bAvgStars = Number(b?.avgStars ?? 0);
-
+          
             const aAvgPct = Number(a?.avgDestruction ?? a?.avgPct ?? a?.avgPercent ?? 0);
             const bAvgPct = Number(b?.avgDestruction ?? b?.avgPct ?? b?.avgPercent ?? 0);
-
+          
+            const nameCmp = String(a?.name||"").localeCompare(String(b?.name||""));
+          
+            // Rank: AVG RK > Total Stars > Total %
             if(cwlMembersSortMode === "rank"){
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-              return String(a?.name||"").localeCompare(String(b?.name||""));
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+              return nameCmp;
+            }
+          
+            // Total Stars: Total Stars > Total % > AVG RK
+            if(cwlMembersSortMode === "totalStars"){
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return nameCmp;
+            }
+          
+            // Total %: Total % > Total Stars > AVG RK
+            if(cwlMembersSortMode === "totalPct"){
+              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return nameCmp;
+            }
+          
+            // AVG Stars: AVG Stars > AVG % > AVG RK
+            if(cwlMembersSortMode === "avgStars"){
+              if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
+              if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return nameCmp;
+            }
+          
+            // AVG %: AVG % > Total Stars > AVG RK
+            if(cwlMembersSortMode === "avgPct"){
+              if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+              return nameCmp;
+            }
+          
+            // fallback
+            if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
+            return nameCmp;
+          });
+
             }
             if(cwlMembersSortMode === "totalStars"){
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
@@ -2922,6 +3091,12 @@
             const avgStars = (avgStarsVal === null) ? "—" : fmt1(avgStarsVal, "—");
 
             const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
+            const isPerfect =
+              (avgStarsVal !== null && isFinite(avgStarsVal) && avgStarsVal >= 3.0) ||
+              (avgDesVal !== null && isFinite(avgDesVal) && avgDesVal >= 100.0);
+            
+            const rowClass = isPerfect ? "cwl-perfect" : "";
+
             const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
         
             // ✅ accept BOTH schemas:
@@ -3045,7 +3220,7 @@
 
 
             return `
-              <tr>
+              <tr class="${rowClass}">
                 <td class="sticky-1 mono">${avgRk}</td>
                 <td class="sticky-2 left" title="${nm}">${nm}</td>
                 <td class="mono bold">${fmtNum(totStars, "0")}</td>
@@ -3059,8 +3234,21 @@
           }).join("");
         }
       }
+      // ✅ fill the ⚔️ header opponent names
+      {
+        const oppNames = getOurCwlOppNames(payload);
+        for(let i=1;i<=7;i++){
+          const id = `cwl-war-oppname-${i}`;
+          const nm = oppNames[i-1] || "";
+          setText(id, nm);
+        }
+      }
 
       enableDragScrollEverywhere();
+
+      // ✅ show scroll hint only when League Overview overflows
+      setScrollHintIfScrollable("cwl-league-wrap", "cwl-league-scroll-inline");
+
     }
 
     // =========================
