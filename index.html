@@ -722,6 +722,9 @@
     .cwl-table .mono{ font-family: monospace; }
     .cwl-table .bold{ font-weight:900; }
     .cwl-table .muted{ opacity:.70; }
+    /* ✅ League Overview highlights */
+    .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
+    .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
 
     .cwl-wide{ min-width: 1220px; }
     .cwl-league{ min-width: 0; width: 100%; }
@@ -2784,13 +2787,21 @@
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
       
             return `
-              <tr>
-                <td class="mono">${rankOut}</td>
-                <td class="left" title="${nameOut}">${nameOut}</td>
-                <td class="mono">${winsOut}</td>
-                <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
-                <td class="mono">${destrOut}</td>
-              </tr>
+              const rankNum = (r.rank === null) ? null : Number(r.rank);
+              const rowClass =
+                (rankNum === 1) ? "rank-good" :
+                ((rankNum === 7 || rankNum === 8) ? "rank-bad" : "");
+              
+              return `
+                <tr class="${rowClass}">
+                  <td class="mono">${rankOut}</td>
+                  <td class="left" title="${nameOut}">${nameOut}</td>
+                  <td class="mono">${winsOut}</td>
+                  <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
+                  <td class="mono">${destrOut}</td>
+                </tr>
+              `;
+
             `;
           }).join("");
         }
@@ -2879,9 +2890,10 @@
           }
 
           memberBody.innerHTML = sorted.map(m => {
-            // Avg Rk (no cap)
-            let avgRkVal = pickNum(m, ["avgRankAttacked","avgRank","avg_rank_attacked","avg_rank"]);
-            const avgRk = (avgRkVal === null || !isFinite(avgRkVal)) ? "—" : fmt1(avgRkVal, "—");
+             // Avg Rk (computed from repaired ranks for wars up to warLimit)
+            let avgRkVal = null; // we will compute it later from repaired ranks
+            let avgRk = "—";
+
 
 
             const nm = escapeHtml(m.name || "—");
@@ -3010,14 +3022,49 @@
 
             // ✅ do NOT count future/prep wars in denominator
             const warLimit = getActiveWarLimit(payload); // 1..7 or null
-            const byWarCountUpToLimit = (() => {
-              if(!warLimit) return byWar.size;
-              let c = 0;
-              for(const k of byWar.keys()){
-                if(k <= warLimit) c++;
+            // ✅ Avg Rk should use repaired ranks, and ONLY count wars up to warLimit (no prep)
+            {
+              const limit = warLimit || 0; // if null, treat as 0 (nothing active yet)
+              const repairedRanks = [];
+            
+              for(let warNum=1; warNum<=7; warNum++){
+                if(warNum > limit) continue;
+            
+                const e = byWar.get(warNum);
+                if(!e) continue;
+            
+                let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
+                if(rk === null) continue;
+            
+                if(rk > 15){
+                  const map = payload.__rankRepairCache?.get(warNum);
+                  if(map && map.has(rk)) rk = map.get(rk);
+                  else rk = 15;
+                }
+            
+                // only count sensible ranks
+                if(rk >= 1 && rk <= 15) repairedRanks.push(rk);
               }
-              return c;
-            })();
+            
+              if(repairedRanks.length){
+                const sum = repairedRanks.reduce((a,b)=>a+b,0);
+                avgRkVal = sum / repairedRanks.length;
+                avgRk = fmt1(avgRkVal, "—");
+              } else {
+                avgRk = "—";
+              }
+            }
+
+            const byWarCountUpToLimit = (() => {
+            // If there is no active war day yet, there should be NO denominator
+            if(!warLimit) return 0;
+          
+            let c = 0;
+            for(const k of byWar.keys()){
+              if(k <= warLimit) c++;
+            }
+            return c;
+          })();
             
             let denom;
             if(warsInLineup !== null && isFinite(warsInLineup) && warsInLineup >= 0){
@@ -3035,9 +3082,11 @@
             const warCells = [];
             for(let i=1;i<=7;i++){
               const e = byWar.get(i) || null;
+              // ✅ Do not show opponent info for wars beyond active warLimit (prep/future)
+              const isActiveWarDay = (warLimit && i <= warLimit);
             
               let oppText = "—";
-              if(e){
+              if(e && isActiveWarDay){
                 const oppNameRaw = String(e.opp || "").trim();
               
                 // If no opponent name (or it's just a dash), treat it as no-attack
