@@ -2606,9 +2606,44 @@
       const x = Number(n);
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
+    
+    function inferTeamSizeFromPayload(payload){
+      // 1) If you ever add teamSize into the payload, this will use it.
+      const hinted =
+        pickNum(payload, ["teamSize","warSize","size","cwlWarSize"]) ??
+        pickNum(payload?.meta, ["teamSize","warSize","size"]) ??
+        null;
+      if(hinted && isFinite(hinted) && hinted > 0) return Math.round(hinted);
+    
+      // 2) Infer from actual attacked defender positions (max observed)
+      let maxPos = 0;
+      const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
+    
+      for(const m of members){
+        const raw = Array.isArray(m?.wars) ? m.wars : (Array.isArray(m?.days) ? m.days : []);
+        for(let i=0;i<raw.length;i++){
+          const e = normCwlEntry(raw[i], i);
+          if(!e) continue;
+    
+          // Only count real attacks
+          const attacked =
+            (e.stars !== null && isFinite(e.stars)) ||
+            (e.destruction !== null && isFinite(e.destruction));
+          if(!attacked) continue;
+    
+          if(e.oppRank !== null && isFinite(e.oppRank)){
+            maxPos = Math.max(maxPos, Math.round(e.oppRank));
+          }
+        }
+      }
+    
+      // CWL sizes are usually 15 or 30
+      if(maxPos > 15) return 30;
+      return 15;
+    }
 
     // =========================
-    // ✅ CWL Rank Repair (15v15)
+    // ✅ CWL Rank Repair (15v15 / 30v30)
     // =========================
     function buildRankRepairMap(allEntriesForWar, teamSize){
       const N = teamSize;
@@ -3037,8 +3072,9 @@
               if(!byWar.has(e.warNum)) byWar.set(e.warNum, e);
             }
 
-            // ✅ Build rank-repair maps once per render (15v15)
-            const TEAM_SIZE = 15;
+            // ✅ Build rank-repair maps once per render (15v15 or 30v30 inferred)
+            const TEAM_SIZE = inferTeamSizeFromPayload(payload);
+
             
             if(!payload.__rankRepairCache){
               payload.__rankRepairCache = new Map();
@@ -3093,7 +3129,7 @@
                   else rk = 15;
                 }
                 
-                if(rk >= 1 && rk <= 15) repairedRanks.push(rk);
+                if(rk >= 1 && rk <= TEAM_SIZE) repairedRanks.push(rk);
 
               }
             
@@ -3144,26 +3180,25 @@
               // ✅ only show opp/rank if an attack actually happened
               const attacked = (sVal !== null) || (pVal !== null);
               
-              if(e && isActiveWarDay && attacked){
+              if(e && isActiveWarDay){
                 const oppNameRaw = String(e.opp || "").trim();
               
-                const hasOpponent =
-                  oppNameRaw &&
-                  oppNameRaw !== "—" &&
-                  oppNameRaw !== "-" &&
-                  oppNameRaw.toLowerCase() !== "n/a";
+                // ✅ Only show opponent/rank if it was a REAL attack
+                const attacked =
+                  (e.stars !== null && isFinite(e.stars)) ||
+                  (e.destruction !== null && isFinite(e.destruction));
               
-                if(hasOpponent){
-                  let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
+                let rk = (e.oppRank !== null && isFinite(e.oppRank))
+                  ? Math.max(1, Math.round(e.oppRank))
+                  : null;
               
-                  // ✅ Apply repair rule ONLY when rank is above 15 (15v15)
-                  if(rk !== null && rk > 15){
+                if(attacked && rk !== null && oppNameRaw && oppNameRaw !== "—" && oppNameRaw !== "-"){
+                  if(rk > TEAM_SIZE){
                     const map = payload.__rankRepairCache?.get(i);
                     if(map && map.has(rk)) rk = map.get(rk);
-                    else rk = 15;
+                    else rk = TEAM_SIZE;
                   }
-              
-                  oppText = (rk !== null) ? `${rk}. ${oppNameRaw}` : oppNameRaw;
+                  oppText = `${rk}. ${oppNameRaw}`;
                 } else {
                   oppText = "—";
                 }
