@@ -729,11 +729,14 @@
     /* ✅ League Overview highlights */
     .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
     .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
-    /* ✅ Member Overview: perfect performance highlight */
-    .cwl-perfect td{
+    /* ✅ Member Overview: perfect performance highlight
+       ONLY color the "general" columns (Avg Rk → Atk), NOT the war columns,
+       and do NOT make anything bold. */
+    .cwl-perfect td:nth-child(-n+7){
       color: rgba(56, 209, 114, 0.95) !important;
-      font-weight: 800;
+      font-weight: 400 !important;
     }
+
 
     .cwl-war-sword{
       display:inline-block;
@@ -752,7 +755,7 @@
     }
     
     .cwl-wide{ min-width: 1220px; }
-    .cwl-league{ min-width: 0; width: 100%; }
+    .cwl-league{ min-width: 700px; width: 100%; }
 
     /* ✅ tighter League Overview columns (padding tighter only for this table) */
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
@@ -1337,13 +1340,13 @@
 
             <table class="cwl-table cwl-league">
             <colgroup>
-              <col style="width:52px;">   <!-- Rank -->
-              <col>                      <!-- Clan -->
-              <col style="width:76px;">  <!-- Wins (fraction) -->
-              <col style="width:64px;">  <!-- total stars -->
-              <col style="width:52px;">  <!-- % -->
-              <col style="width:92px;">  <!-- AVG ⭐ -->
-              <col style="width:98px;">  <!-- AVG DEF -->
+              <col style="width:52px;">    <!-- Rank -->
+              <col style="width:240px;">   <!-- Clan (bigger, NEVER collapses in PWA) -->
+              <col style="width:64px;">    <!-- Wins (narrower) -->
+              <col style="width:60px;">    <!-- total stars (slightly narrower) -->
+              <col style="width:52px;">    <!-- % -->
+              <col style="width:78px;">    <!-- AVG ⭐ (narrower) -->
+              <col style="width:84px;">    <!-- AVG 🛡️ (narrower) -->
             </colgroup>
 
               <thead>
@@ -1354,7 +1357,7 @@
                   <th>⭐</th>
                   <th>%</th>
                   <th>AVG ⭐</th>
-                  <th>AVG DEF</th>
+                  <th>AVG 🛡️</th>
                 </tr>
               </thead>
               <tbody id="cwl-leagueoverview-body">
