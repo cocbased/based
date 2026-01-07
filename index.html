@@ -2771,39 +2771,37 @@
         } else {
           leagueBody.innerHTML = rows.map(rr => {
             const r = normLeagueRow(rr);
-      
+          
             const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
             const nameOut = escapeHtml(r.name || "—");
             const winsOut = fmtNum(r.wins, "0");
-      
+          
             // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
-            // (keeps backward compatibility)
             let starsOut = r.stars;
             if(starsOut === null){
               const fallbackStarsWithBonus = getStarsWithBonus(rr);
               starsOut = (fallbackStarsWithBonus === null ? null : fallbackStarsWithBonus);
             }
-      
+          
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
-      
+          
+            // ✅ row color rules
+            const rankNum = (r.rank === null) ? null : Number(r.rank);
+            const rowClass =
+              (rankNum === 1) ? "rank-good" :
+              ((rankNum === 7 || rankNum === 8) ? "rank-bad" : "");
+          
             return `
-              const rankNum = (r.rank === null) ? null : Number(r.rank);
-              const rowClass =
-                (rankNum === 1) ? "rank-good" :
-                ((rankNum === 7 || rankNum === 8) ? "rank-bad" : "");
-              
-              return `
-                <tr class="${rowClass}">
-                  <td class="mono">${rankOut}</td>
-                  <td class="left" title="${nameOut}">${nameOut}</td>
-                  <td class="mono">${winsOut}</td>
-                  <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
-                  <td class="mono">${destrOut}</td>
-                </tr>
-              `;
-
+              <tr class="${rowClass}">
+                <td class="mono">${rankOut}</td>
+                <td class="left" title="${nameOut}">${nameOut}</td>
+                <td class="mono">${winsOut}</td>
+                <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
+                <td class="mono">${destrOut}</td>
+              </tr>
             `;
           }).join("");
+
         }
       }
 
