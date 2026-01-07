@@ -683,7 +683,7 @@
       -webkit-overflow-scrolling: touch;
       border-radius:10px;
       border:1px solid rgba(255,255,255,0.10);
-      background: var(--cwl-chart-bg);
+      background: rgba(0,0,0,0.10);
     }
     .cwl-table{
       width:100%;
@@ -696,8 +696,7 @@
       position: sticky;
       top: 0;
       z-index: 5;
-      background: var(--cwl-chart-head); /* solid + darker grey */
-      /* solid */
+      background: #0b1829;               /* solid */
       border-bottom: 1px solid rgba(255,255,255,0.12);
       padding: 10px 10px;
       font-size:11px;
@@ -726,15 +725,9 @@
     .cwl-table .right{ text-align:right; }
     .cwl-table .mono{ font-family: monospace; }
     .cwl-table .bold{ font-weight:900; }
-    /* ✅ IMPORTANT: don't use opacity on cells (it makes backgrounds transparent) */
-    .cwl-table .muted{ color: rgba(255,255,255,0.55); }
-
-    /* ✅ Member Overview: perfect highlight ONLY on the LEFT (non-war) side, green but NOT bold */
-    .cwl-perfect td:nth-child(-n+7){
-      color: rgba(56, 209, 114, 0.95) !important;
-      font-weight: 400 !important;
-    }
-
+    .cwl-table .muted{ opacity:.70; }
+    /* ✅ League Overview highlights */
+    .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
     .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
     /* ✅ Member Overview: perfect performance highlight */
     .cwl-perfect td{
@@ -761,36 +754,6 @@
     .cwl-wide{ min-width: 1220px; }
     .cwl-league{ min-width: 0; width: 100%; }
 
-    /* ✅ League Overview should always be scrollable on small screens */
-    .cwl-table.cwl-league{
-      min-width: 720px;  /* forces horizontal scroll instead of tight squish */
-    }
-
-    /* ✅ League Overview sticky Rank + Clan */
-    .cwl-table.cwl-league thead th:nth-child(1),
-    .cwl-table.cwl-league tbody td:nth-child(1){
-      position: sticky;
-      left: 0;
-      z-index: 7;
-      background: var(--cwl-chart-head);
-      font-family: monospace;
-      text-align:center;
-    }
-    .cwl-table.cwl-league thead th:nth-child(1){ z-index: 9; }
-
-    .cwl-table.cwl-league thead th:nth-child(2),
-    .cwl-table.cwl-league tbody td:nth-child(2){
-      position: sticky;
-      left: 52px; /* matches your first col width */
-      z-index: 6;
-      background: var(--cwl-chart-head);
-      border-right: 1px solid rgba(255,255,255,0.10);
-      text-align:left;
-      font-family: inherit;
-    }
-    .cwl-table.cwl-league thead th:nth-child(2){ z-index: 8; }
-
-    
     /* ✅ tighter League Overview columns (padding tighter only for this table) */
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
@@ -800,7 +763,7 @@
       position: sticky;
       left: 0;
       z-index: 7;
-      background: var(--cwl-chart-head);
+      background: #0b1829;
       text-align:center;
       font-family: monospace;
     }
@@ -809,7 +772,7 @@
       position: sticky;
       left: 64px;
       z-index: 6;
-      background: var(--cwl-chart-head);
+      background: #0b1829;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
@@ -1391,7 +1354,7 @@
                   <th>⭐</th>
                   <th>%</th>
                   <th>AVG ⭐</th>
-                  <th>AVG 🛡️</th>
+                  <th>AVG DEF</th>
                 </tr>
               </thead>
               <tbody id="cwl-leagueoverview-body">
@@ -2830,31 +2793,6 @@
   if(fromMeta == null && observedMax == null) return null;
   if(fromMeta == null) return observedMax;
   if(observedMax == null) return fromMeta;
-    // 2.5) If memberOverview inference fails, infer from league overview "wins"
-  if(observedMax == null){
-    const leagueRows =
-      (Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : null) ||
-      (Array.isArray(payload?.league_overview) ? payload.league_overview : null) ||
-      (Array.isArray(payload?.league?.clans) ? payload.league.clans : null) ||
-      (Array.isArray(payload?.clans) ? payload.clans : null) ||
-      [];
-
-    let maxWins = null;
-    for(const r of leagueRows){
-      const w =
-        pickNum(r, ["wins","warWins","matchWins","roundWins","won"]) ??
-        pickNum(r?.stats, ["wins","warWins","matchWins"]) ??
-        pickNum(r?.warStats, ["wins"]) ??
-        null;
-      if(w !== null && isFinite(w)){
-        maxWins = (maxWins == null) ? w : Math.max(maxWins, w);
-      }
-    }
-
-    if(maxWins !== null){
-      observedMax = Math.max(0, Math.min(7, Math.floor(maxWins)));
-    }
-  }
   return Math.max(fromMeta, observedMax);
 }
 
