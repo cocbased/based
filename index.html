@@ -3045,13 +3045,69 @@
               ? m.wars
               : (Array.isArray(m.days) ? m.days : []);
 
-            const entries = [];
-            for(let idx=0; idx<entriesRaw.length; idx++){
-              const n = normCwlEntry(entriesRaw[idx], idx);
-              if(n) entries.push(n);
-            }
-           
+                       
+              // NEW schema prefers "war"
+              let warNum = (e.war != null) ? Number(e.war) : null;
+            
+              // OLD schema fallback: "day"
+              if(warNum == null && e.day != null) warNum = Number(e.day);
+            
+              // last resort: array order
+              if((warNum == null || !isFinite(warNum)) && idx >= 0 && idx < 7) warNum = idx + 1;
+            
+              if(!isFinite(warNum) || warNum < 1 || warNum > 7) return null;
+            
+              const opp = pick(e, [
+                // ✅ NEW schema
+                "defenderName",
+                "defender",
               
+                // common
+                "opponentName","opponent","target",
+              
+                // your generator also writes this (fallback only)
+                "opponentClan",
+              
+                // alternates
+                "enemy","enemyName","enemy_name",
+                "targetName","target_name",
+                "oppName","opp_name",
+              ]) || "—";
+
+            
+              let oppRank =
+                pickNum(e, [
+                  // ✅ NEW schema
+                  "defenderPos",
+              
+                  // others
+                  "opponentRank","opponent_rank",
+                  "defenderRank","defender_rank",
+                  "targetRank","target_rank",
+                  "defenderMapPosition","defenderMapPos",
+                  "targetMapPosition",
+                  "position","mapPosition","map_position"
+                ]);
+
+            
+              if(oppRank !== null && isFinite(oppRank)){
+                oppRank = Math.max(1, Math.round(oppRank));
+              }
+
+            
+              const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
+              const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
+            
+              return {
+                warNum,
+                opp,
+                oppRank,
+                stars: (stars !== null && isFinite(stars)) ? stars : null,
+                destruction: (destruction !== null && isFinite(destruction)) ? destruction : null
+              };
+            }
+
+
             const entries = [];
             for(let idx=0; idx<entriesRaw.length; idx++){
               const n = normCwlEntry(entriesRaw[idx], idx);
