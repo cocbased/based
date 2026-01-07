@@ -1404,13 +1404,13 @@
                 <col style="width:96px;">
 
                 <!-- War cols: Opp widest, Stars tight, % medium -->
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:54px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
               </colgroup>
 
               <thead id="cwl-members-head">
@@ -2580,6 +2580,19 @@
     // =========================
     // CWL render helpers
     // =========================
+    function getWarsCompleted(payload){
+      const warLimit = getActiveWarLimit(payload); // 1..7 or null
+    
+      // If CWL ended, all 7 wars are completed.
+      if(String(payload?.state || "").toLowerCase() === "ended") return 7;
+    
+      // If we don't know the active war yet, assume none completed.
+      if(!warLimit || !isFinite(warLimit)) return 0;
+    
+      // Exclude the active war day
+      return Math.max(0, Math.floor(warLimit) - 1);
+    }
+
     function ensureCwlSelectBound(){
       const sel = document.getElementById("cwlSeasonSelect");
       if(!sel) return;
@@ -2866,10 +2879,13 @@
             pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]) ??
             pickNum(r?.stats, ["starsWithBonus","starsPlusBonus"]) ??
             pickNum(r?.warStats, ["starsWithBonus","starsPlusBonus"]) ??
-            pickNum(r, ["stars","totalStars","starsTotal","starsNoBonus","starsWithoutBonus"]) ??
-            pickNum(r?.stats, ["stars","totalStars","starsTotal"]) ??
-            pickNum(r?.clan?.stats, ["stars","totalStars","starsTotal"]) ??
+          
+            // common alternates
+            pickNum(r, ["totalStars","starsTotal","stars","total_stars"]) ??
+            pickNum(r?.stats, ["totalStars","starsTotal","stars"]) ??
+            pickNum(r?.clan?.stats, ["totalStars","starsTotal","stars"]) ??
             null;
+
         
           // Destruction can be stored as a total (sum) or as pct
           const destr =
@@ -2889,8 +2905,7 @@
           leagueBody.innerHTML = rows.map(rr => {
             const r = normLeagueRow(rr);
             // wars ended = only wars that are actually active/ended
-            const warLimit = getActiveWarLimit(payload);        // 1..7 or null
-            const warsEnded = (payload?.state === "ended") ? 7 : (warLimit || 0);
+            const warsCompleted = getWarsCompleted(payload);
             
             // stars available per war (best-effort)
             const teamSize =
@@ -2901,7 +2916,7 @@
 
             const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
             const nameOut = escapeHtml(r.name || "—");
-            const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsEnded, "0")}`;
+            const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsCompleted, "0")}`;
           
             // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
             let starsOut = r.stars;
@@ -2913,7 +2928,7 @@
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
 
             // ✅ AVG % = total destruction / wars ended (1 decimal)
-            const avgPctVal = (warsEnded > 0 && r.destr !== null) ? (Number(r.destr) / warsEnded) : null;
+            const avgPctVal = (warsCompleted > 0 && r.destr !== null) ? (Number(r.destr) / warsCompleted) : null;
             const avgPctOut =
               (avgPctVal === null || !isFinite(avgPctVal))
                 ? "—"
@@ -2922,12 +2937,13 @@
             
             // prefer stars WITHOUT bonus for averages if present
             const starsNoBonus =
-              pickNum(rr, ["starsNoBonus","starsWithoutBonus","stars_without_bonus","starsWithoutBonus"]) ??
-              pickNum(rr?.stats, ["starsNoBonus","starsWithoutBonus"]) ??
-              pickNum(rr?.warStats, ["starsNoBonus","starsWithoutBonus"]) ??
+              pickNum(rr, ["starsNoBonus","starsWithoutBonus","stars_without_bonus","starsWithoutBonus","totalStarsNoBonus"]) ??
+              pickNum(rr?.stats, ["starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
+              pickNum(rr?.warStats, ["starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
               (starsOut === null ? null : Number(starsOut));
+
             
-            const avgStarsVal = (warsEnded > 0 && starsNoBonus !== null) ? (Number(starsNoBonus) / warsEnded) : null;
+            const avgStarsVal = (warsCompleted > 0 && starsNoBonus !== null) ? (Number(starsNoBonus) / warsCompleted) : null;
             const avgStarsOut =
               (avgStarsVal === null || !isFinite(avgStarsVal))
                 ? "—"
@@ -2935,12 +2951,13 @@
             
             // opponent stars scored on that clan (best-effort keys)
             const starsAgainst =
-              pickNum(rr, ["starsAgainst","opponentStars","starsConceded","starsLost","defStars","stars_against"]) ??
-              pickNum(rr?.stats, ["starsAgainst","opponentStars","starsConceded","starsLost"]) ??
-              pickNum(rr?.warStats, ["starsAgainst","opponentStars","starsConceded","starsLost"]) ??
+              pickNum(rr, ["starsAgainst","stars_against","opponentStars","opponent_stars","starsConceded","stars_conceded","starsAllowed","stars_allowed","starsLost","stars_lost","defStars","def_stars"]) ??
+              pickNum(rr?.stats, ["starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
+              pickNum(rr?.warStats, ["starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
               null;
+
             
-            const avgDefVal = (warsEnded > 0 && starsAgainst !== null) ? (Number(starsAgainst) / warsEnded) : null;
+            const avgDefVal = (warsCompleted > 0 && starsAgainst !== null) ? (Number(starsAgainst) / warsCompleted) : null;
             const avgDefOut =
               (avgDefVal === null || !isFinite(avgDefVal))
                 ? "—"
