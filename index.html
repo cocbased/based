@@ -1336,13 +1336,16 @@
           <div class="cwl-table-wrap dragscroll" id="cwl-league-wrap" aria-label="CWL league overview">
 
             <table class="cwl-table cwl-league">
-              <colgroup>
-                <col style="width:52px;">
-                <col>
-                <col style="width:44px;">
-                <col style="width:64px;">
-                <col style="width:52px;">
-              </colgroup>
+            <colgroup>
+              <col style="width:52px;">   <!-- Rank -->
+              <col>                      <!-- Clan -->
+              <col style="width:76px;">  <!-- Wins (fraction) -->
+              <col style="width:64px;">  <!-- total stars -->
+              <col style="width:52px;">  <!-- % -->
+              <col style="width:92px;">  <!-- AVG ⭐ -->
+              <col style="width:98px;">  <!-- AVG DEF -->
+            </colgroup>
+
               <thead>
                 <tr>
                   <th>Rank</th>
@@ -3020,61 +3023,7 @@
             if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
             return nameCmp;
           });
-
-            }
-            if(cwlMembersSortMode === "totalStars"){
-              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
-              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-              return String(a?.name||"").localeCompare(String(b?.name||""));
-            }
-            if(cwlMembersSortMode === "totalPct"){
-              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
-              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-              return String(a?.name||"").localeCompare(String(b?.name||""));
-            }
-            if(cwlMembersSortMode === "avgStars"){
-              if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
-              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-              return String(a?.name||"").localeCompare(String(b?.name||""));
-            }
-            if(cwlMembersSortMode === "avgPct"){
-              if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
-              if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-              return String(a?.name||"").localeCompare(String(b?.name||""));
-            }
-
-            if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
-            return String(a?.name||"").localeCompare(String(b?.name||""));
-          });
-
-          function getRawCwlDayNum(d){
-            if(!d || typeof d !== "object") return null;
-            const candidates = [d.day, d.dayNumber, d.round, d.warDay, d.matchDay, d.dayIndex];
-            for(const c of candidates){
-              if(c === null || c === undefined || c === "") continue;
-              const n = Number(String(c).replace(/[^\d-]/g,""));
-              if(!isFinite(n)) continue;
-              if(n >= 1 && n <= 7) return n;
-              if(n >= 0 && n <= 6) return n + 1;
-            }
-            return null;
-          }
-
-          function isMeaningfulCwlEntry(d){
-            if(!d || typeof d !== "object") return false;
-
-            const opp = String(d.defender || d.opponent || d.target || "").trim();
-            const hasOpp = !!opp && opp !== "—";
-
-            const stars = (d.stars === null || d.stars === undefined) ? null : Number(d.stars);
-            const destr = (d.destruction === null || d.destruction === undefined) ? null : Number(d.destruction);
-
-            const hasStars = (stars !== null && isFinite(stars));
-            const hasDestr = (destr !== null && isFinite(destr));
-
-            return hasOpp || hasStars || hasDestr;
-          }
-
+            
           memberBody.innerHTML = sorted.map(m => {
              // Avg Rk (computed from repaired ranks for wars up to warLimit)
             let avgRkVal = null; // we will compute it later from repaired ranks
