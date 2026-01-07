@@ -2633,6 +2633,10 @@
     
       let oppRank =
         pickNum(e, [
+          // ✅ NEW generator schema (most correct)
+          "defenderMapPosition",
+      
+          // older / alternate schema fallbacks
           "defenderPos",
           "opponentRank","opponent_rank",
           "defenderRank","defender_rank",
@@ -3080,10 +3084,11 @@
             
               let oppRank =
                 pickNum(e, [
-                  // ✅ NEW schema
-                  "defenderPos",
+                  // ✅ NEW generator schema (most correct)
+                  "defenderMapPosition",
               
-                  // others
+                  // older / alternate schema fallbacks
+                  "defenderPos",
                   "opponentRank","opponent_rank",
                   "defenderRank","defender_rank",
                   "targetRank","target_rank",
@@ -3174,10 +3179,10 @@
                 let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
                 if(rk === null) continue;
                 
-                if(rk > 15){
+                if(rk > TEAM_SIZE){
                   const map = payload.__rankRepairCache?.get(warNum);
                   if(map && map.has(rk)) rk = map.get(rk);
-                  else rk = 15;
+                  else rk = TEAM_SIZE;
                 }
                 
                 if(rk >= 1 && rk <= TEAM_SIZE) repairedRanks.push(rk);
