@@ -3077,18 +3077,24 @@
             
                 const e = byWar.get(warNum);
                 if(!e) continue;
-            
+                
+                // ✅ only count rank if an attack actually happened
+                const attacked =
+                  (e.stars !== null && isFinite(e.stars)) ||
+                  (e.destruction !== null && isFinite(e.destruction));
+                if(!attacked) continue;
+                
                 let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
                 if(rk === null) continue;
-            
+                
                 if(rk > 15){
                   const map = payload.__rankRepairCache?.get(warNum);
                   if(map && map.has(rk)) rk = map.get(rk);
                   else rk = 15;
                 }
-            
-                // only count sensible ranks
+                
                 if(rk >= 1 && rk <= 15) repairedRanks.push(rk);
+
               }
             
               if(repairedRanks.length){
@@ -3131,10 +3137,16 @@
               const isActiveWarDay = (warLimit && i <= warLimit);
             
               let oppText = "—";
-              if(e && isActiveWarDay){
+
+              const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
+              const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
+              
+              // ✅ only show opp/rank if an attack actually happened
+              const attacked = (sVal !== null) || (pVal !== null);
+              
+              if(e && isActiveWarDay && attacked){
                 const oppNameRaw = String(e.opp || "").trim();
               
-                // If no opponent name (or it's just a dash), treat it as no-attack
                 const hasOpponent =
                   oppNameRaw &&
                   oppNameRaw !== "—" &&
@@ -3142,28 +3154,22 @@
                   oppNameRaw.toLowerCase() !== "n/a";
               
                 if(hasOpponent){
-
                   let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
-                
-                  // ✅ Apply your repair rule ONLY when rank is above 15 (because you're 15v15)
+              
+                  // ✅ Apply repair rule ONLY when rank is above 15 (15v15)
                   if(rk !== null && rk > 15){
-                    const map = payload.__rankRepairCache?.get(i); // i = war day 1..7
+                    const map = payload.__rankRepairCache?.get(i);
                     if(map && map.has(rk)) rk = map.get(rk);
-                    else rk = 15; // safety fallback
+                    else rk = 15;
                   }
-                
+              
                   oppText = (rk !== null) ? `${rk}. ${oppNameRaw}` : oppNameRaw;
-                
                 } else {
                   oppText = "—";
                 }
-
               }
 
-
-            
-              const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
-              const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
+        
             
               const opp = escapeHtml(oppText);
               const s = (sVal === null) ? "—" : fmtNum(sVal, "—");
