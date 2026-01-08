@@ -37,6 +37,7 @@
       /* ✅ CWL "War" column tint (dark grey) */
       --cwl-war-bg: rgba(22, 22, 22, 0.92);
       --cwl-war-bg-soft: rgba(18, 18, 18, 0.72);
+      --rounds-gutter: 38px; /* space reserved for the carousel arrows */
     }
 
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
@@ -370,6 +371,10 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+    @media (max-width: 420px){
+      :root{ --rounds-gutter: 22px; }
+    }
+  
     }
 
     /* =========================
@@ -950,22 +955,19 @@
     
     /* the "vs" divider row */
     .rounds-mid{
-      /* ✅ fixed center position for ALL matchups */
       display:flex;
-      justify-content:center;
+      justify-content:flex-start; /* ✅ left aligned */
       align-items:center;
     
-      /* ✅ smallest possible height */
-      padding: 2px 0;
+      padding: 3px 14px;          /* ✅ lines up with team rows */
       line-height: 1;
-      font-size: 10px;
-      opacity: .65;
+      font-size: 11px;            /* ✅ hair bigger */
+      opacity: .75;
     
-      /* ✅ remove the lines above/below VS */
       border: none;
-    
       white-space: nowrap;
     }
+
 
     
     /* team name */
@@ -1019,22 +1021,23 @@
       overflow-y:hidden;
       -webkit-overflow-scrolling: touch;
     
-      /* snap feels like a slideshow */
       scroll-snap-type: x mandatory;
-    
       gap: 10px;
     
-      /* space for arrows (so content doesn't sit under them) */
-      padding: 0 38px;
+      /* ✅ arrow gutter (responsive via --rounds-gutter) */
+      padding: 0 var(--rounds-gutter);
     
       border-radius: 10px;
+      box-sizing: border-box;
     }
     
-    /* Each slide = one round card that fills the viewport width */
+    /* ✅ slide width fits inside the gutter so borders never clip */
     .rounds-slide{
-      flex: 0 0 100%;
+      flex: 0 0 calc(100% - (var(--rounds-gutter) * 2));
       scroll-snap-align: center;
+      box-sizing: border-box;
     }
+
     
     /* Arrow buttons */
     .rounds-arrow{
@@ -1798,6 +1801,7 @@
     // ✅ Rounds carousel: preserve slide while data refreshes
     let cwlRoundsSavedIndex = null;     // what slide user is viewing (0-based)
     let cwlRoundsDidInitThisVisit = false; // only auto-jump on first mount per CWL visit
+    let cwlRoundsRenderHash = null; // ✅ prevents carousel flicker + scroll jumps
     
     // =========================
     // Utilities
@@ -3038,6 +3042,14 @@
       if(!mount) return;
     
       const rounds = Array.isArray(payload?.roundsOverview) ? payload.roundsOverview : [];
+        // ✅ prevent flicker + prevent page jumping back to carousel on refresh
+        const newHash = fnv1a32(JSON.stringify(rounds));
+        const alreadyBuilt = !!mount.querySelector(".rounds-carousel");
+        if(alreadyBuilt && cwlRoundsRenderHash === newHash){
+          return;
+        }
+        cwlRoundsRenderHash = newHash;
+
       if(!rounds.length){
         mount.innerHTML = `<div class="cwl-note">No rounds data yet.</div>`;
         return;
@@ -3178,7 +3190,16 @@
     
       function scrollToIndex(i, behavior="smooth"){
         const clamped = Math.max(0, Math.min(slides.length - 1, i));
-        slides[clamped].scrollIntoView({ behavior, block:"nearest", inline:"center" });
+        const s = slides[clamped];
+      
+        // ✅ Horizontal-only scroll — will NOT move the page vertically
+        const targetLeft = s.offsetLeft - (track.clientWidth/2) + (s.clientWidth/2);
+      
+        track.scrollTo({
+          left: targetLeft,
+          behavior: (behavior === "auto" ? "auto" : "smooth")
+        });
+      
         updateButtons(clamped);
         idx = clamped;
       
@@ -3188,6 +3209,7 @@
         // ✅ update dimming
         setActiveSlideClass(clamped);
       }
+
 
     
       function getClosestIndex(){
@@ -3721,6 +3743,7 @@
       // ✅ reset carousel state ONLY when entering CWL page
       cwlRoundsSavedIndex = null;
       cwlRoundsDidInitThisVisit = false;
+      cwlRoundsRenderHash = null; // ✅ allow first build when entering CWL
     
       fetchClanStats();
       fetchCwlIndex();
