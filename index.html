@@ -2916,7 +2916,10 @@
 
             const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
             const nameOut = escapeHtml(r.name || "—");
-            const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsCompleted, "0")}`;
+            const winsOut = (warsCompleted > 0)
+              ? `${fmtNum(r.wins, "0")}/${fmtNum(warsCompleted, "0")}`
+              : `${fmtNum(r.wins, "0")}/—`;
+            
           
             // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
             let starsOut = r.stars;
@@ -2927,56 +2930,59 @@
           
             const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
 
-            // ✅ AVG % = total destruction / wars ended (1 decimal)
-            const avgPctVal = (warsCompleted > 0 && r.destr !== null) ? (Number(r.destr) / warsCompleted) : null;
-            const avgPctOut =
-              (avgPctVal === null || !isFinite(avgPctVal))
-                ? "—"
-                : avgPctVal.toFixed(1);
-
+            // =============================
+            // ✅ ENDED-ONLY totals for averages
+            // =============================
+            const endedStarsNoBonus =
+              pickNum(rr, ["starsEndedTotal"]) ??
+              pickNum(rr, ["starsNoBonusEndedTotal"]) ?? // in case you ever rename
+              null;
             
-            // prefer stars WITHOUT bonus for averages if present
-            const starsNoBonus =
-              pickNum(rr, [
-                "starsNoBonusTotal",   // ✅ Python output
-                "starsTotal",          // ✅ Python output
-                "starsNoBonus",
-                "starsWithoutBonus",
-                "stars_without_bonus",
-                "totalStarsNoBonus"
-              ]) ??
-              pickNum(rr?.stats, ["starsNoBonusTotal","starsTotal","starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
-              pickNum(rr?.warStats, ["starsNoBonusTotal","starsTotal","starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
-              (starsOut === null ? null : Number(starsOut));
-
-
+            const endedDestructionTotal =
+              pickNum(rr, ["destructionEndedTotal"]) ??
+              null;
             
-            const avgStarsVal = (warsCompleted > 0 && starsNoBonus !== null) ? (Number(starsNoBonus) / warsCompleted) : null;
+            const endedStarsAgainst =
+              pickNum(rr, ["starsAgainstEndedTotal"]) ??
+              null;
+            
+            // team size helper (for "/45" etc)
+            const teamSize =
+              pickNum(payload, ["teamSize","size"]) ??
+              pickNum(payload?.meta, ["teamSize","size"]) ??
+              15;
+            const maxStarsPerWar = Math.max(0, (teamSize|0) * 3);
+            
+            // ✅ AVG ⭐ = ended-only stars (NO bonus) / warsCompleted
+            const avgStarsVal =
+              (warsCompleted > 0 && endedStarsNoBonus !== null)
+                ? (Number(endedStarsNoBonus) / warsCompleted)
+                : null;
             const avgStarsOut =
               (avgStarsVal === null || !isFinite(avgStarsVal))
                 ? "—"
                 : `${avgStarsVal.toFixed(1)}/${maxStarsPerWar}`;
             
-            // opponent stars scored on that clan (best-effort keys)
-            const starsAgainst =
-              pickNum(rr, [
-                "starsAgainstTotal",   // ✅ Python output
-                "starsAgainst",
-                "stars_against",
-                "opponentStars",
-                "opponent_stars",
-                "starsConceded",
-                "stars_conceded",
-                "starsAllowed",
-                "stars_allowed",
-                "starsLost",
-                "stars_lost",
-                "defStars",
-                "def_stars"
-              ]) ??
-              pickNum(rr?.stats, ["starsAgainstTotal","starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
-              pickNum(rr?.warStats, ["starsAgainstTotal","starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
-              null;
+            // ✅ AVG % = ended-only destruction total / warsCompleted
+            const avgPctVal =
+              (warsCompleted > 0 && endedDestructionTotal !== null)
+                ? (Number(endedDestructionTotal) / warsCompleted)
+                : null;
+            const avgPctOut =
+              (avgPctVal === null || !isFinite(avgPctVal))
+                ? "—"
+                : avgPctVal.toFixed(1);
+            
+            // ✅ AVG 🛡️ = ended-only starsAgainst / warsCompleted
+            const avgDefVal =
+              (warsCompleted > 0 && endedStarsAgainst !== null)
+                ? (Number(endedStarsAgainst) / warsCompleted)
+                : null;
+            const avgDefOut =
+              (avgDefVal === null || !isFinite(avgDefVal))
+                ? "—"
+                : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
+            
 
 
             
