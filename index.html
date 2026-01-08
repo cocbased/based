@@ -1353,8 +1353,8 @@
 
               <thead>
                 <tr>
-                  <th>Rank</th>
-                  <th class="left">Clan</th>
+                  <th class="sticky-1">Rank</th>
+                  <th class="sticky-2 left">Clan</th>
                   <th>Wins</th>
                   <th>⭐</th>
                   <th>%</th>
@@ -2978,8 +2978,8 @@
           
             return `
               <tr class="${rowClass}">
-                <td class="mono">${rankOut}</td>
-                <td class="left" title="${nameOut}">${nameOut}</td>
+                <td class="sticky-1 mono">${rankOut}</td>
+                <td class="sticky-2 left" title="${nameOut}">${nameOut}</td>
                 <td class="mono">${winsOut}</td>
                 <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
                 <td class="mono">${destrOut}</td>
@@ -2988,6 +2988,7 @@
                 <td class="mono">${avgDefOut}</td>
               </tr>
             `;
+            
 
 
           }).join("");
