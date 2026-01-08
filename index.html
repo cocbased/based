@@ -1003,6 +1003,67 @@
     .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
     .rounds-neutral{ color: rgba(255,255,255,0.92); font-weight:400; }
     
+    /* =========================
+       ✅ CWL ROUNDS CAROUSEL
+       ========================= */
+    .rounds-carousel{
+      position: relative;
+      width: 100%;
+    }
+    
+    /* The horizontal track you can swipe/drag */
+    .rounds-track{
+      display:flex;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling: touch;
+    
+      /* snap feels like a slideshow */
+      scroll-snap-type: x mandatory;
+    
+      gap: 10px;
+    
+      /* space for arrows (so content doesn't sit under them) */
+      padding: 0 38px;
+    
+      border-radius: 10px;
+    }
+    
+    /* Each slide = one round card that fills the viewport width */
+    .rounds-slide{
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+    }
+    
+    /* Arrow buttons */
+    .rounds-arrow{
+      position:absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      z-index: 5;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    
+    .rounds-arrow:active{ transform: translateY(-50%) scale(0.98); }
+    
+    .rounds-arrow.left{ left: 6px; }
+    .rounds-arrow.right{ right: 6px; }
+    
+    .rounds-arrow[disabled]{
+      opacity: .35;
+      cursor: default;
+    }
 
     
   </style>
@@ -2979,7 +3040,6 @@
         return `${Math.floor(x)}`;
       }
     
-      // returns: rounds-win / rounds-lose / rounds-neutral
       function sideTint(w, side){
         const state = String(w?.state || "").toLowerCase();
         if(state !== "warended") return "rounds-neutral";
@@ -3026,7 +3086,8 @@
         `;
       }
     
-      mount.innerHTML = rounds.map(r => {
+      // Build slides
+      const slidesHtml = rounds.map(r => {
         const roundNum = Number(r?.round || 0) || 0;
         const wars = Array.isArray(r?.wars) ? r.wars : [];
     
@@ -3035,14 +3096,107 @@
           : `<div class="cwl-note">No wars yet.</div>`;
     
         return `
-          <div class="rounds-round">
-            <div class="rounds-round-title">Round ${roundNum || "—"}</div>
-            <div class="rounds-table">
-              ${matchups}
+          <div class="rounds-slide">
+            <div class="rounds-round">
+              <div class="rounds-round-title">Round ${roundNum || "—"}</div>
+              <div class="rounds-table">
+                ${matchups}
+              </div>
             </div>
           </div>
         `;
       }).join("");
+    
+      mount.innerHTML = `
+        <div class="rounds-carousel" aria-label="CWL rounds carousel">
+          <button class="rounds-arrow left" id="roundsPrev" aria-label="Previous round">‹</button>
+          <div class="rounds-track dragscroll" id="cwl-rounds-track" aria-label="Rounds track">
+            ${slidesHtml}
+          </div>
+          <button class="rounds-arrow right" id="roundsNext" aria-label="Next round">›</button>
+        </div>
+      `;
+    
+      // enable your mouse dragscroll behavior
+      enableDragScrollEverywhere();
+    
+      // init on current war day, else round 1
+      setupRoundsCarousel(payload);
+    }
+
+    function setupRoundsCarousel(payload){
+      const track = document.getElementById("cwl-rounds-track");
+      const prevBtn = document.getElementById("roundsPrev");
+      const nextBtn = document.getElementById("roundsNext");
+      if(!track) return;
+    
+      const slides = Array.from(track.querySelectorAll(".rounds-slide"));
+      if(!slides.length) return;
+    
+      // current war day => start there. if none, start at 1.
+      let idx = 0;
+      const warLimit = getActiveWarLimit(payload); // 1..7 or null
+      if(warLimit && isFinite(warLimit)){
+        idx = Math.max(0, Math.min(slides.length - 1, Math.floor(warLimit) - 1));
+      } else {
+        idx = 0;
+      }
+    
+      function scrollToIndex(i, behavior="smooth"){
+        const clamped = Math.max(0, Math.min(slides.length - 1, i));
+        slides[clamped].scrollIntoView({ behavior, block:"nearest", inline:"center" });
+        updateButtons(clamped);
+        idx = clamped;
+      }
+    
+      function getClosestIndex(){
+        const center = track.scrollLeft + (track.clientWidth / 2);
+        let best = 0;
+        let bestDist = Infinity;
+    
+        for(let i=0;i<slides.length;i++){
+          const s = slides[i];
+          const sCenter = s.offsetLeft + (s.clientWidth / 2);
+          const d = Math.abs(sCenter - center);
+          if(d < bestDist){ bestDist = d; best = i; }
+        }
+        return best;
+      }
+    
+      function updateButtons(current){
+        if(!prevBtn || !nextBtn) return;
+        prevBtn.disabled = (current <= 0);
+        nextBtn.disabled = (current >= slides.length - 1);
+      }
+    
+      // Button clicks
+      if(prevBtn && prevBtn.dataset.bound !== "1"){
+        prevBtn.addEventListener("click", () => scrollToIndex(getClosestIndex() - 1, "smooth"));
+        prevBtn.dataset.bound = "1";
+      }
+      if(nextBtn && nextBtn.dataset.bound !== "1"){
+        nextBtn.addEventListener("click", () => scrollToIndex(getClosestIndex() + 1, "smooth"));
+        nextBtn.dataset.bound = "1";
+      }
+    
+      // When user scrolls/swipes, keep buttons accurate
+      let t = null;
+      track.addEventListener("scroll", () => {
+        clearTimeout(t);
+        t = setTimeout(() => updateButtons(getClosestIndex()), 80);
+      }, { passive:true });
+    
+      // Initial positioning (no animation)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToIndex(idx, "auto");
+        });
+      });
+    
+      // Keep snap sane on resize
+      window.addEventListener("resize", () => {
+        scrollToIndex(getClosestIndex(), "auto");
+      }, { passive:true });
     }
 
 
