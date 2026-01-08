@@ -878,124 +878,9 @@
       border-right: 1px solid rgba(255,255,255,0.10) !important;
     }
 
-      /* =========================
-     ✅ CWL Rounds Overview (NEW)
-     ========================= */
-    .rounds-wrap{
-      width:100%;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-    
-    .rounds-round{
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.10);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    
-    .rounds-round-title{
-      text-align:center;
-      font-weight: 400;            /* ✅ not bold */
-      font-size: 12px;             /* ✅ smaller */
-      padding:8px 10px;
-      background: rgba(255,255,255,0.04);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-      letter-spacing:.02em;
-      opacity: .90;
-    }
-    
-    .rounds-table{
-      width:100%;
-      border-collapse: collapse;
-      font-size:12px;
-      font-family: monospace;
-    }
-    
-    .rounds-table tr{
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    
-    .rounds-table tr:last-child{
-      border-bottom:none;
-    }
-    
-    .rounds-cell{
-      padding:10px 10px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    
-    .rounds-mid{
-      width:1%;
-      text-align:center;
-      border-left: 1px solid rgba(255,255,255,0.10);
-      border-right: 1px solid rgba(255,255,255,0.10);
-      font-size: 11px;             /* ✅ smaller */
-      opacity: .75;
-      padding: 0 6px;
-      white-space: nowrap;
-    }
-
-    
-    .rounds-side{
-      width:49.5%;
-    }
-    
-    .rounds-row{
-      display:grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      align-items:center;
-    }
-    
-    .rounds-side-inner{
-      display:flex;
-      flex: 0 0 auto; 
-      align-items:center;
-      gap:10px;
-      min-width:0;
-    }
-    
-    .rounds-name{
-      flex: 1 1 auto;
-      font-weight: 400;            /* ✅ not bold */
-      font-size: 12px;             /* ✅ smaller */
-      min-width:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-
-    
-    .rounds-stats{
-      display:flex;
-      align-items:center;
-      gap:8px;                     /* ✅ tighter */
-      margin-left:auto;
-      font-variant-numeric: tabular-nums;
-      flex: 0 0 auto;              /* ✅ keep stats visible */
-      font-size: 11px;             /* ✅ smaller */
-    }
-    
-    .rounds-stat{
-      display:flex;
-      align-items:center;
-      gap:3px;
-      font-weight: 400;            /* ✅ not bold */
-    }
-
-    
-    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:400; }
-    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
-    .rounds-neutral{ color:#fff; font-weight:400; }
-
-    
-    .rounds-dim{ opacity:.65; }
-
+     
     /* =========================
-   ✅ CWL ROUNDS (match screenshot)
+   ✅ CWL ROUNDS (match RIGHT screenshot)
    ========================= */
     .cwl-rounds-wrap{
       width:100%;
@@ -1009,7 +894,7 @@
     .cwl-round-title{
       margin: 16px 0 8px;
       text-align:center;
-      font-weight: 600;          /* not bold-heavy */
+      font-weight: 600;
       font-size: 14px;
       letter-spacing: .02em;
       opacity: .95;
@@ -1019,6 +904,8 @@
       width:100%;
       border-collapse: collapse;
       table-layout: fixed;
+      font-family: monospace;
+      font-size: 12px;
     }
     
     .cwl-round-table tr{
@@ -1031,58 +918,29 @@
     
     .cwl-round-cell{
       padding: 8px 10px;
-      font-size: 12px;           /* ✅ smaller so names fit */
-      font-weight: 400;          /* ✅ no bold */
+      font-weight: 400;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     
-    .cwl-round-left{
+    .cwl-round-name{ text-align:left; }
+    .cwl-round-mid{ text-align:center; }
+    .cwl-round-stars{ text-align:right; }
+    
+    .cwl-round-vs .cwl-round-name{
       text-align:left;
+      opacity:.85;
     }
     
-    .cwl-round-right{
-      text-align:right;
-    }
+    .cwl-round-win{ color: rgba(56, 209, 114, 0.95); }
+    .cwl-round-lose{ color: rgba(255, 92, 92, 0.92); }
+    .cwl-round-neutral{ color: rgba(255,255,255,0.92); }
     
-    .cwl-round-mid{
-      text-align:center;
-    }
-    
-    .cwl-round-divider{
-      width: 0;
-      padding: 0;
-      border-left: 2px solid rgba(255,255,255,0.22); /* center divider like screenshot */
-    }
-    
-    .cwl-round-team{
-      color: rgba(56, 209, 114, 0.95);  /* green */
-    }
-    
-    .cwl-round-team.red{
-      color: rgba(255, 92, 92, 0.92);   /* red */
-    }
-    
-    .cwl-round-emoji{
-      opacity: .9;
-      margin: 0 6px;
-    }
-    
-    .cwl-round-stars{
+    .cwl-star{
       color: rgba(255,215,0,0.95);
+      margin-left: 6px;
     }
-    
-    .cwl-round-muted{
-      opacity: .75;
-    }
-    
-    /* Force columns to match screenshot proportions */
-    .cwl-round-table col.col-team   { width: 38%; }
-    .cwl-round-table col.col-atk    { width: 18%; }
-    .cwl-round-table col.col-pct    { width: 18%; }
-    .cwl-round-table col.col-stars  { width: 16%; }
-    .cwl-round-table col.col-mid    { width: 2%;  }  /* center divider */
 
     
   </style>
@@ -1585,13 +1443,7 @@
           
           <div id="cwl-rounds-mount" class="rounds-wrap" aria-label="CWL rounds overview">
             <div style="opacity:.75; text-align:center; padding:12px;">Loading…</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="section-title">Rounds</div>
-          <div id="cwl-rounds-mount"></div>
-          
+          </div>                  
                     
           <div class="divider"></div>
 
@@ -3038,229 +2890,100 @@
   if(observedMax == null) return fromMeta;
   return Math.max(fromMeta, observedMax);
 }
-
     function renderCwlRounds(payload){
       const mount = document.getElementById("cwl-rounds-mount");
       if(!mount) return;
     
       const rounds = Array.isArray(payload?.roundsOverview) ? payload.roundsOverview : [];
-    
-      // If no roundsOverview exists (older payload), show message
-      if(!rounds.length){
-        mount.innerHTML = `<div style="opacity:.75; text-align:center; padding:12px;">No rounds data yet.</div>`;
-        return;
-      }
-    
-      function sideClass(state, winner, which){
-        // during war: white
-        if(state !== "warEnded") return "rounds-neutral";
-        if(winner === "tie" || !winner) return "rounds-neutral";
-        return (winner === which) ? "rounds-win" : "rounds-lose";
-      }
-    
-      function fmtPct(x){
-        if(x === null || x === undefined) return "0%";
-        const n = Number(x);
-        if(!isFinite(n)) return "0%";
-        return `${n.toFixed(1)}%`;
-      }
-    
-      function fmtInt(x){
-        const n = Number(x);
-        if(!isFinite(n)) return 0;
-        return Math.floor(n);
-      }
-    
-      function warRowHtml(w){
-        // not started placeholder (your python emits state="notStarted" with Team Name)
-        const state = String(w?.state || "notStarted");
-        const winner = w?.winner || null;
-    
-        const L = w?.clan || {};
-        const R = w?.opponent || {};
-    
-        const lName = escapeHtml(L.name || "Team Name");
-        const rName = escapeHtml(R.name || "Team Name");
-    
-        const lAtk = `${fmtInt(L.attacksUsed)}/${fmtInt(L.totalAttacks)}`;
-        const rAtk = `${fmtInt(R.attacksUsed)}/${fmtInt(R.totalAttacks)}`;
-    
-        const lPct = fmtPct(L.destruction);
-        const rPct = fmtPct(R.destruction);
-    
-        const lStars = fmtInt(L.stars);
-        const rStars = fmtInt(R.stars);
-    
-        const lCls = sideClass(state, winner, "clan");
-        const rCls = sideClass(state, winner, "opponent");
-    
-        // If not started, dim everything a bit and show 0/15 etc
-        const dim = (state === "notStarted") ? "rounds-dim" : "";
-    
-        return `
-          <div class="rounds-cell">
-            <div class="rounds-row ${dim}">
-              <div class="rounds-side">
-                <div class="rounds-side-inner">
-                  <div class="rounds-name ${lCls}" title="${lName}">${lName}</div>
-                  <div class="rounds-stats">
-                    <div class="rounds-stat ${lCls}"><span>⚔️</span><span>${escapeHtml(lAtk)}</span></div>
-                    <div class="rounds-stat ${lCls}"><span>🎯</span><span>${escapeHtml(lPct)}</span></div>
-                    <div class="rounds-stat ${lCls}"><span>⭐</span><span>${lStars}</span></div>
-                  </div>
-                </div>
-              </div>
-    
-              <div class="rounds-mid">VS</div>
-    
-              <div class="rounds-side">
-                <div class="rounds-side-inner">
-                  <div class="rounds-name ${rCls}" title="${rName}">${rName}</div>
-                  <div class="rounds-stats">
-                    <div class="rounds-stat ${rCls}"><span>⚔️</span><span>${escapeHtml(rAtk)}</span></div>
-                    <div class="rounds-stat ${rCls}"><span>🎯</span><span>${escapeHtml(rPct)}</span></div>
-                    <div class="rounds-stat ${rCls}"><span>⭐</span><span>${rStars}</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-    
-      mount.innerHTML = rounds.map(r => {
-        const roundNum = Number(r?.round) || 0;
-        const wars = Array.isArray(r?.wars) ? r.wars : [];
-    
-        // If a round exists but has no wars yet, show one placeholder row
-        const rowsHtml = wars.length
-          ? wars.map(warRowHtml).join("")
-          : `<div class="rounds-cell"><div class="rounds-dim" style="text-align:center;">No wars yet.</div></div>`;
-    
-        return `
-          <div class="rounds-round">
-            <div class="rounds-round-title">Round ${roundNum || "—"}</div>
-            <div>${rowsHtml}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function renderCwlRounds(payload){
-      const mount = document.getElementById("cwl-rounds-mount");
-      if(!mount) return;
-    
-      const rounds = Array.isArray(payload?.roundsOverview) ? payload.roundsOverview : [];
-    
       if(!rounds.length){
         mount.innerHTML = `<div class="cwl-note">No rounds data yet.</div>`;
         return;
       }
     
       function fmtAtk(used, total){
-        const u = (used == null) ? 0 : Number(used);
-        const t = (total == null) ? 0 : Number(total);
+        const u = Number(used ?? 0);
+        const t = Number(total ?? 0);
         if(!isFinite(u) || !isFinite(t)) return "—";
-        return `${u}/${t}`;
+        return `${Math.floor(u)}/${Math.floor(t)}`;
       }
     
       function fmtPct(p){
         const x = Number(p);
         if(!isFinite(x)) return "—";
-        // match screenshot: whole number percent
         return `${Math.round(x)}%`;
       }
     
       function fmtStars(s){
         const x = Number(s);
         if(!isFinite(x)) return "—";
-        return `${Math.round(x)}`;
+        return `${Math.floor(x)}`;
       }
     
-      function oneSideHTML(side, sideClass){
-        // side: {name, attacksUsed, totalAttacks, destruction, stars}
-        const name = escapeHtml(side?.name || "—");
-        const atk = fmtAtk(side?.attacksUsed, side?.totalAttacks);
-        const pct = fmtPct(side?.destruction);
-        const stars = fmtStars(side?.stars);
+      function sideTint(w, side){
+        const state = String(w?.state || "").toLowerCase();
+        if(state !== "warended") return "cwl-round-neutral";
+    
+        const winner = String(w?.winner || "").toLowerCase();
+        if(!winner || winner === "tie") return "cwl-round-neutral";
+    
+        const isWinner = (winner === side);
+        return isWinner ? "cwl-round-win" : "cwl-round-lose";
+      }
+    
+      function rowHtml(w){
+        const L = w?.clan || {};
+        const R = w?.opponent || {};
+    
+        const lName  = escapeHtml(L.name || "Team Name");
+        const rName  = escapeHtml(R.name || "Team Name");
+    
+        const lAtk   = fmtAtk(L.attacksUsed, L.totalAttacks);
+        const rAtk   = fmtAtk(R.attacksUsed, R.totalAttacks);
+    
+        const lPct   = fmtPct(L.destruction);
+        const rPct   = fmtPct(R.destruction);
+    
+        const lStars = fmtStars(L.stars);
+        const rStars = fmtStars(R.stars);
+    
+        const lTint = sideTint(w, "clan");
+        const rTint = sideTint(w, "opponent");
     
         return `
-          <td class="cwl-round-cell cwl-round-left ${sideClass}" title="${name}">${name}</td>
-          <td class="cwl-round-cell cwl-round-mid cwl-round-muted">${atk}</td>
-          <td class="cwl-round-cell cwl-round-mid ${sideClass}">${pct}</td>
-          <td class="cwl-round-cell cwl-round-right ${sideClass}">
-            <span class="cwl-round-stars">${stars}</span>
-            <span class="cwl-round-emoji">⭐</span>
-          </td>
+          <tr>
+            <td class="cwl-round-cell cwl-round-name ${lTint}" title="${lName}">${lName}</td>
+            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(lAtk)}</td>
+            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(lPct)}</td>
+            <td class="cwl-round-cell cwl-round-stars ${lTint}">
+              ${escapeHtml(lStars)}<span class="cwl-star">★</span>
+            </td>
+    
+            <td class="cwl-round-cell cwl-round-mid cwl-round-vs">vs</td>
+    
+            <td class="cwl-round-cell cwl-round-stars ${rTint}">
+              ${escapeHtml(rStars)}<span class="cwl-star">★</span>
+            </td>
+            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(rPct)}</td>
+            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(rAtk)}</td>
+            <td class="cwl-round-cell cwl-round-name ${rTint}" title="${rName}">${rName}</td>
+          </tr>
         `;
       }
     
-      function mirrorSideHTML(side, sideClass){
-        // RIGHT SIDE MUST MIRROR LEFT SIDE ORDER per your screenshot:
-        // ⭐  stars   %   attacks   teamname  (but visually as columns we mirror alignment)
-        const name = escapeHtml(side?.name || "—");
-        const atk = fmtAtk(side?.attacksUsed, side?.totalAttacks);
-        const pct = fmtPct(side?.destruction);
-        const stars = fmtStars(side?.stars);
-    
-        return `
-          <td class="cwl-round-cell cwl-round-left ${sideClass}">
-            <span class="cwl-round-stars">${stars}</span>
-            <span class="cwl-round-emoji">⭐</span>
-          </td>
-          <td class="cwl-round-cell cwl-round-mid ${sideClass}">${pct}</td>
-          <td class="cwl-round-cell cwl-round-mid cwl-round-muted">${atk}</td>
-          <td class="cwl-round-cell cwl-round-right ${sideClass}" title="${name}">${name}</td>
-        `;
-      }
-    
-      // build rounds HTML
       mount.innerHTML = rounds.map(r => {
         const roundNum = Number(r?.round || 0) || 0;
         const wars = Array.isArray(r?.wars) ? r.wars : [];
     
-        // Always show 4 wars rows like screenshot (15v15 group)
-        const rowsHtml = wars.map(w => {
-          const c = w?.clan || {};
-          const o = w?.opponent || {};
+        const rows = wars.length
+          ? wars.map(rowHtml).join("")
+          : `<tr><td class="cwl-round-cell cwl-round-mid" colspan="9" style="opacity:.75;">No wars yet.</td></tr>`;
     
-          // choose winner tinting (green winner, red loser). If not ended, keep neutral.
-          let cClass = "cwl-round-team";
-          let oClass = "cwl-round-team";
-    
-          if(w?.state === "warEnded"){
-            if(w?.winner === "clan"){ cClass = "cwl-round-team"; oClass = "cwl-round-team red"; }
-            else if(w?.winner === "opponent"){ cClass = "cwl-round-team red"; oClass = "cwl-round-team"; }
-          }
-    
-          return `
-            <tr>
-              ${oneSideHTML(c, cClass)}
-              <td class="cwl-round-divider"></td>
-              ${mirrorSideHTML(o, oClass)}
-            </tr>
-          `;
-        }).join("");
-    
-        // Table column structure:
-        // LEFT: Team | Atk | % | Stars | || | Stars | % | Atk | Team
         return `
           <div class="cwl-round-title">Round ${roundNum || "—"}</div>
           <div class="cwl-rounds-wrap">
             <table class="cwl-round-table">
-              <colgroup>
-                <col class="col-team">
-                <col class="col-atk">
-                <col class="col-pct">
-                <col class="col-stars">
-                <col class="col-mid">
-                <col class="col-stars">
-                <col class="col-pct">
-                <col class="col-atk">
-                <col class="col-team">
-              </colgroup>
               <tbody>
-                ${rowsHtml || `<tr><td class="cwl-round-cell cwl-round-mid cwl-round-muted" colspan="9">No wars yet.</td></tr>`}
+                ${rows}
               </tbody>
             </table>
           </div>
@@ -3268,7 +2991,6 @@
       }).join("");
     }
 
-    
     // =========================
     // ✅ CWL render
     // =========================
@@ -3295,9 +3017,7 @@
         "LOADING";
       setText("cwl-state", stateNice);
       
-      renderCwlRounds(payload);
-
-
+      
       // League overview
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
