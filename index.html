@@ -993,97 +993,32 @@
     
     .rounds-dim{ opacity:.65; }
 
-    /* =========================
-   ✅ CWL ROUNDS (match screenshot)
-   ========================= */
-    .cwl-rounds-wrap{
-      width:100%;
-      margin-top: 8px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.10);
-      overflow: hidden;
+    .rounds-stack{
+      display:flex;
+      flex-direction:column;
     }
     
-    .cwl-round-title{
-      margin: 16px 0 8px;
+    .rounds-line{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    
+    .rounds-line:last-child{
+      border-bottom:none;
+    }
+    
+    .rounds-vsline{
       text-align:center;
-      font-weight: 600;          /* not bold-heavy */
-      font-size: 14px;
-      letter-spacing: .02em;
-      opacity: .95;
-    }
-    
-    .cwl-round-table{
-      width:100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-    
-    .cwl-round-table tr{
-      border-top: 1px solid rgba(255,255,255,0.18);
-    }
-    
-    .cwl-round-table tr:last-child{
-      border-bottom: 1px solid rgba(255,255,255,0.18);
-    }
-    
-    .cwl-round-cell{
-      padding: 8px 10px;
-      font-size: 12px;           /* ✅ smaller so names fit */
-      font-weight: 400;          /* ✅ no bold */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .cwl-round-left{
-      text-align:left;
-    }
-    
-    .cwl-round-right{
-      text-align:right;
-    }
-    
-    .cwl-round-mid{
-      text-align:center;
-    }
-    
-    .cwl-round-divider{
-      width: 0;
-      padding: 0;
-      border-left: 2px solid rgba(255,255,255,0.22); /* center divider like screenshot */
-    }
-    
-    .cwl-round-team{
-      color: rgba(56, 209, 114, 0.95);  /* green */
-    }
-    
-    .cwl-round-team.red{
-      color: rgba(255, 92, 92, 0.92);   /* red */
-    }
-    
-    .cwl-round-emoji{
-      opacity: .9;
-      margin: 0 6px;
-    }
-    
-    .cwl-round-stars{
-      color: rgba(255,215,0,0.95);
-    }
-    
-    .cwl-round-muted{
+      font-family: monospace;
+      font-size: 11px;
       opacity: .75;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    
-    /* Force columns to match screenshot proportions */
-    .cwl-round-table col.col-team   { width: 38%; }
-    .cwl-round-table col.col-atk    { width: 18%; }
-    .cwl-round-table col.col-pct    { width: 18%; }
-    .cwl-round-table col.col-stars  { width: 16%; }
-    .cwl-round-table col.col-mid    { width: 2%;  }  /* center divider */
-
-    
+            
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -1584,13 +1519,7 @@
           
           <div id="cwl-rounds-mount" class="rounds-wrap" aria-label="CWL rounds overview">
             <div style="opacity:.75; text-align:center; padding:12px;">Loading…</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="section-title">Rounds</div>
-          <div id="cwl-rounds-mount"></div>
-          
+          </div>               
                     
           <div class="divider"></div>
 
@@ -3098,33 +3027,30 @@
     
         return `
           <div class="rounds-cell">
-            <div class="rounds-row ${dim}">
-              <div class="rounds-side">
-                <div class="rounds-side-inner">
-                  <div class="rounds-name ${lCls}" title="${lName}">${lName}</div>
-                  <div class="rounds-stats">
-                    <div class="rounds-stat ${lCls}"><span>⚔️</span><span>${escapeHtml(lAtk)}</span></div>
-                    <div class="rounds-stat ${lCls}"><span>🎯</span><span>${escapeHtml(lPct)}</span></div>
-                    <div class="rounds-stat ${lCls}"><span>⭐</span><span>${lStars}</span></div>
-                  </div>
+            <div class="rounds-stack ${dim}">
+              <div class="rounds-line">
+                <div class="rounds-name ${lCls}" title="${lName}">${lName}</div>
+                <div class="rounds-stats">
+                  <div class="rounds-stat ${lCls}"><span>⚔️</span><span>${escapeHtml(lAtk)}</span></div>
+                  <div class="rounds-stat ${lCls}"><span>🎯</span><span>${escapeHtml(lPct)}</span></div>
+                  <div class="rounds-stat ${lCls}"><span>⭐</span><span>${lStars}</span></div>
                 </div>
               </div>
-    
-              <div class="rounds-mid">VS</div>
-    
-              <div class="rounds-side">
-                <div class="rounds-side-inner">
-                  <div class="rounds-name ${rCls}" title="${rName}">${rName}</div>
-                  <div class="rounds-stats">
-                    <div class="rounds-stat ${rCls}"><span>⚔️</span><span>${escapeHtml(rAtk)}</span></div>
-                    <div class="rounds-stat ${rCls}"><span>🎯</span><span>${escapeHtml(rPct)}</span></div>
-                    <div class="rounds-stat ${rCls}"><span>⭐</span><span>${rStars}</span></div>
-                  </div>
+        
+              <div class="rounds-vsline">VS</div>
+        
+              <div class="rounds-line">
+                <div class="rounds-name ${rCls}" title="${rName}">${rName}</div>
+                <div class="rounds-stats">
+                  <div class="rounds-stat ${rCls}"><span>⚔️</span><span>${escapeHtml(rAtk)}</span></div>
+                  <div class="rounds-stat ${rCls}"><span>🎯</span><span>${escapeHtml(rPct)}</span></div>
+                  <div class="rounds-stat ${rCls}"><span>⭐</span><span>${rStars}</span></div>
                 </div>
               </div>
             </div>
           </div>
         `;
+
       }
     
       mount.innerHTML = rounds.map(r => {
@@ -3294,9 +3220,7 @@
         "LOADING";
       setText("cwl-state", stateNice);
       
-      renderCwlRounds(payload);
-
-
+      
       // League overview
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
