@@ -916,13 +916,24 @@
       width:100%;
       display:flex;
       flex-direction:column;
+    
+      /* ✅ space between matchups */
+      gap: 10px;
+      padding: 10px;
     }
     
     /* one matchup = STACKED block */
     .rounds-match{
       display:flex;
       flex-direction:column;
-      border-bottom: 1px solid rgba(255,255,255,0.10);
+    
+      /* ✅ make each matchup clearly separated */
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      overflow: hidden;
+    
+      /* ✅ remove the old divider behavior */
+      border-bottom: none;
     }
     .rounds-match:last-child{ border-bottom:none; }
     
@@ -931,20 +942,30 @@
       display:flex;
       align-items:center;
       gap:10px;
-      padding:10px 10px;
+      padding:8px 10px; /* was 10px 10px */
       min-width:0;
     }
+
     
     /* the "vs" divider row */
     .rounds-mid{
-      text-align:center;
-      font-size: 11px;
-      opacity: .75;
-      padding: 8px 6px;
-      border-top: 1px solid rgba(255,255,255,0.10);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
+      /* ✅ fixed center position for ALL matchups */
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    
+      /* ✅ smallest possible height */
+      padding: 2px 0;
+      line-height: 1;
+      font-size: 10px;
+      opacity: .65;
+    
+      /* ✅ remove the lines above/below VS */
+      border: none;
+    
       white-space: nowrap;
     }
+
     
     /* team name */
     .rounds-name{
