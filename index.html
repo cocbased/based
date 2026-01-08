@@ -896,11 +896,13 @@
     
     .rounds-round-title{
       text-align:center;
-      font-weight:900;
-      padding:10px 10px;
+      font-weight: 400;            /* ✅ not bold */
+      font-size: 12px;             /* ✅ smaller */
+      padding:8px 10px;
       background: rgba(255,255,255,0.04);
       border-bottom: 1px solid rgba(255,255,255,0.10);
-      letter-spacing:.03em;
+      letter-spacing:.02em;
+      opacity: .90;
     }
     
     .rounds-table{
@@ -930,7 +932,12 @@
       text-align:center;
       border-left: 1px solid rgba(255,255,255,0.10);
       border-right: 1px solid rgba(255,255,255,0.10);
+      font-size: 11px;             /* ✅ smaller */
+      opacity: .75;
+      padding: 0 6px;
+      white-space: nowrap;
     }
+
     
     .rounds-side{
       width:49.5%;
@@ -950,29 +957,37 @@
     }
     
     .rounds-name{
-      font-weight:900;
+      font-weight: 400;            /* ✅ not bold */
+      font-size: 12px;             /* ✅ smaller */
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
+      white-space:nowrap;
     }
+
     
     .rounds-stats{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:8px;                     /* ✅ tighter */
       margin-left:auto;
       font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;              /* ✅ keep stats visible */
+      font-size: 11px;             /* ✅ smaller */
     }
     
     .rounds-stat{
       display:flex;
       align-items:center;
-      gap:4px;
+      gap:3px;
+      font-weight: 400;            /* ✅ not bold */
     }
+
     
-    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:900; }
-    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:900; }
-    .rounds-neutral{ color:#fff; font-weight:900; }
+    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:400; }
+    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
+    .rounds-neutral{ color:#fff; font-weight:400; }
+
     
     .rounds-dim{ opacity:.65; }
 
