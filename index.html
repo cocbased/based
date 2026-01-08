@@ -876,6 +876,107 @@
       border-left: 1px solid rgba(255,255,255,0.10) !important;
       border-right: 1px solid rgba(255,255,255,0.10) !important;
     }
+
+      /* =========================
+     ✅ CWL Rounds Overview (NEW)
+     ========================= */
+    .rounds-wrap{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    
+    .rounds-round{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .rounds-round-title{
+      text-align:center;
+      font-weight:900;
+      padding:10px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      letter-spacing:.03em;
+    }
+    
+    .rounds-table{
+      width:100%;
+      border-collapse: collapse;
+      font-size:12px;
+      font-family: monospace;
+    }
+    
+    .rounds-table tr{
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    
+    .rounds-table tr:last-child{
+      border-bottom:none;
+    }
+    
+    .rounds-cell{
+      padding:10px 10px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    
+    .rounds-mid{
+      width:1%;
+      text-align:center;
+      border-left: 1px solid rgba(255,255,255,0.10);
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    
+    .rounds-side{
+      width:49.5%;
+    }
+    
+    .rounds-row{
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items:center;
+    }
+    
+    .rounds-side-inner{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    
+    .rounds-name{
+      font-weight:900;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    
+    .rounds-stats{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-left:auto;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    .rounds-stat{
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+    
+    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:900; }
+    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:900; }
+    .rounds-neutral{ color:#fff; font-weight:900; }
+    
+    .rounds-dim{ opacity:.65; }
+
+    
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -1369,6 +1470,19 @@
               </tbody>
             </table>
           </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">Rounds</div>
+          
+          <div id="cwl-rounds-mount" class="rounds-wrap" aria-label="CWL rounds overview">
+            <div style="opacity:.75; text-align:center; padding:12px;">Loading…</div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div class="section-title">Member Overview</div>
+
 
           <div class="divider"></div>
 
@@ -2816,6 +2930,113 @@
   return Math.max(fromMeta, observedMax);
 }
 
+    function renderCwlRounds(payload){
+      const mount = document.getElementById("cwl-rounds-mount");
+      if(!mount) return;
+    
+      const rounds = Array.isArray(payload?.roundsOverview) ? payload.roundsOverview : [];
+    
+      // If no roundsOverview exists (older payload), show message
+      if(!rounds.length){
+        mount.innerHTML = `<div style="opacity:.75; text-align:center; padding:12px;">No rounds data yet.</div>`;
+        return;
+      }
+    
+      function sideClass(state, winner, which){
+        // during war: white
+        if(state !== "warEnded") return "rounds-neutral";
+        if(winner === "tie" || !winner) return "rounds-neutral";
+        return (winner === which) ? "rounds-win" : "rounds-lose";
+      }
+    
+      function fmtPct(x){
+        if(x === null || x === undefined) return "0%";
+        const n = Number(x);
+        if(!isFinite(n)) return "0%";
+        return `${n.toFixed(1)}%`;
+      }
+    
+      function fmtInt(x){
+        const n = Number(x);
+        if(!isFinite(n)) return 0;
+        return Math.floor(n);
+      }
+    
+      function warRowHtml(w){
+        // not started placeholder (your python emits state="notStarted" with Team Name)
+        const state = String(w?.state || "notStarted");
+        const winner = w?.winner || null;
+    
+        const L = w?.clan || {};
+        const R = w?.opponent || {};
+    
+        const lName = escapeHtml(L.name || "Team Name");
+        const rName = escapeHtml(R.name || "Team Name");
+    
+        const lAtk = `${fmtInt(L.attacksUsed)}/${fmtInt(L.totalAttacks)}`;
+        const rAtk = `${fmtInt(R.attacksUsed)}/${fmtInt(R.totalAttacks)}`;
+    
+        const lPct = fmtPct(L.destruction);
+        const rPct = fmtPct(R.destruction);
+    
+        const lStars = fmtInt(L.stars);
+        const rStars = fmtInt(R.stars);
+    
+        const lCls = sideClass(state, winner, "clan");
+        const rCls = sideClass(state, winner, "opponent");
+    
+        // If not started, dim everything a bit and show 0/15 etc
+        const dim = (state === "notStarted") ? "rounds-dim" : "";
+    
+        return `
+          <div class="rounds-cell">
+            <div class="rounds-row ${dim}">
+              <div class="rounds-side">
+                <div class="rounds-side-inner">
+                  <div class="rounds-name ${lCls}" title="${lName}">${lName}</div>
+                  <div class="rounds-stats">
+                    <div class="rounds-stat ${lCls}"><span>⚔️</span><span>${escapeHtml(lAtk)}</span></div>
+                    <div class="rounds-stat ${lCls}"><span>🎯</span><span>${escapeHtml(lPct)}</span></div>
+                    <div class="rounds-stat ${lCls}"><span>⭐</span><span>${lStars}</span></div>
+                  </div>
+                </div>
+              </div>
+    
+              <div class="rounds-mid">VS</div>
+    
+              <div class="rounds-side">
+                <div class="rounds-side-inner">
+                  <div class="rounds-name ${rCls}" title="${rName}">${rName}</div>
+                  <div class="rounds-stats">
+                    <div class="rounds-stat ${rCls}"><span>⚔️</span><span>${escapeHtml(rAtk)}</span></div>
+                    <div class="rounds-stat ${rCls}"><span>🎯</span><span>${escapeHtml(rPct)}</span></div>
+                    <div class="rounds-stat ${rCls}"><span>⭐</span><span>${rStars}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    
+      mount.innerHTML = rounds.map(r => {
+        const roundNum = Number(r?.round) || 0;
+        const wars = Array.isArray(r?.wars) ? r.wars : [];
+    
+        // If a round exists but has no wars yet, show one placeholder row
+        const rowsHtml = wars.length
+          ? wars.map(warRowHtml).join("")
+          : `<div class="rounds-cell"><div class="rounds-dim" style="text-align:center;">No wars yet.</div></div>`;
+    
+        return `
+          <div class="rounds-round">
+            <div class="rounds-round-title">Round ${roundNum || "—"}</div>
+            <div>${rowsHtml}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
 
     // =========================
     // ✅ CWL render
@@ -2841,6 +3062,9 @@
         state === "error" ? "ERROR" :
         "LOADING";
       setText("cwl-state", stateNice);
+      
+      renderCwlRounds(payload);
+
 
       // League overview
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
