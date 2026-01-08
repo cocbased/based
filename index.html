@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -942,10 +941,12 @@
       display:flex;
       align-items:center;
       gap:10px;
-      padding:8px 10px; /* was 10px 10px */
+    
+      /* ✅ more breathing room on the right */
+      padding:8px 14px;
+    
       min-width:0;
     }
-
     
     /* the "vs" divider row */
     .rounds-mid{
@@ -1043,14 +1044,19 @@
       width: 30px;
       height: 30px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(0,0,0,0.35);
-      color: rgba(255,255,255,0.9);
+    
+      /* ✅ opaque */
+      background: #000;
+      color: #fff;
+      opacity: 1;
+    
+      border: 1px solid rgba(255,255,255,0.22);
+    
       display:flex;
       align-items:center;
       justify-content:center;
       cursor:pointer;
-      z-index: 5;
+      z-index: 50;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
@@ -1064,7 +1070,17 @@
       opacity: .35;
       cursor: default;
     }
-
+    /* ✅ dim non-active slides */
+    .rounds-slide{
+      opacity: 0.35;
+      filter: brightness(0.75);
+      transition: opacity 160ms ease, filter 160ms ease;
+    }
+    
+    .rounds-slide.is-active{
+      opacity: 1;
+      filter: none;
+    }
     
   </style>
 
@@ -1779,6 +1795,10 @@
     // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
 
+    // ✅ Rounds carousel: preserve slide while data refreshes
+    let cwlRoundsSavedIndex = null;     // what slide user is viewing (0-based)
+    let cwlRoundsDidInitThisVisit = false; // only auto-jump on first mount per CWL visit
+    
     // =========================
     // Utilities
     // =========================
@@ -3110,7 +3130,7 @@
       mount.innerHTML = `
         <div class="rounds-carousel" aria-label="CWL rounds carousel">
           <button class="rounds-arrow left" id="roundsPrev" aria-label="Previous round">‹</button>
-          <div class="rounds-track dragscroll" id="cwl-rounds-track" aria-label="Rounds track">
+          <div class="rounds-track" id="cwl-rounds-track" aria-label="Rounds track">
             ${slidesHtml}
           </div>
           <button class="rounds-arrow right" id="roundsNext" aria-label="Next round">›</button>
@@ -3133,13 +3153,27 @@
       const slides = Array.from(track.querySelectorAll(".rounds-slide"));
       if(!slides.length) return;
     
-      // current war day => start there. if none, start at 1.
+      // ✅ choose initial index:
+      // - if user already scrolled/selected a round, STAY there
+      // - otherwise, only once per CWL visit, jump to current war day
       let idx = 0;
-      const warLimit = getActiveWarLimit(payload); // 1..7 or null
-      if(warLimit && isFinite(warLimit)){
-        idx = Math.max(0, Math.min(slides.length - 1, Math.floor(warLimit) - 1));
+      
+      if(cwlRoundsSavedIndex !== null && isFinite(cwlRoundsSavedIndex)){
+        idx = Math.max(0, Math.min(slides.length - 1, Math.floor(cwlRoundsSavedIndex)));
+      } else if(!cwlRoundsDidInitThisVisit){
+        const warLimit = getActiveWarLimit(payload); // 1..7 or null
+        if(warLimit && isFinite(warLimit)){
+          idx = Math.max(0, Math.min(slides.length - 1, Math.floor(warLimit) - 1));
+        } else {
+          idx = 0;
+        }
+        cwlRoundsDidInitThisVisit = true; // ✅ only do this once
       } else {
         idx = 0;
+      }
+
+      function setActiveSlideClass(activeIdx){
+        slides.forEach((s, i) => s.classList.toggle("is-active", i === activeIdx));
       }
     
       function scrollToIndex(i, behavior="smooth"){
@@ -3147,7 +3181,14 @@
         slides[clamped].scrollIntoView({ behavior, block:"nearest", inline:"center" });
         updateButtons(clamped);
         idx = clamped;
+      
+        // ✅ remember what user is viewing
+        cwlRoundsSavedIndex = clamped;
+      
+        // ✅ update dimming
+        setActiveSlideClass(clamped);
       }
+
     
       function getClosestIndex(){
         const center = track.scrollLeft + (track.clientWidth / 2);
@@ -3183,8 +3224,18 @@
       let t = null;
       track.addEventListener("scroll", () => {
         clearTimeout(t);
-        t = setTimeout(() => updateButtons(getClosestIndex()), 80);
+        t = setTimeout(() => {
+          const cur = getClosestIndex();
+          updateButtons(cur);
+      
+          // ✅ remember where user stopped
+          cwlRoundsSavedIndex = cur;
+      
+          // ✅ update dimming
+          setActiveSlideClass(cur);
+        }, 80);
       }, { passive:true });
+
     
       // Initial positioning (no animation)
       requestAnimationFrame(() => {
@@ -3664,12 +3715,17 @@
 
     function startCwlLoop(){
       clearIntervals(cwlIntervals);
-
+    
       cwlMembersSortMode = "rank";
-
+    
+      // ✅ reset carousel state ONLY when entering CWL page
+      cwlRoundsSavedIndex = null;
+      cwlRoundsDidInitThisVisit = false;
+    
       fetchClanStats();
       fetchCwlIndex();
       fetchCwlCurrent();
+
 
       cwlIntervals.push(setInterval(fetchClanStats, 15000));
       cwlIntervals.push(setInterval(fetchCwlCurrent, 5000));
