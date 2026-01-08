@@ -2933,9 +2933,12 @@
             // =============================
             // ✅ ENDED-ONLY totals for averages
             // =============================
+            const warsCompleted = getWarsCompleted(payload);
+            
+            // These keys must exist in your rr JSON for the ended-only logic.
+            // If missing, it will safely show "—".
             const endedStarsNoBonus =
-              pickNum(rr, ["starsEndedTotal"]) ??
-              pickNum(rr, ["starsNoBonusEndedTotal"]) ?? // in case you ever rename
+              pickNum(rr, ["starsEndedTotal", "starsNoBonusEndedTotal"]) ??
               null;
             
             const endedDestructionTotal =
@@ -2946,18 +2949,12 @@
               pickNum(rr, ["starsAgainstEndedTotal"]) ??
               null;
             
-            // team size helper (for "/45" etc)
-            const teamSize =
-              pickNum(payload, ["teamSize","size"]) ??
-              pickNum(payload?.meta, ["teamSize","size"]) ??
-              15;
-            const maxStarsPerWar = Math.max(0, (teamSize|0) * 3);
-            
             // ✅ AVG ⭐ = ended-only stars (NO bonus) / warsCompleted
             const avgStarsVal =
               (warsCompleted > 0 && endedStarsNoBonus !== null)
                 ? (Number(endedStarsNoBonus) / warsCompleted)
                 : null;
+            
             const avgStarsOut =
               (avgStarsVal === null || !isFinite(avgStarsVal))
                 ? "—"
@@ -2968,6 +2965,7 @@
               (warsCompleted > 0 && endedDestructionTotal !== null)
                 ? (Number(endedDestructionTotal) / warsCompleted)
                 : null;
+            
             const avgPctOut =
               (avgPctVal === null || !isFinite(avgPctVal))
                 ? "—"
@@ -2978,19 +2976,12 @@
               (warsCompleted > 0 && endedStarsAgainst !== null)
                 ? (Number(endedStarsAgainst) / warsCompleted)
                 : null;
+            
             const avgDefOut =
               (avgDefVal === null || !isFinite(avgDefVal))
                 ? "—"
                 : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
-            
 
-
-            
-            const avgDefVal = (warsCompleted > 0 && starsAgainst !== null) ? (Number(starsAgainst) / warsCompleted) : null;
-            const avgDefOut =
-              (avgDefVal === null || !isFinite(avgDefVal))
-                ? "—"
-                : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
 
             // ✅ row color rules
             const rankNum = (r.rank === null) ? null : Number(r.rank);
