@@ -880,67 +880,108 @@
 
      
     /* =========================
-   ✅ CWL ROUNDS (match RIGHT screenshot)
+   ✅ CWL ROUNDS (STACKED MATCHUPS)
    ========================= */
-    .cwl-rounds-wrap{
+
+    /* You already have <div id="cwl-rounds-mount" class="rounds-wrap"> */
+    .rounds-wrap{
       width:100%;
-      margin-top: 8px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.10);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    
+    /* one round "card" */
+    .rounds-round{
+      border: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
+      border-radius: 10px;
       overflow: hidden;
     }
     
-    .cwl-round-title{
-      margin: 16px 0 8px;
+    /* round header */
+    .rounds-round-title{
       text-align:center;
-      font-weight: 600;
-      font-size: 14px;
-      letter-spacing: .02em;
-      opacity: .95;
-    }
-    
-    .cwl-round-table{
-      width:100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-family: monospace;
-      font-size: 12px;
-    }
-    
-    .cwl-round-table tr{
-      border-top: 1px solid rgba(255,255,255,0.18);
-    }
-    
-    .cwl-round-table tr:last-child{
-      border-bottom: 1px solid rgba(255,255,255,0.18);
-    }
-    
-    .cwl-round-cell{
-      padding: 8px 10px;
       font-weight: 400;
+      font-size: 12px;
+      padding:8px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      letter-spacing:.02em;
+      opacity: .90;
+    }
+    
+    /* inside round: list of matchups */
+    .rounds-table{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+    }
+    
+    /* one matchup = STACKED block */
+    .rounds-match{
+      display:flex;
+      flex-direction:column;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    .rounds-match:last-child{ border-bottom:none; }
+    
+    /* team rows */
+    .rounds-side{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      min-width:0;
+    }
+    
+    /* the "vs" divider row */
+    .rounds-mid{
+      text-align:center;
+      font-size: 11px;
+      opacity: .75;
+      padding: 8px 6px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     
-    .cwl-round-name{ text-align:left; }
-    .cwl-round-mid{ text-align:center; }
-    .cwl-round-stars{ text-align:right; }
-    
-    .cwl-round-vs .cwl-round-name{
-      text-align:left;
-      opacity:.85;
+    /* team name */
+    .rounds-name{
+      flex: 1 1 auto;
+      font-weight: 400;
+      font-size: 12px;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
     
-    .cwl-round-win{ color: rgba(56, 209, 114, 0.95); }
-    .cwl-round-lose{ color: rgba(255, 92, 92, 0.92); }
-    .cwl-round-neutral{ color: rgba(255,255,255,0.92); }
-    
-    .cwl-star{
-      color: rgba(255,215,0,0.95);
-      margin-left: 6px;
+    /* stats cluster on the right */
+    .rounds-stats{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-left:auto;
+      font-family: monospace;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
+    
+    .rounds-stat{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-weight: 400;
+    }
+    
+    /* colors */
+    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:400; }
+    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
+    .rounds-neutral{ color: rgba(255,255,255,0.92); font-weight:400; }
+    
 
     
   </style>
@@ -2906,67 +2947,61 @@
         if(!isFinite(u) || !isFinite(t)) return "—";
         return `${Math.floor(u)}/${Math.floor(t)}`;
       }
-    
       function fmtPct(p){
         const x = Number(p);
         if(!isFinite(x)) return "—";
         return `${Math.round(x)}%`;
       }
-    
       function fmtStars(s){
         const x = Number(s);
         if(!isFinite(x)) return "—";
         return `${Math.floor(x)}`;
       }
     
+      // returns: rounds-win / rounds-lose / rounds-neutral
       function sideTint(w, side){
         const state = String(w?.state || "").toLowerCase();
-        if(state !== "warended") return "cwl-round-neutral";
+        if(state !== "warended") return "rounds-neutral";
     
         const winner = String(w?.winner || "").toLowerCase();
-        if(!winner || winner === "tie") return "cwl-round-neutral";
+        if(!winner || winner === "tie") return "rounds-neutral";
     
         const isWinner = (winner === side);
-        return isWinner ? "cwl-round-win" : "cwl-round-lose";
+        return isWinner ? "rounds-win" : "rounds-lose";
       }
     
-      function rowHtml(w){
+      function teamRowHtml(teamObj, tintClass){
+        const name  = escapeHtml(teamObj?.name || "Team Name");
+        const atk   = fmtAtk(teamObj?.attacksUsed, teamObj?.totalAttacks);
+        const pct   = fmtPct(teamObj?.destruction);
+        const stars = fmtStars(teamObj?.stars);
+    
+        return `
+          <div class="rounds-side">
+            <div class="rounds-name ${tintClass}" title="${name}">${name}</div>
+    
+            <div class="rounds-stats">
+              <span class="rounds-stat ${tintClass}">${escapeHtml(atk)} <span aria-hidden="true">⚔️</span></span>
+              <span class="rounds-stat ${tintClass}">${escapeHtml(pct)}</span>
+              <span class="rounds-stat ${tintClass}">${escapeHtml(stars)} <span aria-hidden="true">⭐</span></span>
+            </div>
+          </div>
+        `;
+      }
+    
+      function matchupHtml(w){
         const L = w?.clan || {};
         const R = w?.opponent || {};
-    
-        const lName  = escapeHtml(L.name || "Team Name");
-        const rName  = escapeHtml(R.name || "Team Name");
-    
-        const lAtk   = fmtAtk(L.attacksUsed, L.totalAttacks);
-        const rAtk   = fmtAtk(R.attacksUsed, R.totalAttacks);
-    
-        const lPct   = fmtPct(L.destruction);
-        const rPct   = fmtPct(R.destruction);
-    
-        const lStars = fmtStars(L.stars);
-        const rStars = fmtStars(R.stars);
     
         const lTint = sideTint(w, "clan");
         const rTint = sideTint(w, "opponent");
     
         return `
-          <tr>
-            <td class="cwl-round-cell cwl-round-name ${lTint}" title="${lName}">${lName}</td>
-            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(lAtk)}</td>
-            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(lPct)}</td>
-            <td class="cwl-round-cell cwl-round-stars ${lTint}">
-              ${escapeHtml(lStars)}<span class="cwl-star">★</span>
-            </td>
-    
-            <td class="cwl-round-cell cwl-round-mid cwl-round-vs">vs</td>
-    
-            <td class="cwl-round-cell cwl-round-stars ${rTint}">
-              ${escapeHtml(rStars)}<span class="cwl-star">★</span>
-            </td>
-            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(rPct)}</td>
-            <td class="cwl-round-cell cwl-round-mid">${escapeHtml(rAtk)}</td>
-            <td class="cwl-round-cell cwl-round-name ${rTint}" title="${rName}">${rName}</td>
-          </tr>
+          <div class="rounds-match">
+            ${teamRowHtml(L, lTint)}
+            <div class="rounds-mid">vs</div>
+            ${teamRowHtml(R, rTint)}
+          </div>
         `;
       }
     
@@ -2974,22 +3009,21 @@
         const roundNum = Number(r?.round || 0) || 0;
         const wars = Array.isArray(r?.wars) ? r.wars : [];
     
-        const rows = wars.length
-          ? wars.map(rowHtml).join("")
-          : `<tr><td class="cwl-round-cell cwl-round-mid" colspan="9" style="opacity:.75;">No wars yet.</td></tr>`;
+        const matchups = wars.length
+          ? wars.map(matchupHtml).join("")
+          : `<div class="cwl-note">No wars yet.</div>`;
     
         return `
-          <div class="cwl-round-title">Round ${roundNum || "—"}</div>
-          <div class="cwl-rounds-wrap">
-            <table class="cwl-round-table">
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
+          <div class="rounds-round">
+            <div class="rounds-round-title">Round ${roundNum || "—"}</div>
+            <div class="rounds-table">
+              ${matchups}
+            </div>
           </div>
         `;
       }).join("");
     }
+
 
     // =========================
     // ✅ CWL render
