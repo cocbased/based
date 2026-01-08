@@ -2937,10 +2937,18 @@
             
             // prefer stars WITHOUT bonus for averages if present
             const starsNoBonus =
-              pickNum(rr, ["starsNoBonus","starsWithoutBonus","stars_without_bonus","starsWithoutBonus","totalStarsNoBonus"]) ??
-              pickNum(rr?.stats, ["starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
-              pickNum(rr?.warStats, ["starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
+              pickNum(rr, [
+                "starsNoBonusTotal",   // ✅ Python output
+                "starsTotal",          // ✅ Python output
+                "starsNoBonus",
+                "starsWithoutBonus",
+                "stars_without_bonus",
+                "totalStarsNoBonus"
+              ]) ??
+              pickNum(rr?.stats, ["starsNoBonusTotal","starsTotal","starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
+              pickNum(rr?.warStats, ["starsNoBonusTotal","starsTotal","starsNoBonus","starsWithoutBonus","totalStarsNoBonus"]) ??
               (starsOut === null ? null : Number(starsOut));
+
 
             
             const avgStarsVal = (warsCompleted > 0 && starsNoBonus !== null) ? (Number(starsNoBonus) / warsCompleted) : null;
@@ -2951,10 +2959,25 @@
             
             // opponent stars scored on that clan (best-effort keys)
             const starsAgainst =
-              pickNum(rr, ["starsAgainst","stars_against","opponentStars","opponent_stars","starsConceded","stars_conceded","starsAllowed","stars_allowed","starsLost","stars_lost","defStars","def_stars"]) ??
-              pickNum(rr?.stats, ["starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
-              pickNum(rr?.warStats, ["starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
+              pickNum(rr, [
+                "starsAgainstTotal",   // ✅ Python output
+                "starsAgainst",
+                "stars_against",
+                "opponentStars",
+                "opponent_stars",
+                "starsConceded",
+                "stars_conceded",
+                "starsAllowed",
+                "stars_allowed",
+                "starsLost",
+                "stars_lost",
+                "defStars",
+                "def_stars"
+              ]) ??
+              pickNum(rr?.stats, ["starsAgainstTotal","starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
+              pickNum(rr?.warStats, ["starsAgainstTotal","starsAgainst","opponentStars","starsConceded","starsAllowed","starsLost"]) ??
               null;
+
 
             
             const avgDefVal = (warsCompleted > 0 && starsAgainst !== null) ? (Number(starsAgainst) / warsCompleted) : null;
