@@ -736,10 +736,23 @@
     /* ✅ Member Overview: perfect performance highlight
        ONLY color the "general" columns (Avg Rk → Atk), NOT the war columns,
        and do NOT make anything bold. */
-    .cwl-perfect td:nth-child(-n+7){
+    /* ✅ Member Overview: perfect performance highlight
+       Color the "general" columns (now 9 cols: 🗡️RK, 🛡️RK, Δ, Name, Total★, Total%, Avg★, Avg%, Atk) */
+    .cwl-perfect td:nth-child(-n+9){
       color: rgba(56, 209, 114, 0.95) !important;
       font-weight: 400 !important;
     }
+    
+    /* ✅ Diff column MUST override perfect-green */
+    .cwl-perfect td.rk-diff.pos{ color: rgba(56, 209, 114, 0.95) !important; font-weight: 900 !important; }
+    .cwl-perfect td.rk-diff.neg{ color: rgba(255, 92, 92, 0.92) !important; font-weight: 900 !important; }
+    .cwl-perfect td.rk-diff.zero{ color: rgba(255,255,255,0.85) !important; font-weight: 700 !important; }
+    
+    /* Also works even when row is NOT perfect */
+    td.rk-diff.pos{ color: rgba(56, 209, 114, 0.95) !important; font-weight: 900 !important; }
+    td.rk-diff.neg{ color: rgba(255, 92, 92, 0.92) !important; font-weight: 900 !important; }
+    td.rk-diff.zero{ color: rgba(255,255,255,0.85) !important; font-weight: 700 !important; }
+
 
 
     .cwl-war-sword{
@@ -765,6 +778,7 @@
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
 
+    /* ✅ CWL Member Overview: 4 sticky columns (🗡️RK, 🛡️RK, Δ, Name) */
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
       position: sticky;
@@ -774,16 +788,45 @@
       text-align:center;
       font-family: monospace;
     }
+    
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: 64px;
+      left: 64px;            /* after col 1 (64px) */
+      z-index: 6;
+      background: #0b1829;
+      text-align:center;
+      font-family: monospace;
+    }
+    
+    .cwl-table th.sticky-3,
+    .cwl-table td.sticky-3{
+      position: sticky;
+      left: 128px;           /* after col 1+2 */
+      z-index: 6;
+      background: #0b1829;
+      text-align:center;
+      font-family: monospace;
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    
+    .cwl-table th.sticky-4,
+    .cwl-table td.sticky-4{
+      position: sticky;
+      left: 192px;           /* after col 1+2+3 */
       z-index: 6;
       background: #0b1829;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
     }
+    
+    /* Keep header above body */
+    .cwl-table thead th.sticky-1{ z-index: 11; }
+    .cwl-table thead th.sticky-2{ z-index: 10; }
+    .cwl-table thead th.sticky-3{ z-index: 10; }
+    .cwl-table thead th.sticky-4{ z-index: 10; }
+
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
 
@@ -865,7 +908,7 @@
        ========================= */
 
     /* Remove vertical borders for the first 7 header cells only (Avg Rk..Atk), both header rows */
-    .cwl-table.cwl-wide thead tr th:nth-child(-n+7){
+    .cwl-table.cwl-wide thead tr th:nth-child(-n+9){
       border-left: none !important;
       border-right: none !important;
     }
@@ -1633,15 +1676,18 @@
           <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
             <table class="cwl-table cwl-wide">
               <colgroup>
-                <col style="width:64px;">
-                <col style="width:88px;">
-                <col style="width:86px;">
-                <col style="width:110px;">
-                <col style="width:92px;">
-                <col style="width:92px;">
-                <col style="width:96px;">
-
-                <!-- War cols: Opp widest, Stars tight, % medium -->
+                <col style="width:64px;">  <!-- 🗡️ RK -->
+                <col style="width:64px;">  <!-- 🛡️ RK -->
+                <col style="width:64px;">  <!-- Δ -->
+                <col style="width:110px;"> <!-- Name -->
+              
+                <col style="width:86px;">  <!-- Total★ -->
+                <col style="width:110px;"> <!-- Total% -->
+                <col style="width:92px;">  <!-- Avg★ -->
+                <col style="width:92px;">  <!-- Avg% -->
+                <col style="width:96px;">  <!-- Atk -->
+              
+                <!-- War cols (unchanged) -->
                 <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
                 <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
                 <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
@@ -1651,17 +1697,21 @@
                 <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
               </colgroup>
 
+
               <thead id="cwl-members-head">
                 <!-- Row 1: keep War group headers, but make the left side visually "blank" -->
                 <tr>
                   <th class="sticky-1 muted">&nbsp;</th>
                   <th class="sticky-2 muted">&nbsp;</th>
+                  <th class="sticky-3 muted">&nbsp;</th>
+                  <th class="sticky-4 muted">&nbsp;</th>
+                
                   <th class="muted">&nbsp;</th>
                   <th class="muted">&nbsp;</th>
                   <th class="muted">&nbsp;</th>
                   <th class="muted">&nbsp;</th>
                   <th class="muted cwl-general-sep">&nbsp;</th>
-
+                
                   <th class="cwl-warhead" colspan="3">War 1</th>
                   <th class="cwl-warhead" colspan="3">War 2</th>
                   <th class="cwl-warhead" colspan="3">War 3</th>
@@ -1671,17 +1721,21 @@
                   <th class="cwl-warhead" colspan="3">War 7</th>
                 </tr>
 
+
                 <!-- Row 2: ALL column headers live here -->
                 <tr>
-                  <th class="sticky-1">Avg Rk</th>
-                  <th class="sticky-2">&nbsp;</th>
-
+                <tr>
+                  <th class="sticky-1">🗡️ RK</th>
+                  <th class="sticky-2">🛡️ RK</th>
+                  <th class="sticky-3">Δ</th>
+                  <th class="sticky-4">&nbsp;</th>
+                
                   <th>Total★</th>
                   <th>Total%</th>
                   <th>Avg★</th>
                   <th>Avg%</th>
                   <th class="cwl-general-sep">Atk</th>
-
+                
                   <!-- War subheaders: ⚔️ / ⭐ / 🎯 -->
                   <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-1"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
                   <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-2"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
@@ -1694,7 +1748,7 @@
               </thead>
 
               <tbody id="cwl-memberoverview-body">
-                <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                <tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -2925,6 +2979,21 @@
       const x = Number(n);
       return isFinite(x) ? x.toFixed(1) : fallback;
     }
+
+    function fmtSigned1(n){
+      const x = Number(n);
+      if(!isFinite(x)) return "—";
+      const sign = (x < 0) ? "-" : "+";
+      return `${sign}${Math.abs(x).toFixed(1)}`;
+    }
+    function diffClass(n){
+      const x = Number(n);
+      if(!isFinite(x)) return "rk-zero";
+      if(x > 0) return "rk-pos";
+      if(x < 0) return "rk-neg";
+      return "rk-zero";
+    }
+
     
     function normCwlEntry(e, idx){
       if(!e || typeof e !== "object") return null;
@@ -2936,7 +3005,18 @@
       const defName = (typeof e.defenderName === "string" ? e.defenderName.trim() : "") || "—";
       let oppRank = (e.defenderPos == null ? null : Number(e.defenderPos));
       oppRank = (oppRank != null && isFinite(oppRank)) ? Math.max(1, Math.round(oppRank)) : null;
-    
+      // ✅ NEW: attacker (our player) map position for this war day
+      // This MUST be supplied by Python using the same logic you used for opponent:
+      // index of player in the API list (1-based).
+      let atkPos =
+        (e.attackerPos != null) ? Number(e.attackerPos) :
+        (e.attackerPosition != null) ? Number(e.attackerPosition) :
+        (e.playerPos != null) ? Number(e.playerPos) :
+        (e.mapPos != null) ? Number(e.mapPos) :
+        null;
+      
+      atkPos = (atkPos != null && isFinite(atkPos)) ? Math.max(1, Math.round(atkPos)) : null;
+
       const stars = (e.stars === null || e.stars === undefined) ? null : Number(e.stars);
       const destruction = (e.destruction === null || e.destruction === undefined) ? null : Number(e.destruction);
     
@@ -2944,9 +3024,11 @@
         warNum,
         defName,
         oppRank,
+        atkPos, // ✅ NEW
         stars: (stars !== null && isFinite(stars)) ? stars : null,
         destruction: (destruction !== null && isFinite(destruction)) ? destruction : null
       };
+
     }
   
     
@@ -3632,6 +3714,51 @@
               }
             }
 
+            // ✅ 🛡️ RK (OUR map position average) — same rules as 🗡️ RK:
+            // - only wars <= warLimit
+            // - only count if an attack happened (stars or destruction exists)
+            // - use attackerPos (index in API list, 1-based) supplied by Python
+            let avgDefRkVal = null;
+            let avgDefRk = "—";
+            
+            {
+              const limit = warLimit || 0;
+              const positions = [];
+            
+              for(let warNum=1; warNum<=7; warNum++){
+                if(warNum > limit) continue;
+            
+                const e = byWar.get(warNum);
+                if(!e) continue;
+            
+                const attacked =
+                  (e.stars !== null && isFinite(e.stars)) ||
+                  (e.destruction !== null && isFinite(e.destruction));
+                if(!attacked) continue;
+            
+                const p = (e.atkPos !== null && isFinite(e.atkPos)) ? e.atkPos : null;
+                if(p === null) continue;
+            
+                positions.push(p);
+              }
+            
+              if(positions.length){
+                const sum = positions.reduce((a,b)=>a+b,0);
+                avgDefRkVal = sum / positions.length;
+                avgDefRk = fmt1(avgDefRkVal, "—");
+              }
+            }
+
+            // ✅ Δ = 🛡️ RK - 🗡️ RK (signed output, red/green)
+            const deltaVal =
+              (avgDefRkVal !== null && isFinite(avgDefRkVal) && avgRkVal !== null && isFinite(avgRkVal))
+                ? (avgDefRkVal - avgRkVal)
+                : null;
+            
+            const deltaOut = (deltaVal === null) ? "—" : fmtSigned1(deltaVal);
+            const deltaCls = (deltaVal === null) ? "rk-zero" : diffClass(deltaVal);
+
+            
             const byWarCountUpToLimit = (() => {
             // If there is no active war day yet, there should be NO denominator
             if(!warLimit) return 0;
@@ -3695,7 +3822,9 @@
             return `
               <tr class="${rowClass}">
                 <td class="sticky-1 mono">${avgRk}</td>
-                <td class="sticky-2 left" title="${nm}">${nm}</td>
+                <td class="sticky-2 mono">${avgDefRk}</td>
+                <td class="sticky-3 mono rk-diff ${deltaCls}">${escapeHtml(deltaOut)}</td>
+                <td class="sticky-4 left" title="${nm}">${nm}</td>
                 <td class="mono bold">${fmtNum(totStars, "0")}</td>
                 <td class="mono">${fmt1(totDes, "0.0")}</td>
                 <td class="mono">${avgStars}</td>
