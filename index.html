@@ -1629,9 +1629,7 @@
               <span id="cwl-title-text">CWL</span>
               <span class="caret" aria-hidden="true">▼</span>
           
-              <select id="cwlSeasonSelect" aria-label="Select CWL season">
-                <option value="current">Current</option>
-              </select>
+              <select id="cwlSeasonSelect" aria-label="Select CWL season"></select>
             </div>
           </div>
           
@@ -2303,7 +2301,6 @@
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
 
-      const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
       const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
       if(curKey && cwlSelected === curKey){
         cwlSelectedPayload = cwlCurrent;
@@ -3555,7 +3552,7 @@
 
       ensureCwlMembersSortBound();
 
-      const payload = cwlSelectedPayload || (cwlSelected === "current" ? cwlCurrent : null);
+      const payload = cwlSelectedPayload || cwlCurrent || null;
       if(payload) renderCwlRounds(payload);
 
       const title = payload?.title || "CWL";
@@ -4106,12 +4103,6 @@
       cwlIntervals.push(setInterval(fetchCwlCurrent, 5000));
       cwlIntervals.push(setInterval(fetchCwlIndex, 60000));
 
-      if(cwlSelected && cwlSelected !== "current"){
-        fetchCwlHistory(cwlSelected);
-      } else {
-        cwlSelectedPayload = cwlCurrent;
-        renderCwlContent();
-      }
     }
 
     // =========================
