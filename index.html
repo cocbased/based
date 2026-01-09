@@ -885,6 +885,9 @@
     /* =========================
    ✅ CWL ROUNDS (STACKED MATCHUPS)
    ========================= */
+    .rounds-stats, .rounds-stat{
+      color: rgba(255,255,255,0.92);
+    }
 
     /* You already have <div id="cwl-rounds-mount" class="rounds-wrap"> */
     .rounds-wrap{
@@ -1095,7 +1098,7 @@
     .rounds-slide{
       opacity: 0.35;
       filter: brightness(0.75);
-      transition: opacity 160ms ease, filter 160ms ease;
+      transition: opacity 60ms ease, filter 60ms ease;
     }
     
     .rounds-slide.is-active{
@@ -3110,14 +3113,15 @@
         return `
           <div class="rounds-side">
             <div class="rounds-name ${tintClass}" title="${name}">${name}</div>
-    
+        
             <div class="rounds-stats">
-              <span class="rounds-stat ${tintClass}">${escapeHtml(atk)} <span aria-hidden="true">⚔️</span></span>
-              <span class="rounds-stat ${tintClass}">${escapeHtml(pct)}</span>
-              <span class="rounds-stat ${tintClass}">${escapeHtml(stars)} <span aria-hidden="true">⭐</span></span>
+              <span class="rounds-stat">${escapeHtml(atk)} <span aria-hidden="true">⚔️</span></span>
+              <span class="rounds-stat">${escapeHtml(pct)}</span>
+              <span class="rounds-stat">${escapeHtml(stars)} <span aria-hidden="true">⭐</span></span>
             </div>
           </div>
         `;
+
       }
     
       function matchupHtml(w){
@@ -3273,7 +3277,7 @@
       
           // ✅ update dimming
           setActiveSlideClass(cur);
-        }, 80);
+        }, 10);
       }, { passive:true });
 
     
