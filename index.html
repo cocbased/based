@@ -778,10 +778,13 @@
     /* ✅ Member Overview: perfect performance highlight
        ONLY color the "general" columns (Avg Rk → Atk), NOT the war columns,
        and do NOT make anything bold. */
-    .cwl-perfect td:nth-child(-n+8){
+    /* ✅ now "general" columns are 9 wide:
+       #, Name, 🗡️RK, 🛡️RK, Total★, Total%, Avg★, Avg%, Atk */
+    .cwl-perfect td:nth-child(-n+9){
       color: rgba(56, 209, 114, 0.95) !important;
       font-weight: 400 !important;
     }
+
 
 
     .cwl-war-sword{
@@ -807,6 +810,8 @@
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
 
+    /* ✅ NEW sticky scheme for Member Overview:
+       sticky # (row number) + sticky Name only */
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
       position: sticky;
@@ -815,32 +820,32 @@
       background: #0b1829;
       text-align:center;
       font-family: monospace;
+      border-right: none;
     }
     
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: 54px; /* 🗡️ RK width */
+      left: 34px; /* # column width */
       z-index: 6;
-      background: #0b1829;
-      text-align:center;
-      font-family: monospace;
-    }
-    
-    .cwl-table th.sticky-3,
-    .cwl-table td.sticky-3{
-      position: sticky;
-      left: 108px; /* 54 + 54 */
-      z-index: 5;
       background: #0b1829;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
     }
     
+    /* header z-index bump */
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
-    .cwl-table thead th.sticky-3{ z-index: 7; }
+    
+    /* RK columns are NOT sticky; make them tight */
+    .cwl-rk{
+      text-align:center;
+      font-family: monospace;
+      padding-left: 6px !important;
+      padding-right: 6px !important;
+    }
+
 
 
     /* ✅ War group headers + war column tint */
@@ -921,10 +926,11 @@
        ========================= */
 
     /* Remove vertical borders for the first 7 header cells only (Avg Rk..Atk), both header rows */
-    .cwl-table.cwl-wide thead tr th:nth-child(-n+8){
+    .cwl-table.cwl-wide thead tr th:nth-child(-n+9){
       border-left: none !important;
       border-right: none !important;
     }
+
 
     /* Hide the horizontal divider between header row 1 & row 2 only on the blank (muted) left cells */
     .cwl-table.cwl-wide thead tr:first-child th.muted{
@@ -1682,7 +1688,8 @@
               <div class="sort-btn">
                 SORT
                 <select id="cwlMembersSortSelect" aria-label="Sort CWL members">
-                  <option value="rank">Rank</option>
+                  <option value="rank">Attack Rank</option>
+                  <option value="defRank">Defensive Rank</option>
                   <option value="totalStars">Total Stars</option>
                   <option value="totalPct">Total %</option>
                   <option value="avgStars">AVG Stars</option>
@@ -1694,35 +1701,39 @@
 
           <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
             <table class="cwl-table cwl-wide">
-              <colgroup>
-                <!-- 🗡️ RK / 🛡️ RK should be as tight as possible -->
-                <col style="width:54px;">  <!-- 🗡️ RK -->
-                <col style="width:54px;">  <!-- 🛡️ RK -->
-                <col style="width:88px;">  <!-- Name -->
-              
-                <col style="width:86px;">
-                <col style="width:110px;">
-                <col style="width:92px;">
-                <col style="width:92px;">
-                <col style="width:96px;">
-              
-                <!-- War cols: Opp widest, Stars tight, % medium -->
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-              </colgroup>
+                <colgroup>
+                  <col style="width:34px;">  <!-- # (sticky) -->
+                  <col style="width:92px;">  <!-- Name (sticky) -->
+                
+                  <col style="width:46px;">  <!-- 🗡️ RK (not sticky) -->
+                  <col style="width:46px;">  <!-- 🛡️ RK (not sticky) -->
+                
+                  <col style="width:86px;">
+                  <col style="width:110px;">
+                  <col style="width:92px;">
+                  <col style="width:92px;">
+                  <col style="width:96px;">
+                
+                  <!-- War cols: Opp widest, Stars tight, % medium -->
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                </colgroup>
+
 
 
             <thead id="cwl-members-head">
-              <!-- Row 1: keep War group headers, but make the left side visually "blank" -->
+              <!-- Row 1: War group headers; left side visually blank -->
               <tr>
                 <th class="sticky-1 muted">&nbsp;</th>
                 <th class="sticky-2 muted">&nbsp;</th>
-                <th class="sticky-3 muted">&nbsp;</th>
+            
+                <th class="muted">&nbsp;</th>
+                <th class="muted">&nbsp;</th>
             
                 <th class="muted">&nbsp;</th>
                 <th class="muted">&nbsp;</th>
@@ -1739,11 +1750,13 @@
                 <th class="cwl-warhead" colspan="3">War 7</th>
               </tr>
             
-              <!-- Row 2: ALL column headers live here -->
+              <!-- Row 2: ALL column headers -->
               <tr>
-                <th class="sticky-1">🗡️RK</th>
-                <th class="sticky-2">🛡️RK</th>
-                <th class="sticky-3">&nbsp;</th>
+                <th class="sticky-1">#</th>
+                <th class="sticky-2">&nbsp;</th>
+            
+                <th class="cwl-rk">🗡️RK</th>
+                <th class="cwl-rk">🛡️RK</th>
             
                 <th>Total★</th>
                 <th>Total%</th>
@@ -1751,7 +1764,7 @@
                 <th>Avg%</th>
                 <th class="cwl-general-sep">Atk</th>
             
-                <!-- War subheaders: ⚔️ / ⭐ / 🎯 -->
+                <!-- War subheaders -->
                 <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-1"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
                 <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-2"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
                 <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-3"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
@@ -1763,8 +1776,9 @@
             </thead>
 
 
+
               <tbody id="cwl-memberoverview-body">
-                <tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                <tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1889,6 +1903,11 @@
     // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
 
+    // ✅ static row numbering (does NOT change with sorting)
+    let cwlRowNumMap = null;      // Map<key, number>
+    let cwlRowNumMapKey = null;   // seasonKey-ish cache key
+
+    
     // ✅ Rounds carousel: preserve slide while data refreshes
     let cwlRoundsSavedIndex = null;     // what slide user is viewing (0-based)
     let cwlRoundsDidInitThisVisit = false; // only auto-jump on first mount per CWL visit
@@ -3609,10 +3628,25 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
+          // ✅ Build static row numbers from ORIGINAL payload order (not sorted)
+          // Key preference: tag -> name
+          const seasonKeyForMap = String(payload?.seasonKey || payload?.title || "cwl").trim();
+          if(!cwlRowNumMap || cwlRowNumMapKey !== seasonKeyForMap){
+            cwlRowNumMapKey = seasonKeyForMap;
+            cwlRowNumMap = new Map();
+            members.forEach((mm, idx) => {
+              const key = String(mm?.tag || mm?.playerTag || mm?.name || "").trim();
+              if(!key) return;
+              if(!cwlRowNumMap.has(key)) cwlRowNumMap.set(key, idx + 1);
+            });
+          }
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
-          
+
+            const aDef = Number(a?.avgDefRank ?? a?.avgDefenseRank ?? a?.avgDefensiveRank ?? 999999);
+            const bDef = Number(b?.avgDefRank ?? b?.avgDefenseRank ?? b?.avgDefensiveRank ?? 999999);
+
             const aTotalStars = Number(a?.totalStars ?? 0);
             const bTotalStars = Number(b?.totalStars ?? 0);
           
@@ -3634,7 +3668,18 @@
               if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
               return nameCmp;
             }
-          
+
+            // Defensive Rank: lowest 🛡️RK first
+            // tiebreaker: 🛡️RK > AVG Stars > Total Stars > Total %
+            if(cwlMembersSortMode === "defRank"){
+              if(isFinite(aDef) && isFinite(bDef) && aDef !== bDef) return aDef - bDef;
+              if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
+              if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+              if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+              return nameCmp;
+            }
+
+            
             // Total Stars: Total Stars > Total % > AVG RK
             if(cwlMembersSortMode === "totalStars"){
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
@@ -3873,18 +3918,26 @@
 
             return `
               <tr class="${rowClass}">
-                <td class="sticky-1 mono">${avgAtkRk}</td>
-                <td class="sticky-2 mono">${avgDefRk}</td>
-                <td class="sticky-3 left" title="${nm}">${nm}</td>
-            
+                <td class="sticky-1 mono">${(() => {
+                  const k = String(m?.tag || m?.playerTag || m?.name || "").trim();
+                  const n = cwlRowNumMap?.get(k);
+                  return (n != null) ? String(n) : "—";
+                })()}</td>
+              
+                <td class="sticky-2 left" title="${nm}">${nm}</td>
+              
+                <td class="mono cwl-rk">${avgAtkRk}</td>
+                <td class="mono cwl-rk">${avgDefRk}</td>
+              
                 <td class="mono bold">${fmtNum(totStars, "0")}</td>
                 <td class="mono">${fmt1(totDes, "0.0")}</td>
                 <td class="mono">${avgStars}</td>
                 <td class="mono">${avgDes}</td>
                 <td class="mono cwl-general-sep">${escapeHtml(atkFrac)}</td>
-            
+              
                 ${warCells.join("")}
               </tr>
+
             `;
 
           }).join("");
