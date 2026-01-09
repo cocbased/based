@@ -3601,7 +3601,7 @@
           
             return `
               <tr class="${rowClass}">
-                <td class="sticky-1 mono">${(m.__rowNum != null ? m.__rowNum : "—")}</td>
+                <td class="sticky-1 mono">${rankOut}</td>
                 <td class="sticky-2 left" title="${nameOut}">${nameOut}</td>
                 <td class="mono">${winsOut}</td>
                 <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
@@ -3611,6 +3611,7 @@
                 <td class="mono">${avgDefOut}</td>
               </tr>
             `;
+
             
 
 
