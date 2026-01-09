@@ -371,11 +371,10 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-    @media (max-width: 420px){
+    
       :root{ --rounds-gutter: 22px; }
     }
-  
-    }
+
 
     /* =========================
        Members (Home)
@@ -921,25 +920,33 @@
       display:flex;
       flex-direction:column;
     
-      /* ✅ space between matchups */
-      gap: 10px;
-      padding: 10px;
+      /* ✅ no “gap boxes” look; clean list */
+      gap: 0;
+      padding: 0;
+    
+      box-sizing: border-box;
     }
+
     
     /* one matchup = STACKED block */
     .rounds-match{
       display:flex;
       flex-direction:column;
     
-      /* ✅ make each matchup clearly separated */
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 10px;
-      overflow: hidden;
+      /* ✅ remove the box completely */
+      border: none;
+      border-radius: 0;
+      overflow: visible;
     
-      /* ✅ remove the old divider behavior */
-      border-bottom: none;
+      /* ✅ consistent seating */
+      box-sizing: border-box;
     }
-    .rounds-match:last-child{ border-bottom:none; }
+    
+    /* ✅ horizontal separator between matchups */
+    .rounds-match + .rounds-match{
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+
     
     /* team rows */
     .rounds-side{
@@ -1024,12 +1031,24 @@
       scroll-snap-type: x mandatory;
       gap: 10px;
     
-      /* ✅ arrow gutter (responsive via --rounds-gutter) */
+      /* gutter reserved for arrows */
       padding: 0 var(--rounds-gutter);
+    
+      /* ✅ makes snap/centering behave at edges */
+      scroll-padding-left: var(--rounds-gutter);
+      scroll-padding-right: var(--rounds-gutter);
     
       border-radius: 10px;
       box-sizing: border-box;
     }
+    
+    /* ✅ invisible spacers so first/last slide can truly center */
+    .rounds-track::before,
+    .rounds-track::after{
+      content:"";
+      flex: 0 0 var(--rounds-gutter);
+    }
+
     
     /* ✅ slide width fits inside the gutter so borders never clip */
     .rounds-slide{
@@ -1066,12 +1085,11 @@
     
     .rounds-arrow:active{ transform: translateY(-50%) scale(0.98); }
     
-    .rounds-arrow.left{ left: 6px; }
-    .rounds-arrow.right{ right: 6px; }
+    .rounds-arrow.left{ left: 3px; }
+    .rounds-arrow.right{ right: 3px; }
     
     .rounds-arrow[disabled]{
-      opacity: .35;
-      cursor: default;
+      display:none;
     }
     /* ✅ dim non-active slides */
     .rounds-slide{
