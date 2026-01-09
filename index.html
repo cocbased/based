@@ -1095,7 +1095,7 @@
     .rounds-slide{
       opacity: 0.35;
       filter: brightness(0.75);
-      transition: opacity 160ms ease, filter 160ms ease;
+      transition: opacity 60ms ease, filter 60ms ease;
     }
     
     .rounds-slide.is-active{
@@ -3101,24 +3101,18 @@
         return isWinner ? "rounds-win" : "rounds-lose";
       }
     
-      function teamRowHtml(teamObj, tintClass){
-        const name  = escapeHtml(teamObj?.name || "Team Name");
-        const atk   = fmtAtk(teamObj?.attacksUsed, teamObj?.totalAttacks);
-        const pct   = fmtPct(teamObj?.destruction);
-        const stars = fmtStars(teamObj?.stars);
-    
-        return `
-          <div class="rounds-side">
-            <div class="rounds-name ${tintClass}" title="${name}">${name}</div>
-    
-            <div class="rounds-stats">
-              <span class="rounds-stat ${tintClass}">${escapeHtml(atk)} <span aria-hidden="true">⚔️</span></span>
-              <span class="rounds-stat ${tintClass}">${escapeHtml(pct)}</span>
-              <span class="rounds-stat ${tintClass}">${escapeHtml(stars)} <span aria-hidden="true">⭐</span></span>
-            </div>
+      return `
+        <div class="rounds-side">
+          <div class="rounds-name ${tintClass}" title="${name}">${name}</div>
+      
+          <div class="rounds-stats">
+            <span class="rounds-stat">${escapeHtml(atk)} <span aria-hidden="true">⚔️</span></span>
+            <span class="rounds-stat">${escapeHtml(pct)}</span>
+            <span class="rounds-stat">${escapeHtml(stars)} <span aria-hidden="true">⭐</span></span>
           </div>
-        `;
-      }
+        </div>
+      `;
+
     
       function matchupHtml(w){
         const L = w?.clan || {};
@@ -3273,7 +3267,7 @@
       
           // ✅ update dimming
           setActiveSlideClass(cur);
-        }, 80);
+        }, 10);
       }, { passive:true });
 
     
