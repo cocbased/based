@@ -1909,10 +1909,18 @@
 
     // CWL state
     const CWL_SELECTED_KEY = "based_cwl_selected_season";
+    
+    // ✅ rollup keys
+    const CWL_ALL_TIME_KEY = "all_time";
+    const CWL_YEAR_PREFIX  = "year:"; // e.g. "year:2026"
+    
     let cwlIndex = null;
     let cwlCurrent = null;
-    let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || "current");
+    
+    // stored selection can be: "YYYY-MM" OR "all_time" OR "year:YYYY"
+    let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || CWL_ALL_TIME_KEY);
     let cwlSelectedPayload = null;
+
 
     // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
@@ -2295,22 +2303,58 @@
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
 
-      if(cwlSelected === "current"){
+      const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
+      const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
+      if(curKey && cwlSelected === curKey){
         cwlSelectedPayload = cwlCurrent;
         renderCwlContent();
       } else {
         renderCwlSeasonSelect();
       }
+
     }
 
-    async function fetchCwlHistory(seasonKey){
-      if(!seasonKey || seasonKey === "current") return;
-
-      const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
-      const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
-
+    async function fetchCwlHistory(key){
+      if(!key) return;
+    
+      // ✅ rollups
+      if(key === CWL_ALL_TIME_KEY){
+        const pagesUrl = `./cwl_rollups/all_time.json`;
+        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/all_time.json`;
+        try{
+          const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
+          cwlSelectedPayload = data;
+          setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+        }catch(e){
+          cwlSelectedPayload = null;
+          setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+        }
+        renderCwlContent();
+        return;
+      }
+    
+      if(String(key).startsWith(CWL_YEAR_PREFIX)){
+        const year = String(key).slice(CWL_YEAR_PREFIX.length);
+        const pagesUrl = `./cwl_rollups/${encodeURIComponent(year)}.json`;
+        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(year)}.json`;
+        try{
+          const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
+          cwlSelectedPayload = data;
+          setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+        }catch(e){
+          cwlSelectedPayload = null;
+          setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+        }
+        renderCwlContent();
+        return;
+      }
+    
+      // ✅ monthly snapshot
+      const pagesUrl = `./cwl_history/${encodeURIComponent(key)}.json`;
+      const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(key)}.json`;
+    
       try{
-        const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}`);
+        const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${key}`);
         cwlSelectedPayload = data;
         setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
       }catch(e){
@@ -2319,6 +2363,7 @@
       }
       renderCwlContent();
     }
+
 
     // =========================
     // Render: Current War section
@@ -2939,19 +2984,13 @@
       if(!sel) return;
       if(sel.dataset.bound === "1") return;
 
-      sel.addEventListener("change", async () => {
-        const v = sel.value || "current";
+      sel.addEventListener("change", () => {
+        const v = sel.value || CWL_ALL_TIME_KEY;
         cwlSelected = v;
         try{ localStorage.setItem(CWL_SELECTED_KEY, cwlSelected); }catch(e){}
-
-    
-        if(v === "current"){
-          cwlSelectedPayload = cwlCurrent;
-          renderCwlContent();
-        } else {
-          await fetchCwlHistory(v);
-        }
+        loadCwlSelected();
       });
+
 
       sel.dataset.bound = "1";
     }
@@ -2973,21 +3012,56 @@
     function renderCwlSeasonSelect(){
       const sel = document.getElementById("cwlSeasonSelect");
       if(!sel) return;
-
+    
       ensureCwlSelectBound();
-
+    
       const seasons = Array.isArray(cwlIndex?.seasons) ? cwlIndex.seasons : [];
-      const opts = [];
-      opts.push({ value:"current", label:"Current" });
-
+    
+      // ✅ get current CWL identity
+      const curTitle = String(cwlCurrent?.title || "").trim();
+      const curKey   = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
+      const curState = String(cwlCurrent?.state || "").toLowerCase();
+    
+      const cwlActive = !!(curTitle && curState !== "notincwl");
+    
+      // ✅ derive years from season keys like "YYYY-MM"
+      const yearSet = new Set();
       for(const s of seasons){
-        if(!s || typeof s !== "object") continue;
-        const key = String(s.seasonKey || "").trim();
-        const title = String(s.title || key || "").trim();
-        if(!key) continue;
-        opts.push({ value:key, label:title });
+        const key = String(s?.seasonKey || "").trim();
+        const m = key.match(/^(\d{4})-(\d{2})$/);
+        if(m) yearSet.add(m[1]);
       }
-
+      const years = Array.from(yearSet).sort((a,b)=>Number(b)-Number(a)); // newest year first
+    
+      // ✅ months sorted newest->oldest by key
+      const months = seasons
+        .map(s => ({
+          value: String(s?.seasonKey || "").trim(),
+          label: String(s?.title || s?.seasonKey || "").trim()
+        }))
+        .filter(o => o.value)
+        .sort((a,b) => String(b.value).localeCompare(String(a.value)));
+    
+      // ✅ if active and month isn't in index yet, inject it
+      if(cwlActive && curKey){
+        const already = months.some(m => m.value === curKey);
+        if(!already){
+          months.unshift({ value: curKey, label: curTitle || curKey });
+        } else {
+          const idx = months.findIndex(m => m.value === curKey);
+          if(idx >= 0 && curTitle) months[idx].label = curTitle;
+        }
+      }
+    
+      // ✅ build final options in required order
+      const opts = [];
+      opts.push({ value: CWL_ALL_TIME_KEY, label: "All-Time" });
+      for(const y of years){
+        opts.push({ value: `${CWL_YEAR_PREFIX}${y}`, label: `${y} CWL` });
+      }
+      opts.push(...months);
+    
+      // ✅ de-dupe
       const seen = new Set();
       const finalOpts = [];
       for(const o of opts){
@@ -2995,28 +3069,54 @@
         seen.add(o.value);
         finalOpts.push(o);
       }
-
-      sel.innerHTML = finalOpts.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join("");
-
-      const wanted = cwlSelected || "current";
-      const hasWanted = finalOpts.some(o => o.value === wanted);
-      sel.value = hasWanted ? wanted : "current";
-
-      // Title text is driven by payload in renderCwlContent()
-      // but if you want a quick placeholder when selecting history:
-      if(sel.value !== "current"){
-        setText("cwl-title-text", sel.value);
-      }
-      
-      if(document.getElementById("cwl-title-text")){
-        if(sel.value === "current"){
-          cwlSelectedPayload = cwlCurrent;
-          renderCwlContent();
-        }
-      }
-
+    
+      sel.innerHTML = finalOpts
+        .map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+        .join("");
+    
+      // ✅ default selection:
+      // active -> current month key
+      // inactive -> all_time
+      let defaultKey = CWL_ALL_TIME_KEY;
+      if(cwlActive && curKey) defaultKey = curKey;
+    
+      // if stored selection missing, fallback
+      const hasStored = finalOpts.some(o => o.value === cwlSelected);
+      cwlSelected = hasStored ? cwlSelected : defaultKey;
+    
+      sel.value = cwlSelected;
+    
+      // update title label immediately
+      const selLabel = finalOpts.find(o => o.value === sel.value)?.label || "CWL";
+      setText("cwl-title-text", selLabel);
+    
+      // load data
+      loadCwlSelected();
     }
 
+
+    function loadCwlSelected(){
+      const key = cwlSelected;
+    
+      // If selected is the active current month key, use live payload
+      const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
+      const curTitle = String(cwlCurrent?.title || "").trim();
+      const curState = String(cwlCurrent?.state || "").toLowerCase();
+    
+      // Treat "active" as: has a title and is not "notInCwl"
+      const cwlActive = !!(curTitle && curState !== "notincwl");
+    
+      if(cwlActive && curKey && key === curKey){
+        cwlSelectedPayload = cwlCurrent;
+        renderCwlContent();
+        return;
+      }
+    
+      // Otherwise fetch from history or rollups
+      fetchCwlHistory(key);
+    }
+
+    
     function fmtNum(n, fallback="—"){
       if(n === null || n === undefined || n === "") return fallback;
       const x = Number(n);
