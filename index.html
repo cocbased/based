@@ -1902,11 +1902,6 @@
 
     // ✅ CWL Member Overview sort state (default: Rank ascending)
     let cwlMembersSortMode = "rank";
-
-    // ✅ static row numbering (does NOT change with sorting)
-    let cwlRowNumMap = null;      // Map<key, number>
-    let cwlRowNumMapKey = null;   // seasonKey-ish cache key
-
     
     // ✅ Rounds carousel: preserve slide while data refreshes
     let cwlRoundsSavedIndex = null;     // what slide user is viewing (0-based)
@@ -3611,10 +3606,7 @@
                 <td class="mono">${avgDefOut}</td>
               </tr>
             `;
-
             
-
-
           }).join("");
 
         }
@@ -3629,19 +3621,7 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-          // ✅ Build static row numbers from ORIGINAL payload order (not sorted)
-          // Key preference: tag -> name
-          const seasonKeyForMap = String(payload?.seasonKey || payload?.title || "cwl").trim();
-          if(!cwlRowNumMap || cwlRowNumMapKey !== seasonKeyForMap){
-            cwlRowNumMapKey = seasonKeyForMap;
-            cwlRowNumMap = new Map();
-            members.forEach((mm, idx) => {
-              const key = String(mm?.tag || mm?.playerTag || mm?.name || "").trim();
-              if(!key) return;
-              if(!cwlRowNumMap.has(key)) cwlRowNumMap.set(key, idx + 1);
-            });
-          }
-          
+                    
           // ✅ Permanent row numbering (never changes with sorting)
           // Stamps 1..N based on ORIGINAL payload order
           for(let i=0; i<members.length; i++){
@@ -3725,16 +3705,13 @@
             return nameCmp;
           });
             
-          memberBody.innerHTML = sorted.map(m => {
+          memberBody.innerHTML = sorted.map((m, idx) => {
              // Avg Rk (computed from repaired ranks for wars up to warLimit)
             let avgAtkRkVal = null; // 🗡️ RK
             let avgAtkRk = "—";
             
             let avgDefRkVal = null; // 🛡️ RK
             let avgDefRk = "—";
-
-
-
 
             const nm = escapeHtml(m.name || "—");
 
@@ -3926,12 +3903,7 @@
 
             return `
               <tr class="${rowClass}">
-                <td class="sticky-1 mono">${(() => {
-                  const k = String(m?.tag || m?.playerTag || m?.name || "").trim();
-                  const n = cwlRowNumMap?.get(k);
-                  return (n != null) ? String(n) : "—";
-                })()}</td>
-              
+                <td class="sticky-1 mono">${idx + 1}</td>
                 <td class="sticky-2 left" title="${nm}">${nm}</td>
               
                 <td class="mono cwl-rk">${avgAtkRk}</td>
