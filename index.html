@@ -772,6 +772,16 @@
     .cwl-table .mono{ font-family: monospace; }
     .cwl-table .bold{ font-weight:900; }
     .cwl-table .muted{ opacity:.70; }
+
+    /* War numeric cells (⭐ and 🎯) should never ellipsize */
+    .cwl-table td.cwl-warcell:not(.left){
+      text-overflow: clip;
+    }
+
+    /* Slightly tighter + uniform spacing for the wide CWL member table */
+    .cwl-table.cwl-wide thead th{ padding: 10px 8px; }
+    .cwl-table.cwl-wide tbody td{ padding: 9px 8px; }
+    
     /* ✅ League Overview highlights */
     .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
     .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
@@ -826,7 +836,7 @@
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: 34px; /* # column width */
+      left: 44px; /* # column width */
       z-index: 6;
       background: #0b1829;
       text-align:left;
@@ -837,16 +847,20 @@
     /* header z-index bump */
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
+
+    .cwl-table td.sticky-1{
+      text-overflow: clip;
+      overflow: visible;
+    }
+
     
     /* RK columns are NOT sticky; make them tight */
     .cwl-rk{
       text-align:center;
       font-family: monospace;
-      padding-left: 6px !important;
-      padding-right: 6px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
     }
-
-
 
     /* ✅ War group headers + war column tint */
     .cwl-warhead{
@@ -1702,26 +1716,26 @@
           <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
             <table class="cwl-table cwl-wide">
                 <colgroup>
-                  <col style="width:34px;">  <!-- # (sticky) -->
+                  <col style="width:44px;">  <!-- # (sticky) -->
                   <col style="width:92px;">  <!-- Name (sticky) -->
                 
-                  <col style="width:46px;">  <!-- 🗡️ RK (not sticky) -->
-                  <col style="width:46px;">  <!-- 🛡️ RK (not sticky) -->
+                  <col style="width:58px;">  <!-- 🗡️ RK (not sticky) -->
+                  <col style="width:58px;">  <!-- 🛡️ RK (not sticky) -->
                 
-                  <col style="width:86px;">
-                  <col style="width:110px;">
+                  <col style="width:75px;">
+                  <col style="width:90px;">
                   <col style="width:92px;">
                   <col style="width:92px;">
                   <col style="width:96px;">
                 
                   <!-- War cols: Opp widest, Stars tight, % medium -->
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:58px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
                 </colgroup>
 
 
@@ -1758,8 +1772,8 @@
                 <th class="cwl-rk">🗡️RK</th>
                 <th class="cwl-rk">🛡️RK</th>
             
-                <th>Total★</th>
-                <th>Total%</th>
+                <th>TTL★</th>
+                <th>TTL%</th>
                 <th>Avg★</th>
                 <th>Avg%</th>
                 <th class="cwl-general-sep">Atk</th>
