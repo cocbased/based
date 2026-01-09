@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1148,6 +1147,14 @@
       opacity: 1;
       filter: none;
     }
+    .cwl-league-under-title{
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      opacity: 0.92;
+      margin: 4px 0 10px;
+    }
+
     
   </style>
 
@@ -1594,8 +1601,7 @@
             </div>
           </div>
           
-          <div class="row"><span class="row-label">League</span><span id="cwl-league-name" class="row-value">Loading…</span></div>
-
+          <div id="cwl-league-name" class="cwl-league-under-title">Loading…</div>
 
           <div class="divider"></div>
 
@@ -3354,6 +3360,17 @@
 
       const title = payload?.title || "CWL";
       setText("cwl-title-text", title);
+
+      // ✅ League name (fix stuck "Loading...")
+      const leagueName =
+        pick(payload, ["leagueName","league","cwlLeague","cwl_league"]) ||
+        pick(payload?.meta, ["leagueName","league","cwlLeague"]) ||
+        pick(payload?.league, ["name","leagueName"]) ||
+        pick(payload?.group, ["league","leagueName"]) ||
+        "—";
+      
+      setText("cwl-league-name", leagueName);
+
       
       // (Status row removed, so no need to set cwl-state anymore)
 
