@@ -709,7 +709,8 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      width: 100%;
+      width: fit-content;
+      max-width: 100%;
 
       font-size: 16px;
       font-weight: 700;
@@ -731,8 +732,10 @@
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
+      text-align:center;
+      text-align-last:center;
     }
-    .cwl-title-dd select option{ background:#0b1829; color:#fff; }
+    .cwl-title-dd select option{ background:#0b1829; color:#fff; text-align:center; }
   
     .cwl-table-wrap{
       width:100%;
