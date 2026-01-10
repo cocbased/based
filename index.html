@@ -704,10 +704,12 @@
   
     .cwl-title-dd{
       position: relative;
-      display: inline-flex;
+      display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-  
+      width: 100%;
+
       font-size: 16px;
       font-weight: 700;
       text-align: center;
@@ -3553,8 +3555,11 @@
         pick(payload?.league, ["name","leagueName"]) ||
         pick(payload?.group, ["league","leagueName"]) ||
         "—";
+      const leagueDisplayName = (selectedKey === CWL_ALL_TIME_KEY && clanStats?.cwl?.currentLeague)
+        ? clanStats.cwl.currentLeague
+        : leagueName;
     
-      setText("cwl-league-name", leagueName);
+      setText("cwl-league-name", leagueDisplayName);
     
       // ============================================================
       // League overview (MONTHLY ONLY)
