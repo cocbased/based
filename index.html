@@ -1853,8 +1853,7 @@
     
     // ✅ rollup keys
     const CWL_ALL_TIME_KEY = "all_time";
-    const CWL_YEAR_PREFIX  = "year:"; // e.g. "year:2026"
-    
+       
     let cwlIndex = null;
     let cwlCurrent = null;
     
@@ -2272,23 +2271,8 @@
         renderCwlContent();
         return;
       }
-    
-      if(String(key).startsWith(CWL_YEAR_PREFIX)){
-        const year = String(key).slice(CWL_YEAR_PREFIX.length);
-        const pagesUrl = `./cwl_rollups/${encodeURIComponent(year)}.json`;
-        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(year)}.json`;
-        try{
-          const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
-          cwlSelectedPayload = data;
-          setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
-        }catch(e){
-          cwlSelectedPayload = null;
-          setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
-        }
-        renderCwlContent();
-        return;
-      }
-    
+
+      
       // ✅ monthly snapshot
       const pagesUrl = `./cwl_history/${encodeURIComponent(key)}.json`;
       const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(key)}.json`;
@@ -2964,15 +2948,7 @@
     
       const cwlActive = !!(curTitle && curState !== "notincwl");
     
-      // ✅ derive years from season keys like "YYYY-MM"
-      const yearSet = new Set();
-      for(const s of seasons){
-        const key = String(s?.seasonKey || "").trim();
-        const m = key.match(/^(\d{4})-(\d{2})$/);
-        if(m) yearSet.add(m[1]);
-      }
-      const years = Array.from(yearSet).sort((a,b)=>Number(b)-Number(a)); // newest year first
-    
+        
       // ✅ months sorted newest->oldest by key
       const months = seasons
         .map(s => ({
@@ -2996,9 +2972,6 @@
       // ✅ build final options in required order
       const opts = [];
       opts.push({ value: CWL_ALL_TIME_KEY, label: "All-Time" });
-      for(const y of years){
-        opts.push({ value: `${CWL_YEAR_PREFIX}${y}`, label: `${y} CWL` });
-      }
       opts.push(...months);
     
       // ✅ de-dupe
@@ -3505,9 +3478,7 @@
     
       const isRollup =
         (selectedKey === CWL_ALL_TIME_KEY) ||
-        (selectedKey.startsWith(CWL_YEAR_PREFIX)) ||
-        (payloadKey === CWL_ALL_TIME_KEY) ||
-        (payloadKey.startsWith(CWL_YEAR_PREFIX));
+        (payloadKey === CWL_ALL_TIME_KEY);
     
       // ✅ allow CSS to hide WAR columns + hide sections
       document.body.classList.toggle("cwl-rollup", isRollup);
