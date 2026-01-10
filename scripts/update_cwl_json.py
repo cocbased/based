@@ -221,7 +221,7 @@ def build_cwl_payload(group):
         if (w.get("state") or "") != "warEnded":
             is_final = False
 
-    league_name = get_league_name()
+    league_name = ((group.get("warLeague") or {}).get("name")) or get_league_name()
 
     # warsCompleted: number of rounds actually ended (used by frontend to exclude active war from denominators)
     wars_completed = 0
