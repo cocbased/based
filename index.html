@@ -19,29 +19,33 @@
       --tabbar-h: 92px;
       --tabbar-bg: rgba(12,12,12,0.96);
       --tabbar-border: rgba(255,255,255,0.10);
-
+  
       --m-emoji-col: 30px;
       --m-name-col: 102px;
-
+  
       --cards-max: 680px;
-
+  
       /* ✅ UI colors used for scrollbar + dividers */
       --card-bg: #0b1829;
       --card-border: #2b3b55;
       --scroll-track: rgba(0,0,0,0.22);
       --scroll-thumb: var(--card-border);
-
+  
       --sep-strong: rgba(255,255,255,0.16);
       --sep-soft: rgba(255,255,255,0.10);
-
+  
       /* ✅ CWL "War" column tint (dark grey) */
       --cwl-war-bg: rgba(22, 22, 22, 0.92);
       --cwl-war-bg-soft: rgba(18, 18, 18, 0.72);
+  
       --rounds-gutter: 38px; /* space reserved for the carousel arrows */
+  
+      /* ✅ DEFAULT sticky offset = Member table "#" col width */
+      --cwl-sticky-1: 44px;
     }
-
+  
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
-
+  
     /* ✅ Non-PWA scrollbar styling (safe to apply globally; mobile/PWA mostly ignores) */
     html, body{
       scrollbar-color: var(--scroll-thumb) var(--scroll-track);
@@ -56,7 +60,7 @@
       border: 2px solid var(--scroll-track);
     }
     ::-webkit-scrollbar-thumb:hover{ filter: brightness(1.08); }
-
+  
     /* Scroll containers */
     .members-wrap::-webkit-scrollbar,
     .cwl-table-wrap::-webkit-scrollbar,
@@ -79,12 +83,12 @@
       border-radius: 999px;
       border: 2px solid var(--scroll-track);
     }
-
+  
     .topnav{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .topnav::-webkit-scrollbar{ display:none; }
     .topnav a{ flex: 0 0 auto; }
     .stage, #app{ min-height: 0; }
-
+  
     body, body *{
       -webkit-user-select: none;
       user-select: none;
@@ -95,7 +99,7 @@
       user-select: text;
       -webkit-touch-callout: default;
     }
-
+  
     body{
       margin:0;
       background:#000;
@@ -111,10 +115,10 @@
       box-sizing:border-box;
       overscroll-behavior-x: none;
     }
-
+  
     .app-icon{ width:90px; height:90px; margin-bottom:12px; border-radius:20px; object-fit:contain; }
     .logo{ width:100%; max-width:225px; height:auto; margin-bottom:16px; object-fit:contain; }
-
+  
     .clan-tag-link{
       color:#fff;
       text-decoration:none;
@@ -124,7 +128,7 @@
       margin:8px 0 10px;
     }
     .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
-
+  
     .topnav{
       width:100%;
       max-width:560px;
@@ -151,10 +155,10 @@
       border-color: rgba(255,255,255,0.22);
       background: rgba(255,255,255,0.08);
     }
-
+  
     .stage{ width:100%; max-width:560px; position:relative; flex:1; display:flex; justify-content:center; }
     #app{ width:100%; max-width:560px; display:flex; flex-direction:column; align-items:center; flex:1; touch-action:auto; }
-
+  
     .cards{
       width:100%;
       max-width: min(var(--cards-max), 100%);
@@ -181,10 +185,10 @@
     .row{ display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:2px 0; gap:12px; }
     .row-label{ font-weight:600; white-space:nowrap; }
     .row-value{ font-family:monospace; text-align:right; flex:1; }
-
+  
     .clan-desc-block{ text-align:center; white-space: pre-line; line-height: 1.25; opacity: .95; padding: 2px 0 6px; }
     #rankings-block{ display:none; }
-
+  
     .war-board{ text-align:center; margin-top:6px; }
     .war-timer{ font-family:monospace; font-weight:900; font-size:14px; margin:6px 0 10px; }
     .war-grid-3{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; }
@@ -202,7 +206,7 @@
     .war-substat{ margin-top:8px; opacity:.95; }
     .war-green{ color:#38d172; font-weight:900; }
     .record-green{ color:#38d172; font-weight:900; }
-
+  
     .dragscroll{
       overflow-x: auto;
       overflow-y: hidden;
@@ -214,7 +218,7 @@
       -webkit-user-select: none;
       user-select: none;
     }
-
+  
     .war-chart-wrap{ margin-top: 12px; }
     .war-mode-title{
       margin: 10px 0 10px;
@@ -224,7 +228,7 @@
       opacity:.75;
       text-align:center;
     }
-
+  
     .war-chart-block{
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
@@ -233,7 +237,7 @@
       color:#fff;
     }
     .war-chart-block + .war-chart-block{ margin-top: 10px; }
-
+  
     .war-chart-head{
       display:flex;
       align-items:center;
@@ -243,7 +247,7 @@
       background: rgba(255,255,255,0.04);
       border-bottom: 1px solid rgba(255,255,255,0.10);
     }
-
+  
     .war-chart-clan{
       display:flex;
       align-items:center;
@@ -256,9 +260,9 @@
       min-width: 0;
       justify-content:center;
     }
-
+  
     .war-sheet{ width:100%; display:block; }
-
+  
     .war-sheet-row{
       display:grid;
       grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 40px 64px 36px;
@@ -267,7 +271,7 @@
       min-height: 38px;
     }
     .war-sheet-row:last-child{ border-bottom:none; }
-
+  
     .war-cell{
       padding: 8px 8px;
       font-size: 12.5px;
@@ -280,14 +284,14 @@
       color:#fff;
       min-width: 0;
     }
-
+  
     .war-cell.stack { white-space: normal; }
     .war-cell.mono{ font-family: monospace; white-space:nowrap; }
     .war-cell.center{ justify-content:center; text-align:center; }
     .war-cell.right{ justify-content:flex-end; text-align:right; }
     .war-cell.bold{ font-weight: 900; }
     .war-cell.numcol{ padding-right: 6px; opacity: .95; }
-
+  
     .war-player{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .war-player .name{
       font-weight:900;
@@ -311,13 +315,13 @@
       white-space:nowrap;
       flex:0 0 auto;
     }
-
+  
     .war-leader-underline{
       text-decoration: underline;
       text-underline-offset: 2px;
       font-weight: 900;
     }
-
+  
     .war-role-emoji{
       font-size:14px;
       line-height:1;
@@ -325,7 +329,7 @@
       flex: 0 0 auto;
       opacity: .95;
     }
-
+  
     .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
     .atkline{
       display:flex;
@@ -339,11 +343,11 @@
       white-space:nowrap;
       min-width:0;
     }
-
+  
     .war-cell.defender{ justify-content:flex-end; text-align:right; }
     .war-cell.defender .atk2{ align-items:flex-end; }
     .war-cell.defender .atkline{ justify-content:flex-end; text-align:right; }
-
+  
     .stars{ display:flex; align-items:center; justify-content:center; gap:4px; font-variant-numeric: tabular-nums; }
     .star{
       font-size:13px; line-height:1;
@@ -352,7 +356,7 @@
     }
     .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
     .muted{ opacity:.65; }
-
+  
     .tiny-status{
       text-align:center;
       font-family:monospace;
@@ -360,7 +364,7 @@
       opacity:.70;
       margin-top: 8px;
     }
-
+  
     @media (max-width: 420px){
       .war-cell.defender{ justify-content: flex-start; text-align: left; }
       .war-cell.defender .atk2{ align-items: flex-start; }
@@ -371,19 +375,17 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-    
+  
       :root{ --rounds-gutter: 22px; }
     }
-
-
+  
     /* =========================
        Members (Home)
        ========================= */
     .members-headerbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
-
-      /* ✅ center SCROLL perfectly via a true center column */
+  
       display:grid;
       grid-template-columns: 1fr auto 1fr;
       grid-template-rows: auto auto;
@@ -393,13 +395,12 @@
     }
     .members-leaderline{ grid-column:1/2; grid-row:1/2; justify-self:start; }
     .members-elderline{ grid-column:1/2; grid-row:2/3; justify-self:start; }
-
+  
     .members-keyline{ display:flex; align-items:center; gap:10px; white-space:nowrap; }
     .key-emoji{ font-size:14px; line-height:1; }
     .key-text{ font-size:12px; line-height:1.2; }
     .legend-underline{ text-decoration: underline; text-underline-offset: 2px; font-weight: 400; }
-
-    /* ✅ perfectly centered */
+  
     .members-scroll-inline{
       grid-column:2/3;
       grid-row:2/3;
@@ -415,7 +416,7 @@
       justify-self:center;
     }
     .members-sortbtn-wrap{ grid-column:3/4; grid-row:1/3; justify-self:end; align-self:center; }
-
+  
     .sort-btn{
       position:relative;
       display:inline-flex;
@@ -447,7 +448,7 @@
       -webkit-appearance:none;
     }
     .sort-btn select option{ background:#0b1829; color:#fff; }
-
+  
     .members-wrap{
       width:100%;
       margin-top:2px;
@@ -488,7 +489,7 @@
       border-right: none;
     }
     .members-table thead th:nth-child(1){ z-index: 9; }
-
+  
     .members-table th:nth-child(2),
     .members-table td:nth-child(2){
       position: sticky;
@@ -498,7 +499,7 @@
       border-right: 1px solid rgba(255,255,255,0.10);
     }
     .members-table thead th:nth-child(2){ z-index: 8; }
-
+  
     .members-table tbody td{
       padding: 10px 10px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -517,7 +518,7 @@
     .m-user-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .m-user-name.m-leader{ font-weight:400; text-decoration: underline; text-underline-offset: 2px; }
     .m-num{ font-family: monospace; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; }
-
+  
     .links{
       width:100%;
       max-width:280px;
@@ -549,7 +550,7 @@
       font-weight:700;
       border-radius:12px;
     }
-
+  
     .page-footer{
       margin-top:auto;
       width:100%;
@@ -558,7 +559,7 @@
       opacity:.7;
       text-align:center;
     }
-
+  
     body.has-pwa-tabs{
       padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
     }
@@ -630,7 +631,7 @@
     }
     .pwa-tabbar a .label{ font-size: 11px; line-height: 1; opacity: 0.95; transform: translateY(-2px); font-weight: 500; }
     .pwa-tabbar a.active{ opacity: 1; }
-
+  
     /* =========================
        ✅ CWL
        ========================= */
@@ -679,7 +680,7 @@
       -webkit-appearance:none;
     }
     .cwl-pill select option{ background:#0b1829; color:#fff; }
-
+  
     /* =========================
        ✅ CWL title dropdown (replaces Current pill)
        ========================= */
@@ -689,26 +690,24 @@
       align-items:center;
       margin: 0 0 10px;
     }
-    
+  
     .cwl-title-dd{
       position: relative;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-    
-      /* keep it looking like a title */
+  
       font-size: 16px;
       font-weight: 700;
       text-align: center;
     }
-    
+  
     .cwl-title-dd .caret{
       font-size: 12px;
       opacity: 0.75;
       transform: translateY(1px);
     }
-    
-    /* invisible select overlay so the whole title acts as the dropdown */
+  
     .cwl-title-dd select{
       position:absolute;
       inset:0;
@@ -720,8 +719,7 @@
       -webkit-appearance:none;
     }
     .cwl-title-dd select option{ background:#0b1829; color:#fff; }
-
-    
+  
     .cwl-table-wrap{
       width:100%;
       overflow-x:auto;
@@ -731,6 +729,7 @@
       border:1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
     }
+  
     .cwl-table{
       width:100%;
       border-collapse: separate;
@@ -738,24 +737,22 @@
       font-size:12.5px;
       table-layout: fixed;
     }
+  
     .cwl-table thead th{
       position: sticky;
       top: 0;
       z-index: 5;
-      background: #0b1829;               /* solid */
+      background: #0b1829;
       border-bottom: 1px solid rgba(255,255,255,0.12);
       padding: 10px 10px;
       font-size:11px;
       letter-spacing:.08em;
       text-transform:uppercase;
-    
-      /* ✅ instead of opacity (which makes background transparent), tint the text */
       color: rgba(255,255,255,0.85);
-    
       white-space: nowrap;
       text-align:center;
     }
-
+  
     .cwl-table tbody td{
       padding: 9px 10px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -766,62 +763,60 @@
       font-family: monospace;
     }
     .cwl-table tbody tr:last-child td{ border-bottom:none; }
-
+  
     .cwl-table .left{ text-align:left; font-family: inherit; }
     .cwl-table .right{ text-align:right; }
     .cwl-table .mono{ font-family: monospace; }
     .cwl-table .bold{ font-weight:900; }
     .cwl-table .muted{ opacity:.70; }
-
+  
     /* War numeric cells (⭐ and 🎯) should never ellipsize */
     .cwl-table td.cwl-warcell:not(.left){
       text-overflow: clip;
     }
-
-    /* Slightly tighter + uniform spacing for the wide CWL member table */
+  
     .cwl-table.cwl-wide thead th{ padding: 10px 8px; }
     .cwl-table.cwl-wide tbody td{ padding: 9px 8px; }
-    
+  
     /* ✅ League Overview highlights */
     .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
     .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
-    /* ✅ Member Overview: perfect performance highlight
-       ONLY color the "general" columns (Avg Rk → Atk), NOT the war columns,
-       and do NOT make anything bold. */
-    /* ✅ now "general" columns are 9 wide:
-       #, Name, 🗡️RK, 🛡️RK, Total★, Total%, Avg★, Avg%, Atk */
+  
+    /* ✅ Member Overview: perfect performance highlight (first 9 columns only) */
     .cwl-perfect td:nth-child(-n+9){
       color: rgba(56, 209, 114, 0.95) !important;
       font-weight: 400 !important;
     }
-
-
-
-    .cwl-war-sword{
-      display:inline-block;
-      margin-right:6px;
-    }
-    
-    /* appended opponent name; can ellipsis */
+  
+    .cwl-war-sword{ display:inline-block; margin-right:6px; }
+  
     .cwl-war-oppname{
       display:inline-block;
-      max-width: 88px;          /* adjust if you want */
+      max-width: 88px;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
       vertical-align:bottom;
       color: rgba(255,255,255,0.85);
     }
-    
+  
     .cwl-wide{ min-width: 1220px; }
-    .cwl-league{ min-width: 700px; width: 100%; }
-
-    /* ✅ tighter League Overview columns (padding tighter only for this table) */
+  
+    /* ✅ League overview table: set correct sticky width + min width */
+    .cwl-league{
+      min-width: 700px;
+      width: 100%;
+      --cwl-sticky-1: 52px; /* ✅ FIX: League "Rank" col width is 52px */
+    }
+  
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
-
-    /* ✅ NEW sticky scheme for Member Overview:
-       sticky # (row number) + sticky Name only */
+  
+    /* =========================================================
+       ✅ FIXED sticky scheme for ALL CWL tables
+       - Member table uses default --cwl-sticky-1: 44px
+       - League table overrides it to 52px (above)
+       ========================================================= */
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
       position: sticky;
@@ -832,68 +827,60 @@
       font-family: monospace;
       border-right: none;
     }
-    
+  
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: 44px; /* # column width */
+      left: var(--cwl-sticky-1); /* ✅ FIX: correct per table */
       z-index: 6;
       background: #0b1829;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
     }
-    
-    /* header z-index bump */
+  
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
-
+  
     .cwl-table td.sticky-1{
       text-overflow: clip;
       overflow: visible;
     }
-
-    
-    /* RK columns are NOT sticky; make them tight */
+  
     .cwl-rk{
       text-align:center;
       font-family: monospace;
       padding-left: 10px !important;
       padding-right: 10px !important;
     }
-
+  
     /* ✅ War group headers + war column tint */
     .cwl-warhead{
       background: var(--cwl-war-bg) !important;
       border-left: 1px solid rgba(255,255,255,0.10);
       border-right: 1px solid rgba(255,255,255,0.10);
     }
-    .cwl-warcell{
-      background: var(--cwl-war-bg-soft);
-    }
-    
+    .cwl-warcell{ background: var(--cwl-war-bg-soft); }
+  
     .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-warcell{
       background: var(--cwl-war-bg) !important;
     }
-    
-    /* ✅ header row 2: make the ⚔️ header cells darker too */
+  
     .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-day-start{
       background: rgba(10,10,10,0.92) !important;
     }
-
+  
     .cwl-note{
       opacity:.75;
       font-size:13px;
       text-align:center;
       padding: 6px 0 2px;
     }
-
-    /* ✅ CWL: headerbar that centers scroll text perfectly */
+  
     .cwl-subheaderbar{
       background: transparent; border:none; border-radius:0;
       padding:0; margin:0 0 8px;
-
-      /* ✅ center column ensures perfect centering even with a right-side sort button */
+  
       display:grid;
       grid-template-columns: 1fr auto 1fr;
       grid-template-rows: auto;
@@ -919,69 +906,51 @@
       justify-self:end;
       align-self:center;
     }
-
-    /* ✅ CWL: visual separators */
-    .cwl-general-sep{
-      border-right: 1px solid var(--sep-strong) !important;
-    }
+  
+    .cwl-general-sep{ border-right: 1px solid var(--sep-strong) !important; }
+  
     .cwl-day-start{
       border-left: 1px solid var(--sep-strong) !important;
-    
-      /* ✅ darker start-of-war column */
       background: rgba(10,10,10,0.78);
     }
-
-    .cwl-day-end{
-      border-right: 1px solid var(--sep-strong) !important;
-    }
-
+    .cwl-day-end{ border-right: 1px solid var(--sep-strong) !important; }
+  
     /* =========================
        FIX: Hide header borders only for the LEFT "general" section in CWL Member Overview
        ========================= */
-
-    /* Remove vertical borders for the first 7 header cells only (Avg Rk..Atk), both header rows */
     .cwl-table.cwl-wide thead tr th:nth-child(-n+9){
       border-left: none !important;
       border-right: none !important;
     }
-
-
-    /* Hide the horizontal divider between header row 1 & row 2 only on the blank (muted) left cells */
+  
     .cwl-table.cwl-wide thead tr:first-child th.muted{
       border-bottom: none !important;
     }
-
-    /* Ensure war group header borders still show (even with the rule above) */
+  
     .cwl-table.cwl-wide thead tr:first-child th.cwl-warhead{
       border-left: 1px solid rgba(255,255,255,0.10) !important;
       border-right: 1px solid rgba(255,255,255,0.10) !important;
     }
-
-     
+  
     /* =========================
-   ✅ CWL ROUNDS (STACKED MATCHUPS)
-   ========================= */
-    .rounds-stats, .rounds-stat{
-      color: rgba(255,255,255,0.92);
-    }
-
-    /* You already have <div id="cwl-rounds-mount" class="rounds-wrap"> */
+       ✅ CWL ROUNDS (STACKED MATCHUPS)
+       ========================= */
+    .rounds-stats, .rounds-stat{ color: rgba(255,255,255,0.92); }
+  
     .rounds-wrap{
       width:100%;
       display:flex;
       flex-direction:column;
       gap:12px;
     }
-    
-    /* one round "card" */
+  
     .rounds-round{
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.10);
       border-radius: 10px;
       overflow: hidden;
     }
-    
-    /* round header */
+  
     .rounds-round-title{
       text-align:center;
       font-weight: 400;
@@ -992,71 +961,49 @@
       letter-spacing:.02em;
       opacity: .90;
     }
-    
-    /* inside round: list of matchups */
+  
     .rounds-table{
       width:100%;
       display:flex;
       flex-direction:column;
-    
-      /* ✅ no “gap boxes” look; clean list */
       gap: 0;
       padding: 0;
-    
       box-sizing: border-box;
     }
-
-    
-    /* one matchup = STACKED block */
+  
     .rounds-match{
       display:flex;
       flex-direction:column;
-    
-      /* ✅ remove the box completely */
       border: none;
       border-radius: 0;
       overflow: visible;
-    
-      /* ✅ consistent seating */
       box-sizing: border-box;
     }
-    
-    /* ✅ horizontal separator between matchups */
+  
     .rounds-match + .rounds-match{
       border-top: 1px solid rgba(255,255,255,0.10);
     }
-
-    
-    /* team rows */
+  
     .rounds-side{
       display:flex;
       align-items:center;
       gap:10px;
-    
-      /* ✅ more breathing room on the right */
       padding:8px 14px;
-    
       min-width:0;
     }
-    
-    /* the "vs" divider row */
+  
     .rounds-mid{
       display:flex;
-      justify-content:flex-start; /* ✅ left aligned */
+      justify-content:flex-start;
       align-items:center;
-    
-      padding: 3px 14px;          /* ✅ lines up with team rows */
+      padding: 3px 14px;
       line-height: 1;
-      font-size: 11px;            /* ✅ hair bigger */
+      font-size: 11px;
       opacity: .75;
-    
       border: none;
       white-space: nowrap;
     }
-
-
-    
-    /* team name */
+  
     .rounds-name{
       flex: 1 1 auto;
       font-weight: 400;
@@ -1066,8 +1013,7 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
-    
-    /* stats cluster on the right */
+  
     .rounds-stats{
       display:flex;
       align-items:center;
@@ -1079,19 +1025,18 @@
       flex: 0 0 auto;
       white-space: nowrap;
     }
-    
+  
     .rounds-stat{
       display:inline-flex;
       align-items:center;
       gap:4px;
       font-weight: 400;
     }
-    
-    /* colors */
+  
     .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:400; }
     .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
     .rounds-neutral{ color: rgba(255,255,255,0.92); font-weight:400; }
-    
+  
     /* =========================
        ✅ CWL ROUNDS CAROUSEL
        ========================= */
@@ -1099,45 +1044,37 @@
       position: relative;
       width: 100%;
     }
-    
-    /* The horizontal track you can swipe/drag */
+  
     .rounds-track{
       display:flex;
       overflow-x:auto;
       overflow-y:hidden;
       -webkit-overflow-scrolling: touch;
-    
+  
       scroll-snap-type: x mandatory;
       gap: 10px;
-    
-      /* gutter reserved for arrows */
+  
       padding: 0 var(--rounds-gutter);
-    
-      /* ✅ makes snap/centering behave at edges */
+  
       scroll-padding-left: var(--rounds-gutter);
       scroll-padding-right: var(--rounds-gutter);
-    
+  
       border-radius: 10px;
       box-sizing: border-box;
     }
-    
-    /* ✅ invisible spacers so first/last slide can truly center */
+  
     .rounds-track::before,
     .rounds-track::after{
       content:"";
       flex: 0 0 var(--rounds-gutter);
     }
-
-    
-    /* ✅ slide width fits inside the gutter so borders never clip */
+  
     .rounds-slide{
       flex: 0 0 calc(100% - (var(--rounds-gutter) * 2));
       scroll-snap-align: center;
       box-sizing: border-box;
     }
-
-    
-    /* Arrow buttons */
+  
     .rounds-arrow{
       position:absolute;
       top: 50%;
@@ -1145,14 +1082,10 @@
       width: 30px;
       height: 30px;
       border-radius: 999px;
-    
-      /* ✅ opaque */
       background: #000;
       color: #fff;
       opacity: 1;
-    
       border: 1px solid rgba(255,255,255,0.22);
-    
       display:flex;
       align-items:center;
       justify-content:center;
@@ -1161,26 +1094,25 @@
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-    
+  
     .rounds-arrow:active{ transform: translateY(-50%) scale(0.98); }
-    
+  
     .rounds-arrow.left{ left: 3px; }
     .rounds-arrow.right{ right: 3px; }
-    
-    .rounds-arrow[disabled]{
-      display:none;
-    }
-    /* ✅ dim non-active slides */
+  
+    .rounds-arrow[disabled]{ display:none; }
+  
     .rounds-slide{
       opacity: 0.35;
       filter: brightness(0.75);
       transition: opacity 60ms ease, filter 60ms ease;
     }
-    
+  
     .rounds-slide.is-active{
       opacity: 1;
       filter: none;
     }
+  
     .cwl-league-under-title{
       text-align: center;
       font-weight: 700;
@@ -1188,28 +1120,18 @@
       opacity: 0.92;
       margin: 4px 0 10px;
     }
-
+  
     /* =========================================================
        CWL Rollup Mode (Year / All-Time)
-       - Hide War columns (keep only # -> Atk, first 9 columns)
-       - Hide the extra war header row
        ========================================================= */
-    body.cwl-rollup #cwl-members-head tr:first-child{
-      display:none;
-    }
-    
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(n+10){
-      display:none;
-    }
-    
-    body.cwl-rollup #cwl-members-head tr:nth-child(2) th:nth-child(n+10){
-      display:none;
-    }
-    
-    body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){
-      display:none;
-    }
-    
+    body.cwl-rollup #cwl-members-head tr:first-child{ display:none; }
+  
+    /* try both in case your table doesn't have the id */
+    body.cwl-rollup #cwl-member-table colgroup col:nth-child(n+10){ display:none; }
+    body.cwl-rollup .cwl-table.cwl-wide colgroup col:nth-child(n+10){ display:none; }
+  
+    body.cwl-rollup #cwl-members-head tr:nth-child(2) th:nth-child(n+10){ display:none; }
+    body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){ display:none; }
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
