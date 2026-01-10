@@ -1189,6 +1189,26 @@
       margin: 4px 0 10px;
     }
 
+    /* =========================================================
+       CWL Rollup Mode (Year / All-Time)
+       - Hide War columns (keep only # -> Atk, first 9 columns)
+       - Hide the extra war header row
+       ========================================================= */
+    body.cwl-rollup #cwl-members-head tr:first-child{
+      display:none;
+    }
+    
+    body.cwl-rollup #cwl-member-table colgroup col:nth-child(n+10){
+      display:none;
+    }
+    
+    body.cwl-rollup #cwl-members-head tr:nth-child(2) th:nth-child(n+10){
+      display:none;
+    }
+    
+    body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){
+      display:none;
+    }
     
   </style>
 
@@ -1628,74 +1648,78 @@
             <div class="cwl-title-dd" aria-label="Select CWL season">
               <span id="cwl-title-text">CWL</span>
               <span class="caret" aria-hidden="true">▼</span>
-          
+    
               <select id="cwlSeasonSelect" aria-label="Select CWL season"></select>
             </div>
           </div>
-          
+    
           <div id="cwl-league-name" class="cwl-league-under-title">Loading…</div>
-
+    
           <div class="divider"></div>
-
-          <div class="section-title">League Overview</div>
-
-          <!-- ✅ only shown when the table is actually scrollable -->
-          <div class="cwl-subheaderbar" style="margin:0 0 8px;" aria-label="CWL league overview header">
-            <div></div>
-            <div class="cwl-scroll-inline" id="cwl-league-scroll-inline">← SCROLL →</div>
-            <div></div>
+    
+          <!-- ✅ WRAPPER: we can hide this entire section in Year/All-Time mode -->
+          <div id="cwl-league-section">
+            <div class="section-title">League Overview</div>
+    
+            <!-- ✅ only shown when the table is actually scrollable -->
+            <div class="cwl-subheaderbar" style="margin:0 0 8px;" aria-label="CWL league overview header">
+              <div></div>
+              <div class="cwl-scroll-inline" id="cwl-league-scroll-inline">← SCROLL →</div>
+              <div></div>
+            </div>
+    
+            <div class="cwl-table-wrap dragscroll" id="cwl-league-wrap" aria-label="CWL league overview">
+              <table class="cwl-table cwl-league">
+                <colgroup>
+                  <col style="width:52px;">    <!-- Rank -->
+                  <col style="width:96px;">    <!-- Clan (was 240px) -->
+                  <col style="width:64px;">    <!-- Wins -->
+                  <col style="width:60px;">    <!-- total stars -->
+                  <col style="width:52px;">    <!-- % (total) -->
+                  <col style="width:78px;">    <!-- AVG ⭐ -->
+                  <col style="width:66px;">    <!-- AVG % (NEW) -->
+                  <col style="width:84px;">    <!-- AVG 🛡️ -->
+                </colgroup>
+    
+                <thead>
+                  <tr>
+                    <th class="sticky-1">Rank</th>
+                    <th class="sticky-2 left">Clan</th>
+                    <th>Wins</th>
+                    <th>⭐</th>
+                    <th>%</th>
+                    <th>AVG ⭐</th>
+                    <th>AVG %</th>
+                    <th>AVG 🛡️</th>
+                  </tr>
+                </thead>
+    
+                <tbody id="cwl-leagueoverview-body">
+                  <tr><td colspan="8" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+    
+            <div class="divider"></div>
           </div>
-          
-          <div class="cwl-table-wrap dragscroll" id="cwl-league-wrap" aria-label="CWL league overview">
-
-            <table class="cwl-table cwl-league">
-            <colgroup>
-              <col style="width:52px;">    <!-- Rank -->
-              <col style="width:96px;">    <!-- Clan (was 240px) -->
-              <col style="width:64px;">    <!-- Wins -->
-              <col style="width:60px;">    <!-- total stars -->
-              <col style="width:52px;">    <!-- % (total) -->
-              <col style="width:78px;">    <!-- AVG ⭐ -->
-              <col style="width:66px;">    <!-- AVG % (NEW) -->
-              <col style="width:84px;">    <!-- AVG 🛡️ -->
-            </colgroup>
-
-
-              <thead>
-                <tr>
-                  <th class="sticky-1">Rank</th>
-                  <th class="sticky-2 left">Clan</th>
-                  <th>Wins</th>
-                  <th>⭐</th>
-                  <th>%</th>
-                  <th>AVG ⭐</th>
-                  <th>AVG %</th>
-                  <th>AVG 🛡️</th>
-                </tr>
-              </thead>
-
-              <tbody id="cwl-leagueoverview-body">
-                <tr><td colspan="8" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
-              </tbody>
-            </table>
+    
+          <!-- ✅ WRAPPER: we can hide this entire section in Year/All-Time mode -->
+          <div id="cwl-rounds-section">
+            <div class="section-title">Rounds</div>
+    
+            <div id="cwl-rounds-mount" class="rounds-wrap" aria-label="CWL rounds overview">
+              <div style="opacity:.75; text-align:center; padding:12px;">Loading…</div>
+            </div>
+    
+            <div class="divider"></div>
           </div>
-
-          <div class="divider"></div>
-
-          <div class="section-title">Rounds</div>
-          
-          <div id="cwl-rounds-mount" class="rounds-wrap" aria-label="CWL rounds overview">
-            <div style="opacity:.75; text-align:center; padding:12px;">Loading…</div>
-          </div>                  
-                    
-          <div class="divider"></div>
-
+    
           <div class="section-title">Member Overview</div>
-
+    
           <!-- ✅ perfectly centered SCROLL + sort -->
           <div class="cwl-subheaderbar" aria-label="CWL member overview header">
             <div></div>
-            <div class="cwl-scroll-inline">← SCROLL →</div>
+            <div class="cwl-scroll-inline" id="cwl-members-scroll-inline">← SCROLL →</div>
             <div class="cwl-sortbtn-wrap">
               <div class="sort-btn">
                 SORT
@@ -1710,97 +1734,94 @@
               </div>
             </div>
           </div>
-
+    
           <div class="cwl-table-wrap dragscroll" aria-label="CWL member overview">
-            <table class="cwl-table cwl-wide">
-                <colgroup>
-                  <col style="width:44px;">  <!-- # (sticky) -->
-                  <col style="width:92px;">  <!-- Name (sticky) -->
-                
-                  <col style="width:58px;">  <!-- 🗡️ RK (not sticky) -->
-                  <col style="width:58px;">  <!-- 🛡️ RK (not sticky) -->
-                
-                  <col style="width:75px;">
-                  <col style="width:90px;">
-                  <col style="width:92px;">
-                  <col style="width:92px;">
-                  <col style="width:96px;">
-                
-                  <!-- War cols: Opp widest, Stars tight, % medium -->
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                  <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
-                </colgroup>
-
-
-
-            <thead id="cwl-members-head">
-              <!-- Row 1: War group headers; left side visually blank -->
-              <tr>
-                <th class="sticky-1 muted">&nbsp;</th>
-                <th class="sticky-2 muted">&nbsp;</th>
-            
-                <th class="muted">&nbsp;</th>
-                <th class="muted">&nbsp;</th>
-            
-                <th class="muted">&nbsp;</th>
-                <th class="muted">&nbsp;</th>
-                <th class="muted">&nbsp;</th>
-                <th class="muted">&nbsp;</th>
-                <th class="muted cwl-general-sep">&nbsp;</th>
-            
-                <th class="cwl-warhead" colspan="3">War 1</th>
-                <th class="cwl-warhead" colspan="3">War 2</th>
-                <th class="cwl-warhead" colspan="3">War 3</th>
-                <th class="cwl-warhead" colspan="3">War 4</th>
-                <th class="cwl-warhead" colspan="3">War 5</th>
-                <th class="cwl-warhead" colspan="3">War 6</th>
-                <th class="cwl-warhead" colspan="3">War 7</th>
-              </tr>
-            
-              <!-- Row 2: ALL column headers -->
-              <tr>
-                <th class="sticky-1">#</th>
-                <th class="sticky-2">&nbsp;</th>
-            
-                <th class="cwl-rk">🗡️RK</th>
-                <th class="cwl-rk">🛡️RK</th>
-            
-                <th>TTL★</th>
-                <th>TTL%</th>
-                <th>Avg★</th>
-                <th>Avg%</th>
-                <th class="cwl-general-sep">Atk</th>
-            
-                <!-- War subheaders -->
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-1"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-2"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-3"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-4"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-5"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-6"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-                <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-7"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
-              </tr>
-            </thead>
-
-
-
+            <table class="cwl-table cwl-wide" id="cwl-member-table">
+              <colgroup>
+                <col style="width:44px;">  <!-- # (sticky) -->
+                <col style="width:92px;">  <!-- Name (sticky) -->
+    
+                <col style="width:58px;">  <!-- 🗡️ RK (not sticky) -->
+                <col style="width:58px;">  <!-- 🛡️ RK (not sticky) -->
+    
+                <col style="width:75px;">
+                <col style="width:90px;">
+                <col style="width:92px;">
+                <col style="width:92px;">
+                <col style="width:96px;">
+    
+                <!-- War cols: Opp widest, Stars tight, % medium -->
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+                <col style="width:120px;"><col style="width:36px;"><col style="width:70px;">
+              </colgroup>
+    
+              <thead id="cwl-members-head">
+                <!-- Row 1: War group headers; left side visually blank -->
+                <tr>
+                  <th class="sticky-1 muted">&nbsp;</th>
+                  <th class="sticky-2 muted">&nbsp;</th>
+    
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+    
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted">&nbsp;</th>
+                  <th class="muted cwl-general-sep">&nbsp;</th>
+    
+                  <th class="cwl-warhead" colspan="3">War 1</th>
+                  <th class="cwl-warhead" colspan="3">War 2</th>
+                  <th class="cwl-warhead" colspan="3">War 3</th>
+                  <th class="cwl-warhead" colspan="3">War 4</th>
+                  <th class="cwl-warhead" colspan="3">War 5</th>
+                  <th class="cwl-warhead" colspan="3">War 6</th>
+                  <th class="cwl-warhead" colspan="3">War 7</th>
+                </tr>
+    
+                <!-- Row 2: ALL column headers -->
+                <tr>
+                  <th class="sticky-1">#</th>
+                  <th class="sticky-2">&nbsp;</th>
+    
+                  <th class="cwl-rk">🗡️RK</th>
+                  <th class="cwl-rk">🛡️RK</th>
+    
+                  <th>TTL★</th>
+                  <th>TTL%</th>
+                  <th>Avg★</th>
+                  <th>Avg%</th>
+                  <th class="cwl-general-sep">Atk</th>
+    
+                  <!-- War subheaders -->
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-1"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-2"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-3"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-4"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-5"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-6"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                  <th class="left cwl-warcell cwl-day-start"><span class="cwl-war-sword">⚔️</span><span class="cwl-war-oppname" id="cwl-war-oppname-7"></span></th><th class="cwl-warcell">⭐</th><th class="cwl-warcell cwl-day-end">🎯</th>
+                </tr>
+              </thead>
+    
               <tbody id="cwl-memberoverview-body">
                 <tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">Loading…</td></tr>
               </tbody>
             </table>
           </div>
-
+    
           <div id="cwl-fetch-status" class="tiny-status">CWL fetch: —</div>
           <div id="cwl-index-status" class="tiny-status">CWL index fetch: —</div>
           <div id="clan-fetch-status-cwl" class="tiny-status">Clan stats fetch: —</div>
         </div>
       `;
     }
+
 
     function renderWarPage(){
       return `
@@ -3549,15 +3570,43 @@
     // =========================
     function renderCwlContent(){
       if(!document.getElementById("cwl-title-text")) return;
-
+    
       ensureCwlMembersSortBound();
-
+    
       const payload = cwlSelectedPayload || cwlCurrent || null;
-      if(payload) renderCwlRounds(payload);
-
+    
+      // ============================================================
+      // ✅ Rollup detection (All-Time / Year) + UI toggles
+      // ============================================================
+      const selectedKey = String(cwlSelected || "").trim();
+      const payloadKey  = String(payload?.seasonKey || "").trim();
+    
+      const isRollup =
+        (selectedKey === CWL_ALL_TIME_KEY) ||
+        (selectedKey.startsWith(CWL_YEAR_PREFIX)) ||
+        (payloadKey === CWL_ALL_TIME_KEY) ||
+        (payloadKey.startsWith(CWL_YEAR_PREFIX));
+    
+      // ✅ allow CSS to hide WAR columns + hide sections
+      document.body.classList.toggle("cwl-rollup", isRollup);
+    
+      // These require you to have wrappers with these IDs in renderCwlPage():
+      // <div id="cwl-league-section"> ... league overview ... </div>
+      // <div id="cwl-rounds-section"> ... rounds ... </div>
+      const leagueSec = document.getElementById("cwl-league-section");
+      const roundsSec = document.getElementById("cwl-rounds-section");
+      if(leagueSec) leagueSec.style.display = isRollup ? "none" : "";
+      if(roundsSec) roundsSec.style.display = isRollup ? "none" : "";
+    
+      // ============================================================
+      // ✅ Current month/monthly pages: keep behavior exactly the same
+      // ✅ Rollups: do NOT render rounds
+      // ============================================================
+      if(payload && !isRollup) renderCwlRounds(payload);
+    
       const title = payload?.title || "CWL";
       setText("cwl-title-text", title);
-
+    
       // ✅ League name (fix stuck "Loading...")
       const leagueName =
         pick(payload, ["leagueName","league","cwlLeague","cwl_league"]) ||
@@ -3565,211 +3614,187 @@
         pick(payload?.league, ["name","leagueName"]) ||
         pick(payload?.group, ["league","leagueName"]) ||
         "—";
-      
+    
       setText("cwl-league-name", leagueName);
-
-      
-      // (Status row removed, so no need to set cwl-state anymore)
-
-      // League overview
+    
+      // ============================================================
+      // League overview (MONTHLY ONLY)
+      // ============================================================
       const leagueBody = document.getElementById("cwl-leagueoverview-body");
       if(leagueBody){
-      
-        // ✅ accept multiple schema shapes
-        const rows =
-          (Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : null) ||
-          (Array.isArray(payload?.league_overview) ? payload.league_overview : null) ||
-          (Array.isArray(payload?.league?.clans) ? payload.league.clans : null) ||
-          (Array.isArray(payload?.clans) ? payload.clans : null) ||
-          [];
-      
-        function normLeagueRow(r){
-          if(!r || typeof r !== "object") return { rank:null, name:"—", wins:0, stars:null, destr:null };
-        
-          const rank =
-            pickNum(r, ["rank","position","place"]) ??
-            pickNum(r?.clan, ["rank","position","place"]) ??
-            null;
-        
-          const name =
-            pick(r, ["name","clanName","clan_name"]) ||
-            pick(r?.clan, ["name","clanName","clan_name"]) ||
-            "—";
-        
-          const wins =
-            pickNum(r, ["wins","warWins","matchWins","roundWins","won"]) ??
-            pickNum(r?.stats, ["wins","warWins","matchWins"]) ??
-            pickNum(r?.warStats, ["wins"]) ??
-            pickNum(r?.clan?.stats, ["wins","warWins","matchWins"]) ??
-            0;
-        
-          // Stars can be stored as total, with bonus, or nested
-          let stars =
-            pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]) ??
-            pickNum(r?.stats, ["starsWithBonus","starsPlusBonus"]) ??
-            pickNum(r?.warStats, ["starsWithBonus","starsPlusBonus"]) ??
-          
-            // common alternates
-            pickNum(r, ["totalStars","starsTotal","stars","total_stars"]) ??
-            pickNum(r?.stats, ["totalStars","starsTotal","stars"]) ??
-            pickNum(r?.clan?.stats, ["totalStars","starsTotal","stars"]) ??
-            null;
-
-        
-          // Destruction can be stored as a total (sum) or as pct
-          const destr =
-            pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]) ??
-            pickNum(r?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
-            pickNum(r?.warStats, ["destructionTotal","destruction","destructionPercentage"]) ??
-            pickNum(r?.clan?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
-            null;
-        
-          return { rank, name, wins, stars, destr };
-        }
-
-      
-        if(!rows.length){
-          leagueBody.innerHTML = `<tr><td colspan="7" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
+    
+        // Rollups: hidden anyway, don't render it
+        if(isRollup){
+          leagueBody.innerHTML = "";
         } else {
-          leagueBody.innerHTML = rows.map(rr => {
-            const r = normLeagueRow(rr);
-            // ✅ warsCompleted (ENDED only): prefer Python meta, fallback to JS inference
-            const warsCompleted =
-              pickNum(payload?.meta, ["warsCompleted"]) ??
-              getWarsCompleted(payload);
-            
-            // stars available per war (best-effort)
-            const teamSize =
-              pickNum(payload, ["teamSize","size"]) ??
-              pickNum(payload?.meta, ["teamSize","size"]) ??
-              15;
-            const maxStarsPerWar = Math.max(0, (teamSize|0) * 3);
-            
-            // ✅ ended-only totals (Python outputs these)
-            const destrEnded =
-              pickNum(rr, ["destructionEndedTotal","destruction_ended_total"]) ??
-              pickNum(rr?.stats, ["destructionEndedTotal"]) ??
-              pickNum(rr?.warStats, ["destructionEndedTotal"]) ??
+    
+          const rows =
+            (Array.isArray(payload?.leagueOverview) ? payload.leagueOverview : null) ||
+            (Array.isArray(payload?.league_overview) ? payload.league_overview : null) ||
+            (Array.isArray(payload?.league?.clans) ? payload.league.clans : null) ||
+            (Array.isArray(payload?.clans) ? payload.clans : null) ||
+            [];
+    
+          function normLeagueRow(r){
+            if(!r || typeof r !== "object") return { rank:null, name:"—", wins:0, stars:null, destr:null };
+    
+            const rank =
+              pickNum(r, ["rank","position","place"]) ??
+              pickNum(r?.clan, ["rank","position","place"]) ??
               null;
-            
-            const starsEndedNoBonus =
-              pickNum(rr, ["starsEndedTotal","stars_ended_total"]) ??
-              pickNum(rr?.stats, ["starsEndedTotal"]) ??
-              pickNum(rr?.warStats, ["starsEndedTotal"]) ??
+    
+            const name =
+              pick(r, ["name","clanName","clan_name"]) ||
+              pick(r?.clan, ["name","clanName","clan_name"]) ||
+              "—";
+    
+            const wins =
+              pickNum(r, ["wins","warWins","matchWins","roundWins","won"]) ??
+              pickNum(r?.stats, ["wins","warWins","matchWins"]) ??
+              pickNum(r?.warStats, ["wins"]) ??
+              pickNum(r?.clan?.stats, ["wins","warWins","matchWins"]) ??
+              0;
+    
+            let stars =
+              pickNum(r, ["starsWithBonus","stars_plus_bonus","starsPlusBonus"]) ??
+              pickNum(r?.stats, ["starsWithBonus","starsPlusBonus"]) ??
+              pickNum(r?.warStats, ["starsWithBonus","starsPlusBonus"]) ??
+              pickNum(r, ["totalStars","starsTotal","stars","total_stars"]) ??
+              pickNum(r?.stats, ["totalStars","starsTotal","stars"]) ??
+              pickNum(r?.clan?.stats, ["totalStars","starsTotal","stars"]) ??
               null;
-            
-            const starsAgainstEnded =
-              pickNum(rr, ["starsAgainstEndedTotal","stars_against_ended_total"]) ??
-              pickNum(rr?.stats, ["starsAgainstEndedTotal"]) ??
-              pickNum(rr?.warStats, ["starsAgainstEndedTotal"]) ??
+    
+            const destr =
+              pickNum(r, ["destructionTotal","destruction","destructionPct","destructionPercentage","destruction_total"]) ??
+              pickNum(r?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
+              pickNum(r?.warStats, ["destructionTotal","destruction","destructionPercentage"]) ??
+              pickNum(r?.clan?.stats, ["destructionTotal","destruction","destructionPercentage"]) ??
               null;
-            
-            // ✅ AVG % (ENDED only)
-            const avgPctVal = (warsCompleted > 0 && destrEnded !== null) ? (Number(destrEnded) / warsCompleted) : null;
-            const avgPctOut =
-              (avgPctVal === null || !isFinite(avgPctVal))
-                ? "—"
-                : avgPctVal.toFixed(1);
-            
-            // ✅ AVG ⭐ (ENDED only)
-            const avgStarsVal = (warsCompleted > 0 && starsEndedNoBonus !== null) ? (Number(starsEndedNoBonus) / warsCompleted) : null;
-            const avgStarsOut =
-              (avgStarsVal === null || !isFinite(avgStarsVal))
-                ? "—"
-                : `${avgStarsVal.toFixed(1)}/${maxStarsPerWar}`;
-            
-            // ✅ AVG 🛡️ (ENDED only)
-            const avgDefVal = (warsCompleted > 0 && starsAgainstEnded !== null) ? (Number(starsAgainstEnded) / warsCompleted) : null;
-            const avgDefOut =
-              (avgDefVal === null || !isFinite(avgDefVal))
-                ? "—"
-                : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
-
-
-            const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
-            const nameOut = escapeHtml(r.name || "—");
-            const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsCompleted, "0")}`;
-          
-            // ✅ use existing bonus logic if the row doesn't already provide starsWithBonus
-            let starsOut = r.stars;
-            if(starsOut === null){
-              const fallbackStarsWithBonus = getStarsWithBonus(rr);
-              starsOut = (fallbackStarsWithBonus === null ? null : fallbackStarsWithBonus);
-            }
-          
-            const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
-
-            // ✅ row color rules
-            const rankNum = (r.rank === null) ? null : Number(r.rank);
-            const rowClass =
-              (rankNum === 1) ? "rank-good" :
-              ((rankNum === 7 || rankNum === 8) ? "rank-bad" : "");
-          
-            return `
-              <tr class="${rowClass}">
-                <td class="sticky-1 mono">${rankOut}</td>
-                <td class="sticky-2 left" title="${nameOut}">${nameOut}</td>
-                <td class="mono">${winsOut}</td>
-                <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
-                <td class="mono">${destrOut}</td>
-                <td class="mono">${avgStarsOut}</td>
-                <td class="mono">${avgPctOut}</td>
-                <td class="mono">${avgDefOut}</td>
-              </tr>
-            `;
-            
-          }).join("");
-
+    
+            return { rank, name, wins, stars, destr };
+          }
+    
+          if(!rows.length){
+            leagueBody.innerHTML = `<tr><td colspan="8" style="opacity:.75; text-align:center; padding:12px;">No league data yet.</td></tr>`;
+          } else {
+            leagueBody.innerHTML = rows.map(rr => {
+              const r = normLeagueRow(rr);
+    
+              const warsCompleted =
+                pickNum(payload?.meta, ["warsCompleted"]) ??
+                getWarsCompleted(payload);
+    
+              const teamSize =
+                pickNum(payload, ["teamSize","size"]) ??
+                pickNum(payload?.meta, ["teamSize","size"]) ??
+                15;
+    
+              const maxStarsPerWar = Math.max(0, (teamSize|0) * 3);
+    
+              const destrEnded =
+                pickNum(rr, ["destructionEndedTotal","destruction_ended_total"]) ??
+                pickNum(rr?.stats, ["destructionEndedTotal"]) ??
+                pickNum(rr?.warStats, ["destructionEndedTotal"]) ??
+                null;
+    
+              const starsEndedNoBonus =
+                pickNum(rr, ["starsEndedTotal","stars_ended_total"]) ??
+                pickNum(rr?.stats, ["starsEndedTotal"]) ??
+                pickNum(rr?.warStats, ["starsEndedTotal"]) ??
+                null;
+    
+              const starsAgainstEnded =
+                pickNum(rr, ["starsAgainstEndedTotal","stars_against_ended_total"]) ??
+                pickNum(rr?.stats, ["starsAgainstEndedTotal"]) ??
+                pickNum(rr?.warStats, ["starsAgainstEndedTotal"]) ??
+                null;
+    
+              const avgPctVal = (warsCompleted > 0 && destrEnded !== null) ? (Number(destrEnded) / warsCompleted) : null;
+              const avgPctOut = (avgPctVal === null || !isFinite(avgPctVal)) ? "—" : avgPctVal.toFixed(1);
+    
+              const avgStarsVal = (warsCompleted > 0 && starsEndedNoBonus !== null) ? (Number(starsEndedNoBonus) / warsCompleted) : null;
+              const avgStarsOut = (avgStarsVal === null || !isFinite(avgStarsVal)) ? "—" : `${avgStarsVal.toFixed(1)}/${maxStarsPerWar}`;
+    
+              const avgDefVal = (warsCompleted > 0 && starsAgainstEnded !== null) ? (Number(starsAgainstEnded) / warsCompleted) : null;
+              const avgDefOut = (avgDefVal === null || !isFinite(avgDefVal)) ? "—" : `${avgDefVal.toFixed(1)}/${maxStarsPerWar}`;
+    
+              const rankOut = (r.rank === null) ? "—" : fmtNum(r.rank, "—");
+              const nameOut = escapeHtml(r.name || "—");
+              const winsOut = `${fmtNum(r.wins, "0")}/${fmtNum(warsCompleted, "0")}`;
+    
+              let starsOut = r.stars;
+              if(starsOut === null){
+                const fallbackStarsWithBonus = getStarsWithBonus(rr);
+                starsOut = (fallbackStarsWithBonus === null ? null : fallbackStarsWithBonus);
+              }
+    
+              const destrOut = (r.destr === null) ? "—" : fmt1(r.destr, "—");
+    
+              const rankNum = (r.rank === null) ? null : Number(r.rank);
+              const rowClass =
+                (rankNum === 1) ? "rank-good" :
+                ((rankNum === 7 || rankNum === 8) ? "rank-bad" : "");
+    
+              return `
+                <tr class="${rowClass}">
+                  <td class="sticky-1 mono">${rankOut}</td>
+                  <td class="sticky-2 left" title="${nameOut}">${nameOut}</td>
+                  <td class="mono">${winsOut}</td>
+                  <td class="mono bold">${starsOut === null ? "—" : fmtNum(starsOut, "—")}</td>
+                  <td class="mono">${destrOut}</td>
+                  <td class="mono">${avgStarsOut}</td>
+                  <td class="mono">${avgPctOut}</td>
+                  <td class="mono">${avgDefOut}</td>
+                </tr>
+              `;
+            }).join("");
+          }
         }
       }
-
-
-      // Member overview
+    
+      // ============================================================
+      // Member overview (MONTHLY + ROLLUPS)
+      // (unchanged logic; rollup hides war cols via CSS)
+      // ============================================================
       const memberBody = document.getElementById("cwl-memberoverview-body");
       if(memberBody){
         const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
         if(!members.length){
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
-          memberBody.innerHTML = `<tr><td colspan="28" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
+          memberBody.innerHTML = `<tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
-                    
-          // ✅ Permanent row numbering (never changes with sorting)
-          // Stamps 1..N based on ORIGINAL payload order
+    
           for(let i=0; i<members.length; i++){
             members[i].__rowNum = i + 1;
           }
-
+    
           const sorted = members.slice().sort((a,b)=>{
             const ar = Number(a?.avgRankAttacked ?? a?.avgRank ?? a?.rank ?? 9999);
             const br = Number(b?.avgRankAttacked ?? b?.avgRank ?? b?.rank ?? 9999);
-
+    
             const aDef = Number(a?.avgDefRank ?? a?.avgDefenseRank ?? a?.avgDefensiveRank ?? 999999);
             const bDef = Number(b?.avgDefRank ?? b?.avgDefenseRank ?? b?.avgDefensiveRank ?? 999999);
-
+    
             const aTotalStars = Number(a?.totalStars ?? 0);
             const bTotalStars = Number(b?.totalStars ?? 0);
-          
+    
             const aTotalPct = Number(a?.totalDestruction ?? a?.totalPct ?? a?.totalPercent ?? 0);
             const bTotalPct = Number(b?.totalDestruction ?? b?.totalPct ?? b?.totalPercent ?? 0);
-          
+    
             const aAvgStars = Number(a?.avgStars ?? 0);
             const bAvgStars = Number(b?.avgStars ?? 0);
-          
+    
             const aAvgPct = Number(a?.avgDestruction ?? a?.avgPct ?? a?.avgPercent ?? 0);
             const bAvgPct = Number(b?.avgDestruction ?? b?.avgPct ?? b?.avgPercent ?? 0);
-          
+    
             const nameCmp = String(a?.name||"").localeCompare(String(b?.name||""));
-          
-            // Rank: AVG RK > Total Stars > Total %
+    
             if(cwlMembersSortMode === "rank"){
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
               if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
               return nameCmp;
             }
-
-            // Defensive Rank: lowest 🛡️RK first
-            // tiebreaker: 🛡️RK > AVG Stars > Total Stars > Total %
             if(cwlMembersSortMode === "defRank"){
               if(isFinite(aDef) && isFinite(bDef) && aDef !== bDef) return aDef - bDef;
               if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
@@ -3777,121 +3802,95 @@
               if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
               return nameCmp;
             }
-
-            
-            // Total Stars: Total Stars > Total % > AVG RK
             if(cwlMembersSortMode === "totalStars"){
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
               if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
               return nameCmp;
             }
-          
-            // Total %: Total % > Total Stars > AVG RK
             if(cwlMembersSortMode === "totalPct"){
               if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
               return nameCmp;
             }
-          
-            // AVG Stars: AVG Stars > AVG % > AVG RK
             if(cwlMembersSortMode === "avgStars"){
               if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
               if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
               return nameCmp;
             }
-          
-            // AVG %: AVG % > Total Stars > AVG RK
             if(cwlMembersSortMode === "avgPct"){
               if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
               if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
               if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
               return nameCmp;
             }
-          
-            // fallback
             if(isFinite(ar) && isFinite(br) && ar !== br) return ar - br;
             return nameCmp;
           });
-            
+    
           memberBody.innerHTML = sorted.map((m, idx) => {
-             // Avg Rk (computed from repaired ranks for wars up to warLimit)
-            let avgAtkRkVal = null; // 🗡️ RK
+            let avgAtkRkVal = null;
             let avgAtkRk = "—";
-            
-            let avgDefRkVal = null; // 🛡️ RK
+    
+            let avgDefRkVal = null;
             let avgDefRk = "—";
-
+    
             const nm = escapeHtml(m.name || "—");
-
+    
             const totStars = pickNum(m, ["totalStars","starsTotal","total_stars"]) ?? 0;
             const totDes = pickNum(m, ["totalDestruction","totalPct","totalPercent","total_destruction"]) ?? 0;
-
-            const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]) ;
+    
+            const avgStarsVal = pickNum(m, ["avgStars","avg_stars"]);
             const avgStars = (avgStarsVal === null) ? "—" : fmt1(avgStarsVal, "—");
-
+    
             const avgDesVal = pickNum(m, ["avgDestruction","avgPct","avgPercent","avg_destruction"]);
             const isPerfect =
               (avgStarsVal !== null && isFinite(avgStarsVal) && avgStarsVal >= 3.0) ||
               (avgDesVal !== null && isFinite(avgDesVal) && avgDesVal >= 100.0);
-            
+    
             const rowClass = isPerfect ? "cwl-perfect" : "";
-
             const avgDes = (avgDesVal === null) ? "—" : fmt1(avgDesVal, "—");
-        
-            // ✅ accept BOTH schemas:
-            // - NEW: m.wars = [{war:1..7, opponentName/opponent/defender, stars, destruction, opponentRank, ...}]
-            // - OLD: m.days = [{day:1..7, defender, stars, destruction}]
-            const entriesRaw = Array.isArray(m.wars)
-              ? m.wars
-              : (Array.isArray(m.days) ? m.days : []);
-                       
-
+    
+            const entriesRaw = Array.isArray(m.wars) ? m.wars : (Array.isArray(m.days) ? m.days : []);
             const entries = [];
-            for(let idx=0; idx<entriesRaw.length; idx++){
-              const n = normCwlEntry(entriesRaw[idx], idx);
+            for(let j=0; j<entriesRaw.length; j++){
+              const n = normCwlEntry(entriesRaw[j], j);
               if(n) entries.push(n);
             }
-
-            // Build byWar (first entry wins)
+    
             const byWar = new Map();
             for(const e of entries){
               if(!byWar.has(e.warNum)) byWar.set(e.warNum, e);
             }
-           
-            
-            // ✅ ATK denominator (BEST): trust warsInLineup if Python provides it
+    
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
             const warsInLineup = pickNum(m, ["warsInLineup","wars_in_lineup"]) ?? null;
-
-            // ✅ do NOT count future/prep wars in denominator
-            const warLimit = getActiveWarLimit(payload); // 1..7 or null
-            // ✅ Avg Rk should use repaired ranks, and ONLY count wars up to warLimit (no prep)
+    
+            const warLimit = getActiveWarLimit(payload);
+    
+            // ✅ 🗡️RK
             {
-              const limit = warLimit || 0; // if null, treat as 0 (nothing active yet)
+              const limit = warLimit || 0;
               const repairedRanks = [];
-            
+    
               for(let warNum=1; warNum<=7; warNum++){
                 if(warNum > limit) continue;
-            
                 const e = byWar.get(warNum);
                 if(!e) continue;
-                
-                // ✅ only count rank if an attack actually happened
+    
                 const attacked =
                   (e.stars !== null && isFinite(e.stars)) ||
                   (e.destruction !== null && isFinite(e.destruction));
                 if(!attacked) continue;
-                
+    
                 let rk = (e.oppRank !== null && isFinite(e.oppRank)) ? Math.max(1, Math.round(e.oppRank)) : null;
                 if(rk === null) continue;
-                  
+    
                 repairedRanks.push(rk);
-
               }
-            
+    
               if(repairedRanks.length){
                 const sum = repairedRanks.reduce((a,b)=>a+b,0);
                 avgAtkRkVal = sum / repairedRanks.length;
@@ -3899,143 +3898,116 @@
               } else {
                 avgAtkRk = "—";
               }
-
-              // ✅ 🛡️ RK: avg defensive map position
-              // Build war->(playerKey->defRank) once per render
-              // (we’ll compute it lazily outside the map loop below if you prefer, but this works here too)
+            }
+    
+            // ✅ 🛡️RK
+            {
               const defRankByWar = buildDefenseRankByWar(payload);
-              
-              {
-                const limit = warLimit || 0;
-                const defRanks = [];
-              
-                // prefer tag if present on member; fallback to name
-                const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
-              
-                for(let warNum=1; warNum<=7; warNum++){
-                  if(warNum > limit) continue;
-              
-                  const map = defRankByWar.get(warNum);
-                  if(!map) continue;
-              
-                  const r = map.get(memberKey);
-                  if(r != null && isFinite(r)) defRanks.push(r);
-                }
-              
-                // If tag not present in payload memberOverview, fallback to name matching
-                if(!defRanks.length){
-                  const nameKey = String(m?.name || "").trim();
-                  for(let warNum=1; warNum<=7; warNum++){
-                    if(warNum > limit) continue;
-                    const map = defRankByWar.get(warNum);
-                    if(!map) continue;
-                    const r = map.get(nameKey);
-                    if(r != null && isFinite(r)) defRanks.push(r);
-                  }
-                }
-              
-                // If python already provides it, accept it (but only if we couldn't compute)
-                if(!defRanks.length){
-                  const provided = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-                  if(provided !== null && isFinite(provided)){
-                    avgDefRkVal = provided;
-                    avgDefRk = fmt1(avgDefRkVal, "—");
-                  } else {
-                    avgDefRk = "—";
-                  }
-                } else {
-                  const sum = defRanks.reduce((a,b)=>a+b,0);
-                  avgDefRkVal = sum / defRanks.length;
-                  avgDefRk = fmt1(avgDefRkVal, "—");
-                }
+              const limit = warLimit || 0;
+              const defRanks = [];
+    
+              const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+    
+              for(let warNum=1; warNum<=7; warNum++){
+                if(warNum > limit) continue;
+                const map = defRankByWar.get(warNum);
+                if(!map) continue;
+                const r = map.get(memberKey);
+                if(r != null && isFinite(r)) defRanks.push(r);
               }
-
+    
+              if(!defRanks.length){
+                const provided = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+                if(provided !== null && isFinite(provided)){
+                  avgDefRkVal = provided;
+                  avgDefRk = fmt1(avgDefRkVal, "—");
+                } else {
+                  avgDefRk = "—";
+                }
+              } else {
+                const sum = defRanks.reduce((a,b)=>a+b,0);
+                avgDefRkVal = sum / defRanks.length;
+                avgDefRk = fmt1(avgDefRkVal, "—");
+              }
             }
-
+    
             const byWarCountUpToLimit = (() => {
-            // If there is no active war day yet, there should be NO denominator
-            if(!warLimit) return 0;
-          
-            let c = 0;
-            for(const k of byWar.keys()){
-              if(k <= warLimit) c++;
-            }
-            return c;
-          })();
-            
+              if(!warLimit) return 0;
+              let c = 0;
+              for(const k of byWar.keys()){
+                if(k <= warLimit) c++;
+              }
+              return c;
+            })();
+    
             let denom;
             if(warsInLineup !== null && isFinite(warsInLineup) && warsInLineup >= 0){
-              // if warsInLineup includes future war, clamp it too
               denom = warsInLineup;
               if(warLimit) denom = Math.min(denom, warLimit);
               denom = Math.max(denom, atkMade);
             } else {
               denom = Math.max(byWarCountUpToLimit, atkMade);
             }
-
+    
             const atkFrac = `${fmtNum(atkMade,"0")}/${fmtNum(denom,"0")}`;
-            
-            // War cells
+    
             const warCells = [];
             for(let i=1;i<=7;i++){
               const e = byWar.get(i) || null;
               const isActiveWarDay = (warLimit && i <= warLimit);
-            
+    
               let oppText = "—";
-            
+    
               const sVal = (e && e.stars !== null && isFinite(e.stars)) ? e.stars : null;
               const pVal = (e && e.destruction !== null && isFinite(e.destruction)) ? e.destruction : null;
-            
+    
               const attacked = (sVal !== null) || (pVal !== null);
-            
-              // ✅ replacement block goes right here
+    
               if (e && isActiveWarDay && attacked) {
                 const rk =
                   (e.oppRank !== null && isFinite(e.oppRank))
                     ? Math.max(1, Math.round(e.oppRank))
                     : null;
-            
-                const nm = String(e.defName || "—").trim() || "—";
-            
-                if (rk !== null && nm !== "—") {
-                  oppText = `${rk}. ${nm}`;
+    
+                const nm2 = String(e.defName || "—").trim() || "—";
+    
+                if (rk !== null && nm2 !== "—") {
+                  oppText = `${rk}. ${nm2}`;
                 }
               }
-            
+    
               const opp = escapeHtml(oppText);
               const s = (sVal === null) ? "—" : fmtNum(sVal, "—");
               const p = (pVal === null) ? "—" : fmt1(pVal, "—");
-            
+    
               warCells.push(`<td class="left mono cwl-warcell cwl-day-start" title="${opp}">${opp}</td>`);
               warCells.push(`<td class="mono cwl-warcell">${s}</td>`);
               warCells.push(`<td class="mono cwl-warcell cwl-day-end">${p}</td>`);
             }
-
-
+    
             return `
               <tr class="${rowClass}">
                 <td class="sticky-1 mono">${idx + 1}</td>
                 <td class="sticky-2 left" title="${nm}">${nm}</td>
-              
+    
                 <td class="mono cwl-rk">${avgAtkRk}</td>
                 <td class="mono cwl-rk">${avgDefRk}</td>
-              
+    
                 <td class="mono bold">${fmtNum(totStars, "0")}</td>
                 <td class="mono">${fmt1(totDes, "0.0")}</td>
                 <td class="mono">${avgStars}</td>
                 <td class="mono">${avgDes}</td>
                 <td class="mono cwl-general-sep">${escapeHtml(atkFrac)}</td>
-              
+    
                 ${warCells.join("")}
               </tr>
-
             `;
-
           }).join("");
         }
       }
-      // ✅ fill the ⚔️ header opponent names
-      {
+    
+      // ✅ Fill ⚔️ header opponent names (MONTHLY ONLY)
+      if(payload && !isRollup){
         const oppNames = getOurCwlOppNames(payload);
         for(let i=1;i<=7;i++){
           const id = `cwl-war-oppname-${i}`;
@@ -4043,13 +4015,15 @@
           setText(id, nm);
         }
       }
-
+    
       enableDragScrollEverywhere();
-
-      // ✅ show scroll hint only when League Overview overflows
-      setScrollHintIfScrollable("cwl-league-wrap", "cwl-league-scroll-inline");
-
+    
+      // ✅ show scroll hint only when League Overview overflows (MONTHLY ONLY)
+      if(!isRollup){
+        setScrollHintIfScrollable("cwl-league-wrap", "cwl-league-scroll-inline");
+      }
     }
+
 
     // =========================
     // Loops per route
