@@ -503,7 +503,7 @@
     .members-table th:nth-child(2),
     .members-table td:nth-child(2){
       position: sticky;
-      left: var(--m-emoji-col);
+      left: var(--members-sticky-1, var(--m-emoji-col));
       z-index: 6;
       background: #0b1829;
       border-right: 1px solid rgba(255,255,255,0.10);
@@ -1401,6 +1401,24 @@
     
       const isScrollable = wrap.scrollWidth > (wrap.clientWidth + 2);
       hint.style.display = isScrollable ? "flex" : "none";
+    }
+
+    function updateStickyOffsets(){
+      const membersTable = document.querySelector(".members-table");
+      if(membersTable){
+        const firstHeader = membersTable.querySelector("thead th:nth-child(1)");
+        if(firstHeader){
+          const width = firstHeader.getBoundingClientRect().width;
+          if(width) membersTable.style.setProperty("--members-sticky-1", `${width}px`);
+        }
+      }
+
+      document.querySelectorAll(".cwl-table").forEach((table) => {
+        const firstSticky = table.querySelector("thead th.sticky-1") || table.querySelector("tbody td.sticky-1");
+        if(!firstSticky) return;
+        const width = firstSticky.getBoundingClientRect().width;
+        if(width) table.style.setProperty("--cwl-sticky-1", `${width}px`);
+      });
     }
 
     function setupNavUI(){
@@ -2737,11 +2755,13 @@
       if(!list){
         tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">Loading…</td></tr>`;
         enableDragScrollEverywhere();
+        requestAnimationFrame(updateStickyOffsets);
         return;
       }
       if(list.length === 0){
         tbody.innerHTML = `<tr><td colspan="8" style="opacity:.75;">No members found.</td></tr>`;
         enableDragScrollEverywhere();
+        requestAnimationFrame(updateStickyOffsets);
         return;
       }
 
@@ -2827,6 +2847,7 @@
       }).join("");
 
       enableDragScrollEverywhere();
+      requestAnimationFrame(updateStickyOffsets);
     }
 
     function renderClanStats(){
@@ -3663,10 +3684,12 @@
                   <td class="mono">${avgStarsOut}</td>
                   <td class="mono">${avgPctOut}</td>
                   <td class="mono">${avgDefOut}</td>
-                </tr>
-              `;
-            }).join("");
-          }
+          </tr>
+        `;
+      }).join("");
+
+      requestAnimationFrame(updateStickyOffsets);
+    }
         }
       }
     
@@ -3940,6 +3963,8 @@
       if(!isRollup){
         setScrollHintIfScrollable("cwl-league-wrap", "cwl-league-scroll-inline");
       }
+
+      requestAnimationFrame(updateStickyOffsets);
     }
 
 
@@ -4076,6 +4101,7 @@
       app.innerHTML = renderRouteContent(route);
 
       enableDragScrollEverywhere();
+      requestAnimationFrame(updateStickyOffsets);
 
       if(route === "home") startHomeLoop();
       if(route === "war")  startWarLoop();
@@ -4091,6 +4117,9 @@
 
     window.addEventListener("hashchange", renderRoute);
     window.addEventListener("pageshow", renderRoute);
+    window.addEventListener("resize", () => {
+      requestAnimationFrame(updateStickyOffsets);
+    }, { passive:true });
     document.addEventListener("visibilitychange", () => {
       if(document.visibilityState === "visible") renderRoute();
     });
