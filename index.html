@@ -422,7 +422,7 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-width: 58px;
+      min-width: 96px;
       height: 36px;
       padding: 0 10px;
       border-radius: 999px;
@@ -436,6 +436,13 @@
       user-select:none;
       -webkit-tap-highlight-color: transparent;
       white-space: nowrap;
+      text-align:center;
+    }
+    .sort-btn-label{
+      display:block;
+      width:100%;
+      text-align:center;
+      pointer-events:none;
     }
     .sort-btn select{
       position:absolute;
@@ -446,8 +453,10 @@
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
+      text-align:center;
+      text-align-last:center;
     }
-    .sort-btn select option{ background:#0b1829; color:#fff; }
+    .sort-btn select option{ background:#0b1829; color:#fff; text-align:center; }
   
     .members-wrap{
       width:100%;
@@ -479,6 +488,7 @@
       text-transform:uppercase;
       opacity:.85;
       white-space: nowrap;
+      box-sizing: border-box;
     }
     .members-table th:nth-child(1),
     .members-table td:nth-child(1){
@@ -506,6 +516,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      box-sizing: border-box;
     }
     .members-table tbody tr:last-child td{ border-bottom:none; }
     .members-table td.m-emoji,
@@ -751,6 +762,7 @@
       color: rgba(255,255,255,0.85);
       white-space: nowrap;
       text-align:center;
+      box-sizing: border-box;
     }
   
     .cwl-table tbody td{
@@ -761,6 +773,7 @@
       text-overflow: ellipsis;
       text-align:center;
       font-family: monospace;
+      box-sizing: border-box;
     }
     .cwl-table tbody tr:last-child td{ border-bottom:none; }
   
@@ -1511,7 +1524,7 @@
 
             <div class="members-sortbtn-wrap">
               <div class="sort-btn">
-                SORT
+                <span class="sort-btn-label" id="membersSortLabel">Role</span>
                 <select id="membersSortSelect" aria-label="Sort members">
                   <option value="role">Role</option>
                   <option value="th">TH</option>
@@ -1644,7 +1657,7 @@
             <div class="cwl-scroll-inline" id="cwl-members-scroll-inline">← SCROLL →</div>
             <div class="cwl-sortbtn-wrap">
               <div class="sort-btn">
-                SORT
+                <span class="sort-btn-label" id="cwlMembersSortLabel">Attack Rank</span>
                 <select id="cwlMembersSortSelect" aria-label="Sort CWL members">
                   <option value="rank">Attack Rank</option>
                   <option value="defRank">Defensive Rank</option>
@@ -2684,15 +2697,25 @@
       return String(a.name||"").localeCompare(String(b.name||""), undefined, { sensitivity:"base" });
     }
 
+    function updateSortButtonLabel(selectId, labelId, fallback){
+      const sel = document.getElementById(selectId);
+      const label = document.getElementById(labelId);
+      if(!sel || !label) return;
+      const option = sel.selectedOptions ? sel.selectedOptions[0] : sel.options[sel.selectedIndex];
+      label.textContent = option ? option.textContent : (fallback || "Sort");
+    }
+
     function ensureSortDropdownBound(){
       const sel = document.getElementById("membersSortSelect");
       if(!sel) return;
 
       sel.value = membersSortMode;
+      updateSortButtonLabel("membersSortSelect", "membersSortLabel", "Role");
 
       if(sel.dataset.bound === "1") return;
       sel.addEventListener("change", () => {
         membersSortMode = sel.value || "role";
+        updateSortButtonLabel("membersSortSelect", "membersSortLabel", "Role");
         renderMembers();
       });
       sel.dataset.bound = "1";
@@ -2924,10 +2947,12 @@
       if(!sel) return;
 
       sel.value = cwlMembersSortMode;
+      updateSortButtonLabel("cwlMembersSortSelect", "cwlMembersSortLabel", "Attack Rank");
 
       if(sel.dataset.bound === "1") return;
       sel.addEventListener("change", () => {
         cwlMembersSortMode = sel.value || "rank";
+        updateSortButtonLabel("cwlMembersSortSelect", "cwlMembersSortLabel", "Attack Rank");
         renderCwlContent();
       });
       sel.dataset.bound = "1";
