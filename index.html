@@ -40,9 +40,8 @@
   
       --rounds-gutter: 38px; /* space reserved for the carousel arrows */
   
-      /* ✅ Default CWL sticky widths (Member table) */
-      --cwl-sticky-1: 44px; /* # */
-      --cwl-sticky-2: 92px; /* Name */
+      /* ✅ DEFAULT sticky offset = Member table "#" col width */
+      --cwl-sticky-1: 44px;
     }
   
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
@@ -515,45 +514,6 @@
       text-overflow: clip !important;
       white-space: nowrap !important;
     }
-    /* =========================================================
-       ✅ FIX: Members sticky columns drifting
-       - Make column widths include padding (border-box)
-       - Lock widths for sticky col 1 & 2
-       ========================================================= */
-    .members-table th,
-    .members-table td{
-      box-sizing: border-box; /* critical */
-    }
-    
-    /* Sticky col 1: emoji column */
-    .members-table th:nth-child(1),
-    .members-table td:nth-child(1){
-      width: var(--m-emoji-col);
-      min-width: var(--m-emoji-col);
-      max-width: var(--m-emoji-col);
-    
-      /* keep the column visually tight so it truly fits in 30px */
-      padding: 10px 6px;
-    }
-    
-    /* Sticky col 2: name column */
-    .members-table th:nth-child(2),
-    .members-table td:nth-child(2){
-      width: var(--m-name-col);
-      min-width: var(--m-name-col);
-      max-width: var(--m-name-col);
-    
-      /* fits inside 102px now because border-box */
-      padding: 10px 10px;
-    }
-    
-    /* Your existing .m-emoji had extra left padding that broke the 30px math.
-       This ensures it cannot inflate the column width beyond --m-emoji-col. */
-    .members-table td.m-emoji,
-    .members-table th.m-emoji{
-      padding: 10px 6px !important;
-    }
-
     .m-emoji{ text-align:right; font-size:14px; padding: 10px 6px 10px 10px; letter-spacing:0; }
     .m-user-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .m-user-name.m-leader{ font-weight:400; text-decoration: underline; text-underline-offset: 2px; }
@@ -842,19 +802,20 @@
   
     .cwl-wide{ min-width: 1220px; }
   
-    /* ✅ League table overrides sticky widths (Rank=52, Clan=96) */
-    .cwl-table.cwl-league{
+    /* ✅ League overview table: set correct sticky width + min width */
+    .cwl-league{
       min-width: 700px;
       width: 100%;
-      --cwl-sticky-1: 52px;
-      --cwl-sticky-2: 96px;
+      --cwl-sticky-1: 52px; /* ✅ FIX: League "Rank" col width is 52px */
     }
   
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
   
     /* =========================================================
-       ✅ FIX: lock sticky widths to stop jitter / shifting
+       ✅ FIXED sticky scheme for ALL CWL tables
+       - Member table uses default --cwl-sticky-1: 44px
+       - League table overrides it to 52px (above)
        ========================================================= */
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
@@ -862,12 +823,6 @@
       left: 0;
       z-index: 7;
       background: #0b1829;
-  
-      width: var(--cwl-sticky-1);
-      min-width: var(--cwl-sticky-1);
-      max-width: var(--cwl-sticky-1);
-  
-      box-sizing: border-box;
       text-align:center;
       font-family: monospace;
       border-right: none;
@@ -876,15 +831,9 @@
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: var(--cwl-sticky-1);
+      left: var(--cwl-sticky-1); /* ✅ FIX: correct per table */
       z-index: 6;
       background: #0b1829;
-  
-      width: var(--cwl-sticky-2);
-      min-width: var(--cwl-sticky-2);
-      max-width: var(--cwl-sticky-2);
-  
-      box-sizing: border-box;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
@@ -892,14 +841,6 @@
   
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
-  
-    .cwl-table th.sticky-1,
-    .cwl-table td.sticky-1,
-    .cwl-table th.sticky-2,
-    .cwl-table td.sticky-2{
-      will-change: transform;
-      transform: translateZ(0);
-    }
   
     .cwl-table td.sticky-1{
       text-overflow: clip;
@@ -1179,26 +1120,6 @@
       opacity: 0.92;
       margin: 4px 0 10px;
     }
-    /* =========================================================
-       ✅ FIX: CWL colgroup widths must include padding
-       ========================================================= */
-    .cwl-table thead th,
-    .cwl-table tbody td{
-      box-sizing: border-box; /* critical */
-    }
-    
-    /* =========================================================
-       ✅ FIX: Avoid sticky drift/jitter on iOS/Safari
-       (Transforms on sticky cells can cause subtle shifting)
-       ========================================================= */
-    .cwl-table th.sticky-1,
-    .cwl-table td.sticky-1,
-    .cwl-table th.sticky-2,
-    .cwl-table td.sticky-2{
-      transform: none !important;
-      will-change: left;
-    }
-
   
     /* =========================================================
        CWL Rollup Mode (Year / All-Time)
@@ -1213,9 +1134,6 @@
     body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){ display:none; }
   </style>
 
-
-
-  
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 
