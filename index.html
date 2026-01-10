@@ -40,8 +40,9 @@
   
       --rounds-gutter: 38px; /* space reserved for the carousel arrows */
   
-      /* ✅ DEFAULT sticky offset = Member table "#" col width */
-      --cwl-sticky-1: 44px;
+      /* ✅ Default CWL sticky widths (Member table) */
+      --cwl-sticky-1: 44px; /* # */
+      --cwl-sticky-2: 92px; /* Name */
     }
   
     html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
@@ -802,20 +803,19 @@
   
     .cwl-wide{ min-width: 1220px; }
   
-    /* ✅ League overview table: set correct sticky width + min width */
-    .cwl-league{
+    /* ✅ League table overrides sticky widths (Rank=52, Clan=96) */
+    .cwl-table.cwl-league{
       min-width: 700px;
       width: 100%;
-      --cwl-sticky-1: 52px; /* ✅ FIX: League "Rank" col width is 52px */
+      --cwl-sticky-1: 52px;
+      --cwl-sticky-2: 96px;
     }
   
     .cwl-table.cwl-league thead th{ padding: 8px 6px; }
     .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
   
     /* =========================================================
-       ✅ FIXED sticky scheme for ALL CWL tables
-       - Member table uses default --cwl-sticky-1: 44px
-       - League table overrides it to 52px (above)
+       ✅ FIX: lock sticky widths to stop jitter / shifting
        ========================================================= */
     .cwl-table th.sticky-1,
     .cwl-table td.sticky-1{
@@ -823,6 +823,12 @@
       left: 0;
       z-index: 7;
       background: #0b1829;
+  
+      width: var(--cwl-sticky-1);
+      min-width: var(--cwl-sticky-1);
+      max-width: var(--cwl-sticky-1);
+  
+      box-sizing: border-box;
       text-align:center;
       font-family: monospace;
       border-right: none;
@@ -831,9 +837,15 @@
     .cwl-table th.sticky-2,
     .cwl-table td.sticky-2{
       position: sticky;
-      left: var(--cwl-sticky-1); /* ✅ FIX: correct per table */
+      left: var(--cwl-sticky-1);
       z-index: 6;
       background: #0b1829;
+  
+      width: var(--cwl-sticky-2);
+      min-width: var(--cwl-sticky-2);
+      max-width: var(--cwl-sticky-2);
+  
+      box-sizing: border-box;
       text-align:left;
       font-family: inherit;
       border-right: 1px solid rgba(255,255,255,0.10);
@@ -841,6 +853,14 @@
   
     .cwl-table thead th.sticky-1{ z-index: 9; }
     .cwl-table thead th.sticky-2{ z-index: 8; }
+  
+    .cwl-table th.sticky-1,
+    .cwl-table td.sticky-1,
+    .cwl-table th.sticky-2,
+    .cwl-table td.sticky-2{
+      will-change: transform;
+      transform: translateZ(0);
+    }
   
     .cwl-table td.sticky-1{
       text-overflow: clip;
@@ -1134,6 +1154,9 @@
     body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){ display:none; }
   </style>
 
+
+
+  
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 
