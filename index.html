@@ -2275,6 +2275,10 @@
         const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
         cwlIndex = data;
         setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
+        if(cwlSelected === CWL_ALL_TIME_KEY && cwlSelectedPayload){
+          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(cwlSelectedPayload);
+          renderCwlContent();
+        }
       }catch(e){
         cwlIndex = null;
         setText("cwl-index-status", `CWL index fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
@@ -2364,22 +2368,19 @@
       for(const data of historyResults){
         const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
         for(const m of members){
-          const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+          const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim().toUpperCase();
           if(!memberKey) continue;
 
           const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
           if(avgDef === null || !isFinite(avgDef)) continue;
 
-          const weightRaw = pickNum(m, ["warsInLineup","wars_in_lineup"]);
-          const weight = (weightRaw !== null && isFinite(weightRaw) && weightRaw > 0) ? weightRaw : 1;
-
-          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + (avgDef * weight));
-          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + weight);
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + avgDef);
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
         }
       }
 
       for(const m of payload.memberOverview){
-        const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+        const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim().toUpperCase();
         if(!memberKey) continue;
 
         const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
