@@ -709,7 +709,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      width: 100%;
+      width: 33.333%;
 
       font-size: 16px;
       font-weight: 700;
@@ -732,7 +732,7 @@
       appearance:none;
       -webkit-appearance:none;
     }
-    .cwl-title-dd select option{ background:#0b1829; color:#fff; }
+    .cwl-title-dd select option{ background:#0b1829; color:#fff; text-align:center; }
   
     .cwl-table-wrap{
       width:100%;
@@ -1420,7 +1420,9 @@
         const firstSticky = table.querySelector("thead th.sticky-1") || table.querySelector("tbody td.sticky-1");
         if(!firstSticky) return;
         const width = firstSticky.getBoundingClientRect().width;
-        if(width) table.style.setProperty("--cwl-sticky-1", `${width}px`);
+        const minWidth = (table.id === "cwl-member-table") ? 44 : 0;
+        const finalWidth = Math.max(width || 0, minWidth);
+        if(finalWidth) table.style.setProperty("--cwl-sticky-1", `${finalWidth}px`);
       });
     }
 
