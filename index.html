@@ -2370,11 +2370,8 @@
           const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
           if(avgDef === null || !isFinite(avgDef)) continue;
 
-          const weightRaw = pickNum(m, ["warsInLineup","wars_in_lineup"]);
-          const weight = (weightRaw !== null && isFinite(weightRaw) && weightRaw > 0) ? weightRaw : 1;
-
-          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + (avgDef * weight));
-          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + weight);
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + avgDef);
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
         }
       }
 
