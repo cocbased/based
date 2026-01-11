@@ -3858,7 +3858,13 @@
                 avgAtkRkVal = sum / repairedRanks.length;
                 avgAtkRk = fmt1(avgAtkRkVal, "—");
               } else {
-                avgAtkRk = "—";
+                const provided = pickNum(m, ["avgRankAttacked","avgAttackRank","avgAtkRank","avg_attacked_rank","avg_rank_attacked"]);
+                if(provided !== null && isFinite(provided)){
+                  avgAtkRkVal = provided;
+                  avgAtkRk = fmt1(avgAtkRkVal, "—");
+                } else {
+                  avgAtkRk = "—";
+                }
               }
             }
     
