@@ -2311,7 +2311,7 @@
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/all_time.json`;
         try{
           const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
-          cwlSelectedPayload = data;
+          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(data);
           setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
         }catch(e){
           cwlSelectedPayload = null;
@@ -2335,6 +2335,87 @@
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       renderCwlContent();
+    }
+
+    async function hydrateCwlRollupDefenseRanks(payload){
+      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
+
+      const seasons = Array.isArray(cwlIndex?.seasons) ? cwlIndex.seasons : [];
+      const seasonKeys = seasons
+        .map(s => String(s?.seasonKey || "").trim())
+        .filter(Boolean);
+
+      if(!seasonKeys.length) return payload;
+
+      const sumByMember = new Map();
+      const countByMember = new Map();
+
+      const historyResults = await Promise.all(seasonKeys.map(async (seasonKey) => {
+        const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
+        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
+        try{
+          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defense`);
+          return data;
+        }catch(e){
+          return null;
+        }
+      }));
+
+      for(const data of historyResults){
+        if(!data) continue;
+
+        const monthSum = new Map();
+        const monthCount = new Map();
+
+        const defRankByWar = buildDefenseRankByWar(data);
+        for(const map of defRankByWar.values()){
+          for(const [memberKey, rank] of map.entries()){
+            if(rank == null || !isFinite(rank)) continue;
+            monthSum.set(memberKey, (monthSum.get(memberKey) || 0) + rank);
+            monthCount.set(memberKey, (monthCount.get(memberKey) || 0) + 1);
+          }
+        }
+
+        for(const [memberKey, sum] of monthSum.entries()){
+          const count = monthCount.get(memberKey) || 0;
+          if(count <= 0) continue;
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + sum);
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + count);
+        }
+
+        const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
+        for(const m of members){
+          const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+          if(!memberKey) continue;
+
+          if((monthCount.get(memberKey) || 0) > 0) continue;
+
+          const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+          if(avgDef === null || !isFinite(avgDef)) continue;
+
+          const weightRaw = pickNum(m, ["warsInLineup","wars_in_lineup"]);
+          const weight = (weightRaw !== null && isFinite(weightRaw) && weightRaw > 0) ? weightRaw : 1;
+
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + (avgDef * weight));
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + weight);
+        }
+      }
+
+      for(const m of payload.memberOverview){
+        const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+        if(!memberKey) continue;
+
+        const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+        if(existing !== null && isFinite(existing)) continue;
+
+        const sum = sumByMember.get(memberKey);
+        const count = countByMember.get(memberKey);
+        if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
+
+        m.avgDefRank = Number((sum / count).toFixed(2));
+      }
+
+      return payload;
     }
 
 
@@ -3181,27 +3262,70 @@
       // returns Map<warNum, Map<playerKey, defRank>>
       // playerKey can be tag if present, otherwise name
       const out = new Map();
-    
+
       const days =
         (Array.isArray(payload?.warDays) ? payload.warDays : null) ||
         (Array.isArray(payload?.days) ? payload.days : null) ||
         (Array.isArray(payload?.wars) ? payload.wars : null) ||
         (Array.isArray(payload?.rounds) ? payload.rounds : null) ||
         [];
-    
-      for(let i=0;i<Math.min(7, days.length);i++){
-        const d = days[i];
+
+      const roundWars = [];
+      if(!days.length && Array.isArray(payload?.roundsOverview)){
+        for(let i=0; i<payload.roundsOverview.length; i++){
+          const round = payload.roundsOverview[i];
+          const warNum = pickNum(round, ["round","war","warNum","day","dayNum"]) ?? (i + 1);
+          const wars = Array.isArray(round?.wars) ? round.wars : [];
+          for(const war of wars){
+            roundWars.push({ ...war, round: warNum });
+          }
+        }
+      }
+
+      const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
+      const memberKeys = new Set();
+      for(const m of members){
+        const tag = String(m?.tag || m?.playerTag || "").trim();
+        const name = String(m?.name || "").trim();
+        if(tag) memberKeys.add(tag);
+        if(name) memberKeys.add(name);
+      }
+
+      const sources = days.length ? days : roundWars;
+
+      for(let i=0;i<Math.min(7, sources.length);i++){
+        const d = sources[i];
         const warNum = (pickNum(d, ["war","warNum","day","dayNum","round"]) ?? (i+1)) | 0;
         if(warNum < 1 || warNum > 7) continue;
-    
+
         // Try common member list shapes
-        const players =
-          (Array.isArray(d?.clan?.members) ? d.clan.members : null) ||
-          (Array.isArray(d?.clanMembers) ? d.clanMembers : null) ||
-          (Array.isArray(d?.members) ? d.members : null) ||
-          (Array.isArray(d?.players) ? d.players : null) ||
+        const pickPlayers = (obj) =>
+          (Array.isArray(obj?.members) ? obj.members : null) ||
+          (Array.isArray(obj?.clanMembers) ? obj.clanMembers : null) ||
+          (Array.isArray(obj?.players) ? obj.players : null) ||
           [];
-    
+
+        const candidates = [];
+        if(d?.clan) candidates.push(d.clan);
+        if(d?.opponent) candidates.push(d.opponent);
+        candidates.push(d);
+
+        let players = [];
+        for(const c of candidates){
+          const roster = pickPlayers(c);
+          if(!roster.length) continue;
+          if(memberKeys.size){
+            const hasMember = roster.some(p => {
+              const tag = String(p?.tag || p?.playerTag || "").trim();
+              const name = String(p?.name || p?.playerName || "").trim();
+              return (tag && memberKeys.has(tag)) || (name && memberKeys.has(name));
+            });
+            if(!hasMember) continue;
+          }
+          players = roster;
+          break;
+        }
+
         if(!players.length) continue;
     
         const sorted = players.slice().sort((a,b)=>{
