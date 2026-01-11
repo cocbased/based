@@ -1417,9 +1417,16 @@
       }
 
       document.querySelectorAll(".cwl-table").forEach((table) => {
-        const firstSticky = table.querySelector("thead th.sticky-1") || table.querySelector("tbody td.sticky-1");
-        if(!firstSticky) return;
-        const width = firstSticky.getBoundingClientRect().width;
+        const stickyCandidates = table.querySelectorAll("thead th.sticky-1, tbody td.sticky-1");
+        if(!stickyCandidates.length) return;
+
+        let width = 0;
+        stickyCandidates.forEach((cell) => {
+          if(width) return;
+          const cellWidth = cell.getBoundingClientRect().width;
+          if(cellWidth > 0) width = cellWidth;
+        });
+
         const minWidth = (table.id === "cwl-member-table") ? 44 : 0;
         const finalWidth = Math.max(width || 0, minWidth);
         if(finalWidth) table.style.setProperty("--cwl-sticky-1", `${finalWidth}px`);
