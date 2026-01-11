@@ -2311,7 +2311,7 @@
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/all_time.json`;
         try{
           const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
-          cwlSelectedPayload = data;
+          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(data);
           setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
         }catch(e){
           cwlSelectedPayload = null;
@@ -2335,6 +2335,64 @@
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
       }
       renderCwlContent();
+    }
+
+    async function hydrateCwlRollupDefenseRanks(payload){
+      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
+
+      const seasons = Array.isArray(cwlIndex?.seasons) ? cwlIndex.seasons : [];
+      const seasonKeys = seasons
+        .map(s => String(s?.seasonKey || "").trim())
+        .filter(Boolean);
+
+      if(!seasonKeys.length) return payload;
+
+      const sumByMember = new Map();
+      const countByMember = new Map();
+
+      const historyResults = await Promise.all(seasonKeys.map(async (seasonKey) => {
+        const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
+        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
+        try{
+          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defense`);
+          return data;
+        }catch(e){
+          return null;
+        }
+      }));
+
+      for(const data of historyResults){
+        const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
+        for(const m of members){
+          const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+          if(!memberKey) continue;
+
+          const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+          if(avgDef === null || !isFinite(avgDef)) continue;
+
+          const weightRaw = pickNum(m, ["warsInLineup","wars_in_lineup"]);
+          const weight = (weightRaw !== null && isFinite(weightRaw) && weightRaw > 0) ? weightRaw : 1;
+
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + (avgDef * weight));
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + weight);
+        }
+      }
+
+      for(const m of payload.memberOverview){
+        const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+        if(!memberKey) continue;
+
+        const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+        if(existing !== null && isFinite(existing)) continue;
+
+        const sum = sumByMember.get(memberKey);
+        const count = countByMember.get(memberKey);
+        if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
+
+        m.avgDefRank = Number((sum / count).toFixed(2));
+      }
+
+      return payload;
     }
 
 
