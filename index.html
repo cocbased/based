@@ -1909,6 +1909,7 @@
     // stored selection can be: "YYYY-MM" OR "all_time" OR "year:YYYY"
     let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || CWL_ALL_TIME_KEY);
     let cwlSelectedPayload = null;
+    let cwlRollupDefHydrationInFlight = false;
 
 
     // ✅ CWL Member Overview sort state (default: Rank ascending)
@@ -3633,8 +3634,33 @@
       const leagueDisplayName = (selectedKey === CWL_ALL_TIME_KEY && clanStats?.cwl?.currentLeague)
         ? clanStats.cwl.currentLeague
         : leagueName;
-    
+
       setText("cwl-league-name", leagueDisplayName);
+
+      // ✅ All-Time rollup: ensure 🛡️RK is hydrated even if index arrives late
+      if(isRollup && selectedKey === CWL_ALL_TIME_KEY && payload && Array.isArray(payload?.memberOverview)){
+        const needsDefRanks = payload.memberOverview.some((m) => {
+          const v = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+          return (v === null || !isFinite(v));
+        });
+
+        if(needsDefRanks && !cwlRollupDefHydrationInFlight){
+          if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
+            fetchCwlIndex();
+          } else {
+            cwlRollupDefHydrationInFlight = true;
+            hydrateCwlRollupDefenseRanks(payload)
+              .then((hydrated) => {
+                cwlSelectedPayload = hydrated;
+                cwlRollupDefHydrationInFlight = false;
+                renderCwlContent();
+              })
+              .catch(() => {
+                cwlRollupDefHydrationInFlight = false;
+              });
+          }
+        }
+      }
     
       // ============================================================
       // League overview (MONTHLY ONLY)
