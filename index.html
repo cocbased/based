@@ -1149,16 +1149,11 @@
     body.cwl-rollup #cwl-members-head tr:nth-child(2) th:nth-child(n+10){ display:none; }
     body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){ display:none; }
 
-    /* ✅ Rollup (Year/All-Time) column widths: tighten the summary table */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(1){ width: calc(2.6ch * 0.2) !important; } /* # */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(2){ width: calc(37px * 0.12) !important; } /* Name */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(3),
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(4){ width: calc(15px * 0.3) !important; } /* 🗡️/🛡️ RK */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(5){ width: calc(17px * 0.3) !important; } /* TTL★ */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(6){ width: calc(19px * 0.3) !important; } /* TTL% */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(7),
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(8){ width: calc(19px * 0.3) !important; } /* Avg★/Avg% */
-    body.cwl-rollup #cwl-member-table colgroup col:nth-child(9){ width: calc(17px * 0.3) !important; } /* Atk */
+    /* ✅ Rollup (Year/All-Time) column widths: keep the summary table compact */
+    body.cwl-rollup .cwl-table.cwl-wide{
+      width: max-content;
+      min-width: 0;
+    }
   </style>
 
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
