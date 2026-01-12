@@ -1910,6 +1910,7 @@
     // stored selection can be: "YYYY-MM" OR "all_time" OR "year:YYYY"
     let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || CWL_ALL_TIME_KEY);
     let cwlSelectedPayload = null;
+    let cwlMemberOverviewTable = null;
 
 
     // ✅ CWL Member Overview sort state (default: Rank ascending)
@@ -2302,6 +2303,7 @@
       const curKey = String(cwlCurrent?.seasonKey || cwlCurrent?.meta?.seasonKey || "").trim();
       if(curKey && cwlSelected === curKey){
         cwlSelectedPayload = cwlCurrent;
+        await fetchCwlMemberOverviewTable(curKey);
         renderCwlContent();
       } else {
         renderCwlSeasonSelect();
@@ -2314,6 +2316,7 @@
     
       // ✅ rollups
       if(isCwlRollupKey(key)){
+        cwlMemberOverviewTable = null;
         const pagesUrl = `./cwl_rollups/${encodeURIComponent(key)}.json`;
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
         try{
@@ -2337,11 +2340,27 @@
         const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${key}`);
         cwlSelectedPayload = data;
         setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
+        await fetchCwlMemberOverviewTable(key);
       }catch(e){
         cwlSelectedPayload = null;
         setText("cwl-fetch-status", `CWL fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
+        cwlMemberOverviewTable = null;
       }
       renderCwlContent();
+    }
+
+    async function fetchCwlMemberOverviewTable(seasonKey){
+      if(!seasonKey || isCwlRollupKey(seasonKey)){
+        cwlMemberOverviewTable = null;
+        return;
+      }
+      const pagesUrl = `./cwl_tables/${encodeURIComponent(seasonKey)}_member_overview.table.json`;
+      try{
+        const { data } = await fetchJsonWithMeta(pagesUrl, `cwl_tables:${seasonKey}`);
+        cwlMemberOverviewTable = data;
+      }catch(e){
+        cwlMemberOverviewTable = null;
+      }
     }
 
     function isCwlRollupKey(key){
@@ -3099,7 +3118,7 @@
     }
 
 
-    function loadCwlSelected(){
+    async function loadCwlSelected(){
       const key = cwlSelected;
     
       // If selected is the active current month key, use live payload
@@ -3112,12 +3131,13 @@
     
       if(cwlActive && curKey && key === curKey){
         cwlSelectedPayload = cwlCurrent;
+        await fetchCwlMemberOverviewTable(curKey);
         renderCwlContent();
         return;
       }
     
       // Otherwise fetch from history or rollups
-      fetchCwlHistory(key);
+      await fetchCwlHistory(key);
     }
 
     
@@ -3130,6 +3150,16 @@
       if(n === null || n === undefined || n === "") return fallback;
       const x = Number(n);
       return isFinite(x) ? x.toFixed(1) : fallback;
+    }
+
+    function formatTableValue(value, fmt){
+      if(value === null || value === undefined) return "—";
+      if(fmt === "1dp"){
+        const n = Number(value);
+        return isFinite(n) ? n.toFixed(1) : "—";
+      }
+      if(typeof value === "number" && isFinite(value)) return String(value);
+      return String(value);
     }
     
     function normCwlEntry(e, idx){
@@ -3698,6 +3728,145 @@
       // ============================================================
       const memberBody = document.getElementById("cwl-memberoverview-body");
       if(memberBody){
+        const tableMatchesSeason =
+          !!cwlMemberOverviewTable &&
+          cwlMemberOverviewTable.tableId === "cwl_member_overview" &&
+          (!payload?.seasonKey || cwlMemberOverviewTable.seasonKey === payload.seasonKey);
+
+        const useTable = !isRollup && tableMatchesSeason;
+
+        if(useTable){
+          const rows = Array.isArray(cwlMemberOverviewTable?.rows) ? cwlMemberOverviewTable.rows : [];
+          const columns = Array.isArray(cwlMemberOverviewTable?.columns) ? cwlMemberOverviewTable.columns : [];
+          const columnByKey = new Map(columns.map(c => [c?.key, c]));
+
+          if(!rows.length){
+            const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
+            memberBody.innerHTML = `<tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
+          } else {
+            const numVal = (row, key) => {
+              const v = row?.[key];
+              const n = Number(v);
+              return (v === null || v === undefined || !isFinite(n)) ? null : n;
+            };
+
+            const sorted = rows.slice().sort((a,b)=>{
+              const ar = numVal(a, "atk_rk");
+              const br = numVal(b, "atk_rk");
+
+              const aDef = numVal(a, "def_rk");
+              const bDef = numVal(b, "def_rk");
+
+              const aTotalStars = numVal(a, "ttl_stars") ?? 0;
+              const bTotalStars = numVal(b, "ttl_stars") ?? 0;
+
+              const aTotalPct = numVal(a, "ttl_pct") ?? 0;
+              const bTotalPct = numVal(b, "ttl_pct") ?? 0;
+
+              const aAvgStars = numVal(a, "avg_stars") ?? 0;
+              const bAvgStars = numVal(b, "avg_stars") ?? 0;
+
+              const aAvgPct = numVal(a, "avg_pct") ?? 0;
+              const bAvgPct = numVal(b, "avg_pct") ?? 0;
+
+              const nameCmp = String(a?.name||"").localeCompare(String(b?.name||""));
+
+              if(cwlMembersSortMode === "rank"){
+                if(ar !== null && br !== null && ar !== br) return ar - br;
+                if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+                if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+                return nameCmp;
+              }
+              if(cwlMembersSortMode === "defRank"){
+                if(aDef !== null && bDef !== null && aDef !== bDef) return aDef - bDef;
+                if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
+                if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+                if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+                return nameCmp;
+              }
+              if(cwlMembersSortMode === "totalStars"){
+                if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+                if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+                if(ar !== null && br !== null && ar !== br) return ar - br;
+                return nameCmp;
+              }
+              if(cwlMembersSortMode === "totalPct"){
+                if(bTotalPct !== aTotalPct) return bTotalPct - aTotalPct;
+                if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+                if(ar !== null && br !== null && ar !== br) return ar - br;
+                return nameCmp;
+              }
+              if(cwlMembersSortMode === "avgStars"){
+                if(bAvgStars !== aAvgStars) return bAvgStars - aAvgStars;
+                if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
+                if(ar !== null && br !== null && ar !== br) return ar - br;
+                return nameCmp;
+              }
+              if(cwlMembersSortMode === "avgPct"){
+                if(bAvgPct !== aAvgPct) return bAvgPct - aAvgPct;
+                if(bTotalStars !== aTotalStars) return bTotalStars - aTotalStars;
+                if(ar !== null && br !== null && ar !== br) return ar - br;
+                return nameCmp;
+              }
+              if(ar !== null && br !== null && ar !== br) return ar - br;
+              return nameCmp;
+            });
+
+            memberBody.innerHTML = sorted.map((row, idx) => {
+              const nm = escapeHtml(row?.name || "—");
+              const avgStarsVal = numVal(row, "avg_stars");
+              const avgPctVal = numVal(row, "avg_pct");
+              const isPerfect =
+                (avgStarsVal !== null && avgStarsVal >= 3.0) ||
+                (avgPctVal !== null && avgPctVal >= 100.0);
+              const rowClass = isPerfect ? "cwl-perfect" : "";
+
+              const fmtFor = (key, value) => formatTableValue(value, columnByKey.get(key)?.fmt);
+
+              const atkRk = fmtFor("atk_rk", row?.atk_rk);
+              const defRk = fmtFor("def_rk", row?.def_rk);
+
+              const ttlStars = fmtFor("ttl_stars", row?.ttl_stars);
+              const ttlPct = fmtFor("ttl_pct", row?.ttl_pct);
+              const avgStars = fmtFor("avg_stars", row?.avg_stars);
+              const avgPct = fmtFor("avg_pct", row?.avg_pct);
+              const atkFrac = fmtFor("atk_frac", row?.atk_frac);
+
+              const warCells = [];
+              for(let i=1;i<=7;i++){
+                const oppKey = `war${i}_opp`;
+                const starsKey = `war${i}_stars`;
+                const pctKey = `war${i}_pct`;
+
+                const opp = escapeHtml(fmtFor(oppKey, row?.[oppKey]));
+                const s = escapeHtml(fmtFor(starsKey, row?.[starsKey]));
+                const p = escapeHtml(fmtFor(pctKey, row?.[pctKey]));
+
+                warCells.push(`<td class="left mono cwl-warcell cwl-day-start" title="${opp}">${opp}</td>`);
+                warCells.push(`<td class="mono cwl-warcell">${s}</td>`);
+                warCells.push(`<td class="mono cwl-warcell cwl-day-end">${p}</td>`);
+              }
+
+              return `
+                <tr class="${rowClass}">
+                  <td class="sticky-1 mono">${idx + 1}</td>
+                  <td class="sticky-2 left" title="${nm}">${nm}</td>
+
+                  <td class="mono cwl-rk">${escapeHtml(atkRk)}</td>
+                  <td class="mono cwl-rk">${escapeHtml(defRk)}</td>
+
+                  <td class="mono bold">${escapeHtml(ttlStars)}</td>
+                  <td class="mono">${escapeHtml(ttlPct)}</td>
+                  <td class="mono">${escapeHtml(avgStars)}</td>
+                  <td class="mono">${escapeHtml(avgPct)}</td>
+                  <td class="mono cwl-general-sep">${escapeHtml(atkFrac)}</td>
+
+                  ${warCells.join("")}
+                </tr>
+              `;
+            }).join("");
+          }
+        } else {
         const members = Array.isArray(payload?.memberOverview) ? payload.memberOverview : [];
         if(!members.length){
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";

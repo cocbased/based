@@ -15,6 +15,7 @@ REPO_DIR = "/home/admin/based"
 OUT_CURRENT = os.path.join(REPO_DIR, "cwl_current.json")
 OUT_INDEX   = os.path.join(REPO_DIR, "cwl_index.json")
 HISTORY_DIR = os.path.join(REPO_DIR, "cwl_history")
+TABLES_DIR  = os.path.join(REPO_DIR, "cwl_tables")
 
 # =========================
 # HTTP helper
@@ -47,11 +48,18 @@ def safe_float(x, default=0.0):
 def ensure_dirs():
     os.makedirs(REPO_DIR, exist_ok=True)
     os.makedirs(HISTORY_DIR, exist_ok=True)
+    os.makedirs(TABLES_DIR, exist_ok=True)
 
 def save_json(path, obj):
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+def save_json_pretty(path, obj):
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
     os.replace(tmp, path)
 
 def load_json(path, default):
@@ -513,6 +521,110 @@ def write_history_if_final(payload, season_key):
         return
     path = os.path.join(HISTORY_DIR, f"{season_key}.json")
     save_json(path, payload)
+    write_member_overview_table(payload, season_key)
+
+def build_member_overview_table(payload):
+    season_key = payload.get("seasonKey")
+    generated_at = payload.get("generatedAt") or utc_now_iso()
+    team_size = payload.get("teamSize") or 15
+    meta = payload.get("meta") or {}
+    wars_completed = meta.get("warsCompleted")
+    active_war_day = meta.get("activeWarDay")
+
+    columns = [
+        {"key": "name", "label": "Name", "align": "left"},
+        {"key": "atk_rk", "label": "🗡️RK", "fmt": "1dp", "align": "right"},
+        {"key": "def_rk", "label": "🛡️RK", "fmt": "1dp", "align": "right"},
+        {"key": "ttl_stars", "label": "TTL★", "align": "right"},
+        {"key": "ttl_pct", "label": "TTL%", "fmt": "1dp", "align": "right"},
+        {"key": "avg_stars", "label": "Avg★", "fmt": "1dp", "align": "right"},
+        {"key": "avg_pct", "label": "Avg%", "fmt": "1dp", "align": "right"},
+        {"key": "atk_frac", "label": "Atk", "align": "right"},
+    ]
+
+    for war_num in range(1, 8):
+        columns.extend([
+            {"key": f"war{war_num}_opp", "label": "⚔️", "align": "left"},
+            {"key": f"war{war_num}_stars", "label": "⭐", "align": "right"},
+            {"key": f"war{war_num}_pct", "label": "🎯", "fmt": "1dp", "align": "right"},
+        ])
+
+    rows = []
+    members = payload.get("memberOverview") or []
+    for member in members:
+        attacks_made = safe_int(member.get("attacksMade"), 0)
+
+        if wars_completed is not None:
+            denom_target = safe_int(wars_completed, 7)
+        else:
+            denom_target = 7
+
+        wars_in_lineup = member.get("warsInLineup")
+        if wars_in_lineup is not None:
+            denom = min(safe_int(wars_in_lineup, 0), denom_target)
+        else:
+            denom = denom_target
+        denom = max(denom, attacks_made)
+
+        row = {
+            "name": member.get("name"),
+            "tag": member.get("tag"),
+            "atk_rk": member.get("avgRankAttacked"),
+            "def_rk": member.get("avgDefRank"),
+            "ttl_stars": member.get("totalStars"),
+            "ttl_pct": member.get("totalDestruction"),
+            "avg_stars": member.get("avgStars"),
+            "avg_pct": member.get("avgDestruction"),
+            "atk_frac": f"{attacks_made}/{denom}",
+        }
+
+        wars = member.get("wars") or []
+        wars_by_num = {}
+        for w in wars:
+            war_num = safe_int(w.get("war"), 0)
+            if 1 <= war_num <= 7:
+                wars_by_num[war_num] = w
+
+        for war_num in range(1, 8):
+            entry = wars_by_num.get(war_num)
+            if entry:
+                defender_pos = entry.get("defenderPos")
+                defender_name = entry.get("defenderName")
+                stars = entry.get("stars")
+                destruction = entry.get("destruction")
+                has_outcome = (stars is not None) or (destruction is not None)
+                has_target = (defender_pos is not None) and bool(defender_name)
+                if has_outcome and has_target:
+                    row[f"war{war_num}_opp"] = f"{defender_pos}. {defender_name}"
+                    row[f"war{war_num}_stars"] = stars
+                    row[f"war{war_num}_pct"] = destruction
+                else:
+                    row[f"war{war_num}_opp"] = "—"
+                    row[f"war{war_num}_stars"] = None
+                    row[f"war{war_num}_pct"] = None
+            else:
+                row[f"war{war_num}_opp"] = "—"
+                row[f"war{war_num}_stars"] = None
+                row[f"war{war_num}_pct"] = None
+
+        rows.append(row)
+
+    return {
+        "tableId": "cwl_member_overview",
+        "seasonKey": season_key,
+        "generatedAt": generated_at,
+        "teamSize": team_size,
+        "meta": {"activeWarDay": active_war_day, "warsCompleted": wars_completed},
+        "columns": columns,
+        "rows": rows,
+    }
+
+def write_member_overview_table(payload, season_key):
+    if not season_key:
+        return
+    table_payload = build_member_overview_table(payload)
+    path = os.path.join(TABLES_DIR, f"{season_key}_member_overview.table.json")
+    save_json_pretty(path, table_payload)
 
 # =========================
 # MAIN
