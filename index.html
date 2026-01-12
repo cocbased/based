@@ -1892,6 +1892,8 @@
 
     const LAST_WAR_STORAGE_KEY = "based_last_war_snapshot";
     let lastWarSnapshot = null;
+    const LAST_WAR_DETAIL_STORAGE_KEY = "based_last_war_detail_snapshot";
+    let lastWarDetailSnapshot = null;
 
     let clanStats = null;
     let membersData = null;
@@ -1947,6 +1949,20 @@
       try{ localStorage.setItem(LAST_WAR_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
     }
     lastWarSnapshot = loadLastWarSnapshot();
+
+    function loadLastWarDetailSnapshot(){
+      try{
+        const raw = localStorage.getItem(LAST_WAR_DETAIL_STORAGE_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(obj && typeof obj === "object" && obj.state && obj.state !== "notInWar") return obj;
+      } catch(e){}
+      return null;
+    }
+    function saveLastWarDetailSnapshot(w){
+      try{ localStorage.setItem(LAST_WAR_DETAIL_STORAGE_KEY, JSON.stringify(w)); } catch(e){}
+    }
+    lastWarDetailSnapshot = loadLastWarDetailSnapshot();
 
     function winPctFromWLT(w,l,t){
       const W=(w|0), L=(l|0), T=(t|0);
@@ -2013,21 +2029,21 @@
       return null;
     }
 
-    function getWarTimes(display){
+    function getWarTimes(display, detailDisplay){
       const start =
         parseWarTime(display?.startTimeIso) ||
         parseWarTime(display?.startTime) ||
         parseWarTime(display?.start) ||
-        parseWarTime(warDetail?.startTimeIso) ||
-        parseWarTime(warDetail?.startTime) ||
+        parseWarTime(detailDisplay?.startTimeIso) ||
+        parseWarTime(detailDisplay?.startTime) ||
         null;
 
       const end =
         parseWarTime(display?.endTimeIso) ||
         parseWarTime(display?.endTime) ||
         parseWarTime(display?.end) ||
-        parseWarTime(warDetail?.endTimeIso) ||
-        parseWarTime(warDetail?.endTime) ||
+        parseWarTime(detailDisplay?.endTimeIso) ||
+        parseWarTime(detailDisplay?.endTime) ||
         null;
 
       return { start, end };
@@ -2163,6 +2179,10 @@
       try{
         const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACK, "war_detail.json");
         warDetail = data;
+        if(warDetail && warDetail.state && warDetail.state !== "notInWar"){
+          lastWarDetailSnapshot = warDetail;
+          saveLastWarDetailSnapshot(warDetail);
+        }
         setText("war-chart-status", formatMetaLine("Chart fetch", meta));
       } catch(e){
         warDetail = null;
@@ -2374,12 +2394,13 @@
       let display = warData;
       if(display && display.state === "notInWar" && lastWarSnapshot) display = lastWarSnapshot;
 
-      const stateRaw = String(display?.state || warDetail?.state || "");
+      const detailDisplay = (warDetail && warDetail.state !== "notInWar") ? warDetail : lastWarDetailSnapshot;
+      const stateRaw = String(display?.state || detailDisplay?.state || "");
       const state = stateRaw.trim().toLowerCase();
 
       const teamSize =
         Number(display?.teamSize || display?.size || 0) ||
-        Number(warDetail?.teamSize || 0) ||
+        Number(detailDisplay?.teamSize || 0) ||
         null;
       setText("war-size", teamSize ? `${teamSize} v ${teamSize}` : "—");
 
@@ -2396,31 +2417,31 @@
       const maxStars = teamSize ? (3 * teamSize) : null;
       const maxAttacks = teamSize ? (2 * teamSize) : null;
 
-      const ourName = display?.ourName || warDetail?.clan?.name || warDetail?.our?.name || "US";
-      const oppName = display?.oppName || warDetail?.opponent?.name || "OPPONENT";
+      const ourName = display?.ourName || detailDisplay?.clan?.name || detailDisplay?.our?.name || "US";
+      const oppName = display?.oppName || detailDisplay?.opponent?.name || "OPPONENT";
       setText("war-name-us", ourName);
       setText("war-name-opp", oppName);
 
-      const ourStars = (display?.ourStars ?? warDetail?.clan?.stars ?? warDetail?.our?.stars ?? null);
-      const oppStars = (display?.oppStars ?? warDetail?.opponent?.stars ?? null);
+      const ourStars = (display?.ourStars ?? detailDisplay?.clan?.stars ?? detailDisplay?.our?.stars ?? null);
+      const oppStars = (display?.oppStars ?? detailDisplay?.opponent?.stars ?? null);
 
       setText("war-stars-us", (ourStars == null) ? "—" : (maxStars ? `${ourStars}/${maxStars}` : String(ourStars)));
       setText("war-stars-opp",(oppStars == null) ? "—" : (maxStars ? `${oppStars}/${maxStars}` : String(oppStars)));
 
-      const ourDes = (display?.ourDestructionPercentage ?? warDetail?.clan?.destructionPercentage ?? warDetail?.our?.destructionPercentage ?? null);
-      const oppDes = (display?.oppDestructionPercentage ?? warDetail?.opponent?.destructionPercentage ?? null);
+      const ourDes = (display?.ourDestructionPercentage ?? detailDisplay?.clan?.destructionPercentage ?? detailDisplay?.our?.destructionPercentage ?? null);
+      const oppDes = (display?.oppDestructionPercentage ?? detailDisplay?.opponent?.destructionPercentage ?? null);
 
       setText("war-destr-us", (ourDes == null) ? "—" : `${Number(ourDes)}%`);
       setText("war-destr-opp", (oppDes == null) ? "—" : `${Number(oppDes)}%`);
 
-      const ourAtkUsed = (display?.ourAttacksUsed ?? warDetail?.clan?.attacks ?? warDetail?.our?.attacks ?? null);
-      const oppAtkUsed = (display?.oppAtkUsed ?? warDetail?.opponent?.attacks ?? null);
+      const ourAtkUsed = (display?.ourAttacksUsed ?? detailDisplay?.clan?.attacks ?? detailDisplay?.our?.attacks ?? null);
+      const oppAtkUsed = (display?.oppAttacksUsed ?? detailDisplay?.opponent?.attacks ?? null);
 
       setText("war-attacks-us", (ourAtkUsed == null) ? "—" : (maxAttacks ? `${ourAtkUsed}/${maxAttacks}` : String(ourAtkUsed)));
       setText("war-attacks-opp",(oppAtkUsed == null) ? "—" : (maxAttacks ? `${oppAtkUsed}/${maxAttacks}` : String(oppAtkUsed)));
 
       const now = new Date();
-      const { start, end } = getWarTimes(display);
+      const { start, end } = getWarTimes(display, detailDisplay);
       const startOk = start && !isNaN(start.getTime());
       const endOk = end && !isNaN(end.getTime());
 
@@ -2550,17 +2571,18 @@
         enableDragScrollEverywhere();
         return;
       }
-      if(!warDetail || typeof warDetail !== "object"){
+      const detailDisplay = (warDetail && warDetail.state !== "notInWar") ? warDetail : lastWarDetailSnapshot;
+      if(!detailDisplay || typeof detailDisplay !== "object"){
         mount.innerHTML = `<div class="muted" style="text-align:center;">War chart unavailable</div>`;
         enableDragScrollEverywhere();
         return;
       }
 
-      const our = warDetail.our || warDetail.clan || {};
-      const opp = warDetail.opponent || {};
+      const our = detailDisplay.our || detailDisplay.clan || {};
+      const opp = detailDisplay.opponent || {};
 
       const teamSize =
-        Number(warDetail?.teamSize || our?.teamSize || opp?.teamSize || 0) ||
+        Number(detailDisplay?.teamSize || our?.teamSize || opp?.teamSize || 0) ||
         (Array.isArray(our?.members) ? our.members.length : 0) ||
         0;
 
