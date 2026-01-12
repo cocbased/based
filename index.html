@@ -2391,16 +2391,17 @@
           const { data } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json:hydrate");
           cwlIndex = data;
         }catch(e){
-          return payload;
         }
       }
     
       const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
+      console.log("[CWL hydrate] rollupKey", rollupKey, "seasonKeys", seasonKeys.length);
       if(!seasonKeys.length) return payload;
     
       // Accumulate def ranks across all monthly seasons + wars
       const sumByMember = new Map();
       const countByMember = new Map();
+      const aliasByName = new Map();
     
       const historyResults = await Promise.all(seasonKeys.map(async (seasonKey) => {
         const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
@@ -2412,6 +2413,8 @@
           return null;
         }
       }));
+      const successfulHistory = historyResults.filter(Boolean);
+      console.log("[CWL hydrate] historyPayloads", successfulHistory.length);
     
       // For each monthly payload, compute defRank maps from roster positions
       for(const data of historyResults){
@@ -2422,9 +2425,23 @@
     
         // For each member in THAT month, collect any war ranks and accumulate
         const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
+        const aliasMap = new Map();
         for(const m of members){
-          const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
+          const nameKey = canonKey(m?.name || m?.playerName);
+          const tagKey = canonKey(m?.tag || m?.playerTag);
+          if(nameKey && tagKey){
+            aliasMap.set(nameKey, tagKey);
+            if(!aliasByName.has(nameKey)) aliasByName.set(nameKey, tagKey);
+          }
+        }
+        for(const m of members){
+          const hasTag = Boolean(m?.tag || m?.playerTag);
+          let memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
           if(!memberKey) continue;
+          if(!hasTag){
+            const alias = aliasMap.get(memberKey);
+            if(alias) memberKey = alias;
+          }
     
           for(const warMap of defRankByWar.values()){
             const r = warMap?.get(memberKey);
@@ -2439,8 +2456,13 @@
       // Apply to rollup payload if missing
       let hydratedCount = 0;
       for(const m of payload.memberOverview){
-        const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
+        const hasTag = Boolean(m?.tag || m?.playerTag);
+        let memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
         if(!memberKey) continue;
+        if(!hasTag){
+          const alias = aliasByName.get(memberKey);
+          if(alias) memberKey = alias;
+        }
     
         const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
         if(existing !== null && isFinite(existing)) continue;
@@ -2452,6 +2474,7 @@
         m.avgDefRank = Number((sum / count).toFixed(2));
         hydratedCount++;
       }
+      console.log("[CWL hydrate] hydratedCount", hydratedCount);
     
       // Minimal diagnostic (won’t spam)
       payload.__defHydrated = hydratedCount > 0;
