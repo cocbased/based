@@ -3846,7 +3846,7 @@
             // ✅ 🛡️RK
             {
               const provided = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-              avgDefRk = (provided !== null && isFinite(provided)) ? fmt1(provided, "—") : "—";
+              avgDefRk = fmt1(provided, "—");
             }
     
             const byWarCountUpToLimit = (() => {
