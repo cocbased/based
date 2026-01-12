@@ -1867,7 +1867,7 @@
     const RAW_CWL_INDEX_URL_BASE   = "./cwl_index.json";
 
     // Fallbacks
-    const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/cocbased/based/main/";
+    const RAW_FALLBACK_BASE = "https://cdn.jsdelivr.net/gh/cocbased/based@main/";
     const RAW_WAR_FALLBACK         = RAW_FALLBACK_BASE + "war.json";
     const RAW_WAR_DETAIL_FALLBACK  = RAW_FALLBACK_BASE + "war_detail.json";
     const RAW_CLAN_FALLBACK        = RAW_FALLBACK_BASE + "clan_stats.json";
@@ -2099,7 +2099,17 @@
     }
 
     async function fetchJsonSmart(pagesUrl, rawFallbackUrl, stateKey){
-      const primary = await fetchJsonWithMeta(pagesUrl, stateKey || pagesUrl);
+      let primary;
+      try{
+        primary = await fetchJsonWithMeta(pagesUrl, stateKey || pagesUrl);
+      }catch(e){
+        if(rawFallbackUrl){
+          const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
+          fb.meta.via = "fallback";
+          return fb;
+        }
+        throw e;
+      }
 
       if(rawFallbackUrl){
         const st = endpointState.get(stateKey || pagesUrl);
@@ -2109,7 +2119,7 @@
           try{
             const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
             if(fb.meta.hash !== primary.meta.hash){
-              fb.meta.via = "raw";
+              fb.meta.via = "fallback";
               return fb;
             }
           }catch(e){}
