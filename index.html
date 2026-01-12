@@ -1910,7 +1910,6 @@
     // stored selection can be: "YYYY-MM" OR "all_time" OR "year:YYYY"
     let cwlSelected = (localStorage.getItem(CWL_SELECTED_KEY) || CWL_ALL_TIME_KEY);
     let cwlSelectedPayload = null;
-    let cwlRollupDefHydrationInFlight = false;
 
 
     // ✅ CWL Member Overview sort state (default: Rank ascending)
@@ -2283,10 +2282,6 @@
         const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
         cwlIndex = data;
         setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
-        if(isCwlRollupKey(cwlSelected) && cwlSelectedPayload){
-          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(cwlSelectedPayload, cwlSelected);
-          renderCwlContent();
-        }
       }catch(e){
         cwlIndex = null;
         setText("cwl-index-status", `CWL index fetch: ${stampTime()} ❌ ${String(e.message || e)}`);
@@ -2323,7 +2318,7 @@
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
         try{
           const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
-          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(data, key);
+          cwlSelectedPayload = data;
           setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
         }catch(e){
           cwlSelectedPayload = null;
@@ -2369,119 +2364,6 @@
 
       return [];
     }
-
-    function cwlPayloadNeedsDefRanks(payload){
-      if(!payload || !Array.isArray(payload?.memberOverview)) return false;
-      return payload.memberOverview.some((m) => {
-        const v = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-        return (v === null || !isFinite(v));
-      });
-    }
-
-    function canonKey(x){
-      return String(x || "").trim().toUpperCase();
-    }
-
-    async function hydrateCwlRollupDefenseRanks(payload, rollupKey = CWL_ALL_TIME_KEY){
-      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
-    
-      // Ensure index exists (race condition)
-      if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
-        try{
-          const { data } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json:hydrate");
-          cwlIndex = data;
-        }catch(e){
-        }
-      }
-    
-      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
-      console.log("[CWL hydrate] rollupKey", rollupKey, "seasonKeys", seasonKeys.length);
-      if(!seasonKeys.length) return payload;
-    
-      // Accumulate def ranks across all monthly seasons + wars
-      const sumByMember = new Map();
-      const countByMember = new Map();
-      const aliasByName = new Map();
-    
-      const historyResults = await Promise.all(seasonKeys.map(async (seasonKey) => {
-        const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
-        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
-        try{
-          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defrank`);
-          return data;
-        }catch(e){
-          return null;
-        }
-      }));
-      const successfulHistory = historyResults.filter(Boolean);
-      console.log("[CWL hydrate] historyPayloads", successfulHistory.length);
-    
-      // For each monthly payload, compute defRank maps from roster positions
-      for(const data of historyResults){
-        if(!data) continue;
-    
-        const defRankByWar = buildDefenseRankByWar(data); // Map<warNum, Map<canonKey, rank>>
-        if(!defRankByWar || !defRankByWar.size) continue;
-    
-        // For each member in THAT month, collect any war ranks and accumulate
-        const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
-        const aliasMap = new Map();
-        for(const m of members){
-          const nameKey = canonKey(m?.name || m?.playerName);
-          const tagKey = canonKey(m?.tag || m?.playerTag);
-          if(nameKey && tagKey){
-            aliasMap.set(nameKey, tagKey);
-            if(!aliasByName.has(nameKey)) aliasByName.set(nameKey, tagKey);
-          }
-        }
-        for(const m of members){
-          const hasTag = Boolean(m?.tag || m?.playerTag);
-          let memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
-          if(!memberKey) continue;
-          if(!hasTag){
-            const alias = aliasMap.get(memberKey);
-            if(alias) memberKey = alias;
-          }
-    
-          for(const warMap of defRankByWar.values()){
-            const r = warMap?.get(memberKey);
-            if(r != null && isFinite(r)){
-              sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + r);
-              countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
-            }
-          }
-        }
-      }
-    
-      // Apply to rollup payload if missing
-      let hydratedCount = 0;
-      for(const m of payload.memberOverview){
-        const hasTag = Boolean(m?.tag || m?.playerTag);
-        let memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
-        if(!memberKey) continue;
-        if(!hasTag){
-          const alias = aliasByName.get(memberKey);
-          if(alias) memberKey = alias;
-        }
-    
-        const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-        if(existing !== null && isFinite(existing)) continue;
-    
-        const sum = sumByMember.get(memberKey);
-        const count = countByMember.get(memberKey);
-        if(sum == null || count == null || count <= 0) continue;
-    
-        m.avgDefRank = Number((sum / count).toFixed(2));
-        hydratedCount++;
-      }
-      console.log("[CWL hydrate] hydratedCount", hydratedCount);
-    
-      // Minimal diagnostic (won’t spam)
-      payload.__defHydrated = hydratedCount > 0;
-    
-      return payload;
-    }
-
 
     // =========================
     // Render: Current War section
@@ -3322,57 +3204,6 @@
       return out;
     }
 
-    function buildDefenseRankByWar(payload){
-      // returns Map<warNum, Map<playerKey, defRank>>
-      // playerKey can be tag if present, otherwise name
-      const out = new Map();
-    
-      const days =
-        (Array.isArray(payload?.warDays) ? payload.warDays : null) ||
-        (Array.isArray(payload?.days) ? payload.days : null) ||
-        (Array.isArray(payload?.wars) ? payload.wars : null) ||
-        (Array.isArray(payload?.rounds) ? payload.rounds : null) ||
-        [];
-    
-      for(let i=0;i<Math.min(7, days.length);i++){
-        const d = days[i];
-        const warNum = (pickNum(d, ["war","warNum","day","dayNum","round"]) ?? (i+1)) | 0;
-        if(warNum < 1 || warNum > 7) continue;
-    
-        // Try common member list shapes
-        const players =
-          (Array.isArray(d?.clan?.members) ? d.clan.members : null) ||
-          (Array.isArray(d?.clanMembers) ? d.clanMembers : null) ||
-          (Array.isArray(d?.members) ? d.members : null) ||
-          (Array.isArray(d?.players) ? d.players : null) ||
-          [];
-    
-        if(!players.length) continue;
-    
-        const sorted = players.slice().sort((a,b)=>{
-          const ap = pickNum(a, ["mapPosition","position","pos","__pos"]) ?? 999999;
-          const bp = pickNum(b, ["mapPosition","position","pos","__pos"]) ?? 999999;
-          return ap - bp;
-        });
-    
-        const map = new Map();
-        for(let idx=0; idx<sorted.length; idx++){
-          const p = sorted[idx];
-          const tag = pick(p, ["tag","playerTag"]) || "";
-          const name = pick(p, ["name","playerName"]) || "";
-          const key = canonKey(tag ? String(tag) : String(name));
-          if(!key) continue;
-          // ✅ EXACT LOGIC: index in sorted list => rank (1-based)
-          map.set(key, idx + 1);
-        }
-    
-        out.set(warNum, map);
-      }
-    
-      return out;
-    }
-
-    
     function getActiveWarLimit(payload){
       // 1) Try explicit keys first
       let n =
@@ -3724,24 +3555,6 @@
 
       setText("cwl-league-name", leagueDisplayName);
 
-      // ✅ Rollups: ensure 🛡️RK is hydrated even if index arrives late
-      if(isRollup && rollupKey && cwlPayloadNeedsDefRanks(payload) && !cwlRollupDefHydrationInFlight){
-        if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
-          fetchCwlIndex();
-        } else {
-          cwlRollupDefHydrationInFlight = true;
-          hydrateCwlRollupDefenseRanks(payload, rollupKey)
-            .then((hydrated) => {
-              cwlSelectedPayload = hydrated;
-              cwlRollupDefHydrationInFlight = false;
-              renderCwlContent();
-            })
-            .catch(() => {
-              cwlRollupDefHydrationInFlight = false;
-            });
-        }
-      }
-    
       // ============================================================
       // League overview (MONTHLY ONLY)
       // ============================================================
@@ -3891,7 +3704,6 @@
           memberBody.innerHTML = `<tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
           const warLimit = getActiveWarLimit(payload);
-          const defRankByWar = buildDefenseRankByWar(payload);
     
           for(let i=0; i<members.length; i++){
             members[i].__rowNum = i + 1;
@@ -3962,8 +3774,6 @@
           memberBody.innerHTML = sorted.map((m, idx) => {
             let avgAtkRkVal = null;
             let avgAtkRk = "—";
-    
-            let avgDefRkVal = null;
             let avgDefRk = "—";
     
             const nm = escapeHtml(m.name || "—");
@@ -4035,32 +3845,8 @@
     
             // ✅ 🛡️RK
             {
-              const limit = warLimit || 0;
-              const defRanks = [];
-    
-              const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
-    
-              for(let warNum=1; warNum<=7; warNum++){
-                if(warNum > limit) continue;
-                const map = defRankByWar.get(warNum);
-                if(!map) continue;
-                const r = map.get(memberKey);
-                if(r != null && isFinite(r)) defRanks.push(r);
-              }
-    
-              if(!defRanks.length){
-                const provided = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-                if(provided !== null && isFinite(provided)){
-                  avgDefRkVal = provided;
-                  avgDefRk = fmt1(avgDefRkVal, "—");
-                } else {
-                  avgDefRk = "—";
-                }
-              } else {
-                const sum = defRanks.reduce((a,b)=>a+b,0);
-                avgDefRkVal = sum / defRanks.length;
-                avgDefRk = fmt1(avgDefRkVal, "—");
-              }
+              const provided = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+              avgDefRk = (provided !== null && isFinite(provided)) ? fmt1(provided, "—") : "—";
             }
     
             const byWarCountUpToLimit = (() => {
