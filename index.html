@@ -2061,12 +2061,7 @@
 
       const started = performance.now();
       const res = await fetch(busted, {
-        cache: "no-store",
-        mode: "cors",
-        credentials: "omit",
-        headers: {
-          "Accept": "application/json"
-        }
+        cache: "no-store"
       });
 
       const text = await res.text();
@@ -2389,8 +2384,8 @@
 
     async function hydrateCwlRollupDefenseRanks(payload, rollupKey = CWL_ALL_TIME_KEY){
       if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
-
-      // ✅ Ensure index exists (eliminates race condition)
+    
+      // Ensure index exists (race condition)
       if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
         try{
           const { data } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json:hydrate");
@@ -2399,13 +2394,14 @@
           return payload;
         }
       }
-
+    
       const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
       if(!seasonKeys.length) return payload;
-
+    
+      // Accumulate def ranks across all monthly seasons + wars
       const sumByMember = new Map();
       const countByMember = new Map();
-
+    
       const historyResults = await Promise.all(seasonKeys.map(async (seasonKey) => {
         const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
@@ -2416,40 +2412,50 @@
           return null;
         }
       }));
-
+    
+      // For each monthly payload, compute defRank maps from roster positions
       for(const data of historyResults){
+        if(!data) continue;
+    
+        const defRankByWar = buildDefenseRankByWar(data); // Map<warNum, Map<canonKey, rank>>
+        if(!defRankByWar || !defRankByWar.size) continue;
+    
+        // For each member in THAT month, collect any war ranks and accumulate
         const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
         for(const m of members){
           const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
           if(!memberKey) continue;
-
-          const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-          if(avgDef === null || !isFinite(avgDef)) continue;
-
-          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + avgDef);
-          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
+    
+          for(const warMap of defRankByWar.values()){
+            const r = warMap?.get(memberKey);
+            if(r != null && isFinite(r)){
+              sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + r);
+              countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
+            }
+          }
         }
       }
-
+    
+      // Apply to rollup payload if missing
       let hydratedCount = 0;
-
       for(const m of payload.memberOverview){
         const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
         if(!memberKey) continue;
-
+    
         const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
         if(existing !== null && isFinite(existing)) continue;
-
+    
         const sum = sumByMember.get(memberKey);
         const count = countByMember.get(memberKey);
-        if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
-
+        if(sum == null || count == null || count <= 0) continue;
+    
         m.avgDefRank = Number((sum / count).toFixed(2));
         hydratedCount++;
       }
-
-      if(hydratedCount > 0) payload.__defHydrated = true;
-
+    
+      // Minimal diagnostic (won’t spam)
+      payload.__defHydrated = hydratedCount > 0;
+    
       return payload;
     }
 
@@ -3331,7 +3337,7 @@
           const p = sorted[idx];
           const tag = pick(p, ["tag","playerTag"]) || "";
           const name = pick(p, ["name","playerName"]) || "";
-          const key = (tag ? String(tag) : String(name)).trim();
+          const key = canonKey(tag ? String(tag) : String(name));
           if(!key) continue;
           // ✅ EXACT LOGIC: index in sorted list => rank (1-based)
           map.set(key, idx + 1);
@@ -4009,7 +4015,7 @@
               const limit = warLimit || 0;
               const defRanks = [];
     
-              const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim();
+              const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
     
               for(let warNum=1; warNum<=7; warNum++){
                 if(warNum > limit) continue;
