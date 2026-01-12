@@ -1902,6 +1902,7 @@
     
     // ✅ rollup keys
     const CWL_ALL_TIME_KEY = "all_time";
+    const CWL_ROLLUP_YEAR_RE = /^\d{4}$/;
        
     let cwlIndex = null;
     let cwlCurrent = null;
@@ -2276,8 +2277,8 @@
         const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
         cwlIndex = data;
         setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
-        if(cwlSelected === CWL_ALL_TIME_KEY && cwlSelectedPayload){
-          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(cwlSelectedPayload);
+        if(isCwlRollupKey(cwlSelected) && cwlSelectedPayload && cwlPayloadNeedsDefRanks(cwlSelectedPayload)){
+          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(cwlSelectedPayload, cwlSelected);
           renderCwlContent();
         }
       }catch(e){
@@ -2311,12 +2312,12 @@
       if(!key) return;
     
       // ✅ rollups
-      if(key === CWL_ALL_TIME_KEY){
-        const pagesUrl = `./cwl_rollups/all_time.json`;
-        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/all_time.json`;
+      if(isCwlRollupKey(key)){
+        const pagesUrl = `./cwl_rollups/${encodeURIComponent(key)}.json`;
+        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
         try{
           const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
-          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(data);
+          cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(data, key);
           setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
         }catch(e){
           cwlSelectedPayload = null;
@@ -2342,13 +2343,38 @@
       renderCwlContent();
     }
 
-    async function hydrateCwlRollupDefenseRanks(payload){
-      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
+    function isCwlRollupKey(key){
+      if(key === CWL_ALL_TIME_KEY) return true;
+      return CWL_ROLLUP_YEAR_RE.test(String(key || "").trim());
+    }
 
+    function getCwlSeasonKeysForRollup(rollupKey){
       const seasons = Array.isArray(cwlIndex?.seasons) ? cwlIndex.seasons : [];
-      const seasonKeys = seasons
+      const allKeys = seasons
         .map(s => String(s?.seasonKey || "").trim())
         .filter(Boolean);
+
+      if(rollupKey === CWL_ALL_TIME_KEY) return allKeys;
+
+      const year = String(rollupKey || "").trim();
+      if(CWL_ROLLUP_YEAR_RE.test(year)){
+        return allKeys.filter((key) => key.startsWith(`${year}-`));
+      }
+
+      return [];
+    }
+
+    function cwlPayloadNeedsDefRanks(payload){
+      if(!payload || !Array.isArray(payload?.memberOverview)) return false;
+      return payload.memberOverview.some((m) => {
+        const v = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
+        return (v === null || !isFinite(v));
+      });
+    }
+
+    async function hydrateCwlRollupDefenseRanks(payload, rollupKey=CWL_ALL_TIME_KEY){
+      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
+      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
 
       if(!seasonKeys.length) return payload;
 
@@ -3599,10 +3625,12 @@
       // ============================================================
       const selectedKey = String(cwlSelected || "").trim();
       const payloadKey  = String(payload?.seasonKey || "").trim();
-    
-      const isRollup =
-        (selectedKey === CWL_ALL_TIME_KEY) ||
-        (payloadKey === CWL_ALL_TIME_KEY);
+
+      const rollupKey =
+        isCwlRollupKey(selectedKey) ? selectedKey :
+        (isCwlRollupKey(payloadKey) ? payloadKey : null);
+
+      const isRollup = !!rollupKey;
     
       // ✅ allow CSS to hide WAR columns + hide sections
       document.body.classList.toggle("cwl-rollup", isRollup);
@@ -3637,28 +3665,21 @@
 
       setText("cwl-league-name", leagueDisplayName);
 
-      // ✅ All-Time rollup: ensure 🛡️RK is hydrated even if index arrives late
-      if(isRollup && selectedKey === CWL_ALL_TIME_KEY && payload && Array.isArray(payload?.memberOverview)){
-        const needsDefRanks = payload.memberOverview.some((m) => {
-          const v = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
-          return (v === null || !isFinite(v));
-        });
-
-        if(needsDefRanks && !cwlRollupDefHydrationInFlight){
-          if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
-            fetchCwlIndex();
-          } else {
-            cwlRollupDefHydrationInFlight = true;
-            hydrateCwlRollupDefenseRanks(payload)
-              .then((hydrated) => {
-                cwlSelectedPayload = hydrated;
-                cwlRollupDefHydrationInFlight = false;
-                renderCwlContent();
-              })
-              .catch(() => {
-                cwlRollupDefHydrationInFlight = false;
-              });
-          }
+      // ✅ Rollups: ensure 🛡️RK is hydrated even if index arrives late
+      if(isRollup && rollupKey && cwlPayloadNeedsDefRanks(payload) && !cwlRollupDefHydrationInFlight){
+        if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
+          fetchCwlIndex();
+        } else {
+          cwlRollupDefHydrationInFlight = true;
+          hydrateCwlRollupDefenseRanks(payload, rollupKey)
+            .then((hydrated) => {
+              cwlSelectedPayload = hydrated;
+              cwlRollupDefHydrationInFlight = false;
+              renderCwlContent();
+            })
+            .catch(() => {
+              cwlRollupDefHydrationInFlight = false;
+            });
         }
       }
     
