@@ -2049,6 +2049,25 @@
       return { start, end };
     }
 
+    function getWarUpdatedAt(obj){
+      return (
+        parseWarTime(obj?.updatedAtIso) ||
+        parseWarTime(obj?.updatedAt) ||
+        parseWarTime(obj?.updated_at) ||
+        parseWarTime(obj?.lastUpdatedIso) ||
+        parseWarTime(obj?.lastUpdated) ||
+        parseWarTime(obj?.last_updated) ||
+        null
+      );
+    }
+
+    function isNewerWarSnapshot(current, incoming){
+      const curTime = getWarUpdatedAt(current);
+      const nextTime = getWarUpdatedAt(incoming);
+      if(!curTime || !nextTime) return false;
+      return curTime.getTime() >= nextTime.getTime();
+    }
+
     function stampTime(){
       const d = new Date();
       return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
@@ -2158,8 +2177,11 @@
     // =========================
     async function fetchWarData(){
       try{
+        const previous = warData;
         const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACK, "war.json");
-        warData = data;
+        warData = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
+          ? previous
+          : data;
 
         if(warData && warData.state && warData.state !== "notInWar"){
           lastWarSnapshot = warData;
@@ -2177,8 +2199,11 @@
 
     async function fetchWarDetail(){
       try{
+        const previous = warDetail;
         const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACK, "war_detail.json");
-        warDetail = data;
+        warDetail = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
+          ? previous
+          : data;
         if(warDetail && warDetail.state && warDetail.state !== "notInWar"){
           lastWarDetailSnapshot = warDetail;
           saveLastWarDetailSnapshot(warDetail);
