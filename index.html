@@ -2061,11 +2061,7 @@
 
       const started = performance.now();
       const res = await fetch(busted, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache"
-        }
+        cache: "no-store"
       });
 
       const text = await res.text();
