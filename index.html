@@ -2376,10 +2376,20 @@
       return String(x || "").trim().toUpperCase();
     }
 
-    async function hydrateCwlRollupDefenseRanks(payload, rollupKey=CWL_ALL_TIME_KEY){
+    async function hydrateCwlRollupDefenseRanks(payload, rollupKey = CWL_ALL_TIME_KEY){
       if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
-      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
 
+      // ✅ Ensure index exists (eliminates race condition)
+      if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
+        try{
+          const { data } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json:hydrate");
+          cwlIndex = data;
+        }catch(e){
+          return payload;
+        }
+      }
+
+      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
       if(!seasonKeys.length) return payload;
 
       const sumByMember = new Map();
@@ -2389,7 +2399,7 @@
         const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
         try{
-          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defense`);
+          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defrank`);
           return data;
         }catch(e){
           return null;
