@@ -2409,26 +2409,26 @@
       for(const data of historyResults){
         const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
         for(const m of members){
-          const key = canonKey(m?.tag || m?.playerTag || m?.name);
-          if(!key) continue;
+          const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
+          if(!memberKey) continue;
 
           const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
           if(avgDef === null || !isFinite(avgDef)) continue;
 
-          sumByMember.set(key, (sumByMember.get(key) || 0) + avgDef);
-          countByMember.set(key, (countByMember.get(key) || 0) + 1);
+          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + avgDef);
+          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
         }
       }
 
       for(const m of payload.memberOverview){
-        const key = canonKey(m?.tag || m?.playerTag || m?.name);
-        if(!key) continue;
+        const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
+        if(!memberKey) continue;
 
         const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
         if(existing !== null && isFinite(existing)) continue;
 
-        const sum = sumByMember.get(key);
-        const count = countByMember.get(key);
+        const sum = sumByMember.get(memberKey);
+        const count = countByMember.get(memberKey);
         if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
 
         m.avgDefRank = Number((sum / count).toFixed(2));
