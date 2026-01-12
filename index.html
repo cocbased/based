@@ -2277,7 +2277,7 @@
         const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
         cwlIndex = data;
         setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
-        if(isCwlRollupKey(cwlSelected) && cwlSelectedPayload && cwlPayloadNeedsDefRanks(cwlSelectedPayload)){
+        if(isCwlRollupKey(cwlSelected) && cwlSelectedPayload){
           cwlSelectedPayload = await hydrateCwlRollupDefenseRanks(cwlSelectedPayload, cwlSelected);
           renderCwlContent();
         }
@@ -2372,10 +2372,24 @@
       });
     }
 
-    async function hydrateCwlRollupDefenseRanks(payload, rollupKey=CWL_ALL_TIME_KEY){
-      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
-      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
+    function canonKey(x){
+      return String(x || "").trim().toUpperCase();
+    }
 
+    async function hydrateCwlRollupDefenseRanks(payload, rollupKey = CWL_ALL_TIME_KEY){
+      if(!payload || !Array.isArray(payload?.memberOverview)) return payload;
+
+      // ✅ Ensure index exists (eliminates race condition)
+      if(!cwlIndex || !Array.isArray(cwlIndex?.seasons) || !cwlIndex.seasons.length){
+        try{
+          const { data } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json:hydrate");
+          cwlIndex = data;
+        }catch(e){
+          return payload;
+        }
+      }
+
+      const seasonKeys = getCwlSeasonKeysForRollup(rollupKey);
       if(!seasonKeys.length) return payload;
 
       const sumByMember = new Map();
@@ -2385,7 +2399,7 @@
         const pagesUrl = `./cwl_history/${encodeURIComponent(seasonKey)}.json`;
         const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(seasonKey)}.json`;
         try{
-          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defense`);
+          const { data } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${seasonKey}:defrank`);
           return data;
         }catch(e){
           return null;
@@ -2395,26 +2409,26 @@
       for(const data of historyResults){
         const members = Array.isArray(data?.memberOverview) ? data.memberOverview : [];
         for(const m of members){
-          const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim().toUpperCase();
-          if(!memberKey) continue;
+          const key = canonKey(m?.tag || m?.playerTag || m?.name);
+          if(!key) continue;
 
           const avgDef = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
           if(avgDef === null || !isFinite(avgDef)) continue;
 
-          sumByMember.set(memberKey, (sumByMember.get(memberKey) || 0) + avgDef);
-          countByMember.set(memberKey, (countByMember.get(memberKey) || 0) + 1);
+          sumByMember.set(key, (sumByMember.get(key) || 0) + avgDef);
+          countByMember.set(key, (countByMember.get(key) || 0) + 1);
         }
       }
 
       for(const m of payload.memberOverview){
-        const memberKey = String(m?.tag || m?.playerTag || m?.name || "").trim().toUpperCase();
-        if(!memberKey) continue;
+        const key = canonKey(m?.tag || m?.playerTag || m?.name);
+        if(!key) continue;
 
         const existing = pickNum(m, ["avgDefRank","avgDefenseRank","avgDefensiveRank","avg_def_rank","avg_defensive_rank"]);
         if(existing !== null && isFinite(existing)) continue;
 
-        const sum = sumByMember.get(memberKey);
-        const count = countByMember.get(memberKey);
+        const sum = sumByMember.get(key);
+        const count = countByMember.get(key);
         if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
 
         m.avgDefRank = Number((sum / count).toFixed(2));
@@ -3831,6 +3845,8 @@
           const msg = (payload?.state === "notInCwl") ? "Not in CWL right now." : "No member data yet.";
           memberBody.innerHTML = `<tr><td colspan="30" style="opacity:.75; text-align:center; padding:12px;">${escapeHtml(msg)}</td></tr>`;
         } else {
+          const warLimit = getActiveWarLimit(payload);
+          const defRankByWar = buildDefenseRankByWar(payload);
     
           for(let i=0; i<members.length; i++){
             members[i].__rowNum = i + 1;
@@ -3936,8 +3952,6 @@
             const atkMade = pickNum(m, ["attacksMade","attacks","attacks_made"]) ?? 0;
             const warsInLineup = pickNum(m, ["warsInLineup","wars_in_lineup"]) ?? null;
     
-            const warLimit = getActiveWarLimit(payload);
-    
             // ✅ 🗡️RK
             {
               const limit = warLimit || 0;
@@ -3976,7 +3990,6 @@
     
             // ✅ 🛡️RK
             {
-              const defRankByWar = buildDefenseRankByWar(payload);
               const limit = warLimit || 0;
               const defRanks = [];
     
