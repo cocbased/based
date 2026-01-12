@@ -2420,6 +2420,8 @@
         }
       }
 
+      let hydratedCount = 0;
+
       for(const m of payload.memberOverview){
         const memberKey = canonKey(m?.tag || m?.playerTag || m?.name);
         if(!memberKey) continue;
@@ -2432,7 +2434,10 @@
         if(sum == null || count == null || !isFinite(sum) || !isFinite(count) || count <= 0) continue;
 
         m.avgDefRank = Number((sum / count).toFixed(2));
+        hydratedCount++;
       }
+
+      if(hydratedCount > 0) payload.__defHydrated = true;
 
       return payload;
     }
