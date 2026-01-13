@@ -129,7 +129,8 @@
       pointer-events: none;
       z-index: 1000;
       --ptr-offset: 0px;
-      transform: translateY(calc(-100% + var(--ptr-offset)));
+      --ptr-lift: -36px;
+      transform: translateY(calc(-100% + var(--ptr-offset) + var(--ptr-lift)));
       transition: transform 140ms ease-out;
     }
     .pull-to-refresh__pill{
@@ -1578,6 +1579,21 @@
       return scroller ? scroller.scrollTop : window.scrollY;
     }
 
+    async function refreshPwaCache(){
+      try{
+        if("caches" in window){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      }catch(e){}
+      try{
+        if("serviceWorker" in navigator){
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all((regs || []).map(r => r.update().catch(() => {})));
+        }
+      }catch(e){}
+    }
+
     async function refreshCurrentRoute(){
       const route = normalizeRoute(location.hash);
       const tasks = [];
@@ -1637,6 +1653,7 @@
       async function finishRefresh(){
         const started = performance.now();
         try{
+          await refreshPwaCache();
           await refreshCurrentRoute();
         }catch(e){}
         const elapsed = performance.now() - started;
