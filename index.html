@@ -122,14 +122,15 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 64px;
+      height: calc(64px + env(safe-area-inset-top, 0px));
       display: flex;
-      align-items: flex-end;
+      align-items: flex-start;
       justify-content: center;
+      padding-top: env(safe-area-inset-top, 0px);
       pointer-events: none;
       z-index: 1000;
       --ptr-offset: 0px;
-      --ptr-lift: -36px;
+      --ptr-lift: 0px;
       transform: translateY(calc(-100% + var(--ptr-offset) + var(--ptr-lift)));
       transition: transform 140ms ease-out;
     }
@@ -1544,6 +1545,7 @@
     const PTR_TRIGGER = 80;
     const PTR_MIN_VISIBLE = 6;
     const PTR_MIN_SPIN_MS = 600;
+    const PTR_SCROLL_EPSILON = 2;
     let ptrStartY = 0;
     let ptrPulling = false;
     let ptrReady = false;
@@ -1582,7 +1584,8 @@
     function getPtrScrollTop(){
       const scroller = document.scrollingElement || document.documentElement || document.body;
       if(scroller && typeof scroller.scrollTop === "number") return scroller.scrollTop;
-      return (typeof window.scrollY === "number") ? window.scrollY : 0;
+      if(typeof window.scrollY === "number") return window.scrollY;
+      return (typeof window.pageYOffset === "number") ? window.pageYOffset : 0;
     }
 
     async function refreshPwaCache(){
@@ -1621,23 +1624,23 @@
       const touchEnabled = ("ontouchstart" in window) || (navigator.maxTouchPoints || 0) > 0;
       if(!touchEnabled) return;
 
-      window.addEventListener("touchstart", (event) => {
+      document.addEventListener("touchstart", (event) => {
         if(ptrRefreshing) return;
-        if(getPtrScrollTop() > 0) return;
+        if(getPtrScrollTop() > PTR_SCROLL_EPSILON) return;
         const touch = event.touches[0];
         if(!touch) return;
         ptrStartY = touch.clientY;
         ptrPulling = true;
         ptrReady = false;
         markPtrPulling();
-      }, { passive: true });
+      }, { passive: true, capture: true });
 
-      window.addEventListener("touchmove", (event) => {
+      document.addEventListener("touchmove", (event) => {
         if(!ptrPulling || ptrRefreshing) return;
         const touch = event.touches[0];
         if(!touch) return;
         const delta = Math.max(0, touch.clientY - ptrStartY);
-        if(delta > 0){
+        if(delta > 0 && event.cancelable){
           event.preventDefault();
         }
         const clamped = Math.min(PTR_MAX, delta);
@@ -1655,7 +1658,7 @@
             setPtrLabel("Pull to refresh");
           }
         }
-      }, { passive: false });
+      }, { passive: false, capture: true });
 
       async function finishRefresh(){
         const started = performance.now();
@@ -1669,7 +1672,7 @@
         resetPtr();
       }
 
-      window.addEventListener("touchend", () => {
+      document.addEventListener("touchend", () => {
         if(!ptrPulling || ptrRefreshing) return;
         if(ptrReady){
           ptrRefreshing = true;
@@ -1680,12 +1683,12 @@
           return;
         }
         resetPtr();
-      }, { passive: true });
+      }, { passive: true, capture: true });
 
-      window.addEventListener("touchcancel", () => {
+      document.addEventListener("touchcancel", () => {
         if(ptrRefreshing) return;
         resetPtr();
-      }, { passive: true });
+      }, { passive: true, capture: true });
     }
 
     // =========================
