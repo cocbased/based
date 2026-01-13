@@ -117,6 +117,43 @@
       overscroll-behavior-x: none;
     }
 
+    #pull-refresh{
+      position: fixed;
+      top: env(safe-area-inset-top, 0px);
+      left: 0;
+      right: 0;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-70px);
+      opacity: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #pull-refresh.is-pulling,
+    #pull-refresh.is-refreshing{
+      opacity: 1;
+    }
+    #pull-refresh.is-refreshing{
+      transform: translateY(0);
+    }
+    .pull-refresh-spinner{
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: rgba(255,255,255,0.85);
+      animation: pull-spin 0.9s linear infinite;
+    }
+    #pull-refresh.is-pulling .pull-refresh-spinner{
+      animation-play-state: paused;
+    }
+    @keyframes pull-spin{
+      to{ transform: rotate(360deg); }
+    }
+
     .app-icon{ width:90px; height:90px; margin-bottom:12px; border-radius:20px; object-fit:contain; }
     .logo{ width:100%; max-width:225px; height:auto; margin-bottom:16px; object-fit:contain; }
   
@@ -1164,6 +1201,9 @@
 </head>
 
 <body>
+  <div id="pull-refresh" aria-hidden="true">
+    <div class="pull-refresh-spinner" aria-hidden="true"></div>
+  </div>
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
@@ -1228,6 +1268,78 @@
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
       return !!(standaloneDisplay || iosStandalone);
+    }
+
+    function initPullToRefresh(){
+      if(!("ontouchstart" in window)) return;
+      if(!isPwaInstalled()) return;
+
+      const pullEl = document.getElementById("pull-refresh");
+      if(!pullEl) return;
+
+      const PULL_MAX = 120;
+      const PULL_TRIGGER = 80;
+      let startY = null;
+      let pulling = false;
+      let currentPull = 0;
+      let isRefreshing = false;
+
+      function setPullDistance(px){
+        const clamped = Math.max(0, Math.min(PULL_MAX, px));
+        currentPull = clamped;
+        const offset = clamped - PULL_MAX;
+        pullEl.style.transform = `translateY(${offset}px)`;
+      }
+
+      function resetPull(){
+        pullEl.classList.remove("is-pulling");
+        setPullDistance(0);
+        startY = null;
+        pulling = false;
+      }
+
+      function startRefresh(){
+        isRefreshing = true;
+        pullEl.classList.remove("is-pulling");
+        pullEl.classList.add("is-refreshing");
+        pullEl.style.transform = "translateY(0)";
+        setTimeout(() => {
+          location.reload();
+        }, 150);
+      }
+
+      document.addEventListener("touchstart", (event) => {
+        if(isRefreshing) return;
+        if(event.touches.length !== 1) return;
+        if(window.scrollY > 0) return;
+        const target = event.target;
+        if(target && target.closest && target.closest("input, textarea, select, button")) return;
+        startY = event.touches[0].clientY;
+        pulling = true;
+        pullEl.classList.add("is-pulling");
+      }, {passive: true});
+
+      document.addEventListener("touchmove", (event) => {
+        if(!pulling || startY === null) return;
+        if(window.scrollY > 0) return;
+        const dy = event.touches[0].clientY - startY;
+        if(dy <= 0){
+          setPullDistance(0);
+          return;
+        }
+        event.preventDefault();
+        const eased = dy * 0.65;
+        setPullDistance(eased);
+      }, {passive: false});
+
+      document.addEventListener("touchend", () => {
+        if(!pulling) return;
+        if(currentPull >= PULL_TRIGGER && !isRefreshing){
+          startRefresh();
+          return;
+        }
+        resetPull();
+      });
     }
 
     function normalizeRoute(hash){
@@ -4153,6 +4265,7 @@
 
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
+    initPullToRefresh();
     renderRoute();
 
     window.addEventListener("hashchange", renderRoute);
