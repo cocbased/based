@@ -1858,23 +1858,27 @@
     // =========================
     // Data endpoints
     // =========================
-    const RAW_WAR_URL_BASE        = "./war.json";
-    const RAW_WAR_DETAIL_URL_BASE = "./war_detail.json";
-    const RAW_CLAN_URL_BASE       = "./clan_stats.json";
-    const RAW_MEMBERS_URL_BASE    = "./members.json";
+    const GITHUB_OWNER = "cocbased";
+    const GITHUB_REPO = "based";
+    const RAW_DATA_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/data/`;
+
+    const RAW_WAR_URL_BASE        = `${RAW_DATA_BASE}war.json`;
+    const RAW_WAR_DETAIL_URL_BASE = `${RAW_DATA_BASE}war_detail.json`;
+    const RAW_CLAN_URL_BASE       = `${RAW_DATA_BASE}clan_stats.json`;
+    const RAW_MEMBERS_URL_BASE    = `${RAW_DATA_BASE}members.json`;
 
     // CWL endpoints
-    const RAW_CWL_CURRENT_URL_BASE = "./cwl_current.json";
-    const RAW_CWL_INDEX_URL_BASE   = "./cwl_index.json";
+    const RAW_CWL_CURRENT_URL_BASE = `${RAW_DATA_BASE}cwl_current.json`;
+    const RAW_CWL_INDEX_URL_BASE   = `${RAW_DATA_BASE}cwl_index.json`;
 
     // Fallbacks
     const RAW_FALLBACK_BASE = "https://cdn.jsdelivr.net/gh/cocbased/based@main/";
-    const RAW_WAR_FALLBACK         = RAW_FALLBACK_BASE + "war.json";
-    const RAW_WAR_DETAIL_FALLBACK  = RAW_FALLBACK_BASE + "war_detail.json";
-    const RAW_CLAN_FALLBACK        = RAW_FALLBACK_BASE + "clan_stats.json";
-    const RAW_MEMBERS_FALLBACK     = RAW_FALLBACK_BASE + "members.json";
-    const RAW_CWL_CURRENT_FALLBACK = RAW_FALLBACK_BASE + "cwl_current.json";
-    const RAW_CWL_INDEX_FALLBACK   = RAW_FALLBACK_BASE + "cwl_index.json";
+    const RAW_WAR_FALLBACKS         = ["./war.json", `${RAW_FALLBACK_BASE}war.json`];
+    const RAW_WAR_DETAIL_FALLBACKS  = ["./war_detail.json", `${RAW_FALLBACK_BASE}war_detail.json`];
+    const RAW_CLAN_FALLBACKS        = ["./clan_stats.json", `${RAW_FALLBACK_BASE}clan_stats.json`];
+    const RAW_MEMBERS_FALLBACKS     = ["./members.json", `${RAW_FALLBACK_BASE}members.json`];
+    const RAW_CWL_CURRENT_FALLBACKS = ["./cwl_current.json", `${RAW_FALLBACK_BASE}cwl_current.json`];
+    const RAW_CWL_INDEX_FALLBACKS   = ["./cwl_index.json", `${RAW_FALLBACK_BASE}cwl_index.json`];
 
     // =========================
     // State + intervals
@@ -2133,35 +2137,42 @@
       return { data, meta };
     }
 
-    async function fetchJsonSmart(pagesUrl, rawFallbackUrl, stateKey){
+    async function fetchJsonSmart(primaryUrl, fallbackUrls, stateKey){
+      const fallbacks = Array.isArray(fallbackUrls)
+        ? fallbackUrls.filter(Boolean)
+        : (fallbackUrls ? [fallbackUrls] : []);
       let primary;
       try{
-        primary = await fetchJsonWithMeta(pagesUrl, stateKey || pagesUrl);
+        primary = await fetchJsonWithMeta(primaryUrl, stateKey || primaryUrl);
       }catch(e){
-        if(rawFallbackUrl){
-          const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
-          fb.meta.via = "fallback";
-          return fb;
+        for(let i=0;i<fallbacks.length;i++){
+          try{
+            const fb = await fetchJsonWithMeta(fallbacks[i], (stateKey || primaryUrl) + `::fallback${i+1}`);
+            fb.meta.via = `fallback-${i+1}`;
+            return fb;
+          }catch(err){}
         }
         throw e;
       }
 
-      if(rawFallbackUrl){
-        const st = endpointState.get(stateKey || pagesUrl);
+      if(fallbacks.length){
+        const st = endpointState.get(stateKey || primaryUrl);
         const shouldTryFallback = primary.meta.unchanged && st && st.unchangedStreak >= 3;
 
         if(shouldTryFallback){
-          try{
-            const fb = await fetchJsonWithMeta(rawFallbackUrl, (stateKey || pagesUrl) + "::raw");
-            if(fb.meta.hash !== primary.meta.hash){
-              fb.meta.via = "fallback";
-              return fb;
-            }
-          }catch(e){}
+          for(let i=0;i<fallbacks.length;i++){
+            try{
+              const fb = await fetchJsonWithMeta(fallbacks[i], (stateKey || primaryUrl) + `::fallback${i+1}`);
+              if(fb.meta.hash !== primary.meta.hash){
+                fb.meta.via = `fallback-${i+1}`;
+                return fb;
+              }
+            }catch(e){}
+          }
         }
       }
 
-      primary.meta.via = "pages";
+      primary.meta.via = "primary";
       return primary;
     }
 
@@ -2179,7 +2190,7 @@
     async function fetchWarData(){
       try{
         const previous = warData;
-        const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACK, "war.json");
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACKS, "war.json");
         warData = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
           ? previous
           : data;
@@ -2201,7 +2212,7 @@
     async function fetchWarDetail(){
       try{
         const previous = warDetail;
-        const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACK, "war_detail.json");
+        const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACKS, "war_detail.json");
         warDetail = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
           ? previous
           : data;
@@ -2295,7 +2306,7 @@
 
     async function fetchMembersData(){
       try{
-        const { data, meta } = await fetchJsonSmart(RAW_MEMBERS_URL_BASE, RAW_MEMBERS_FALLBACK, "members.json");
+        const { data, meta } = await fetchJsonSmart(RAW_MEMBERS_URL_BASE, RAW_MEMBERS_FALLBACKS, "members.json");
         membersData = data;
         setTextAny(["members-fetch-status"], formatMetaLine("Members fetch", meta));
       } catch(e){
@@ -2307,7 +2318,7 @@
 
     async function fetchClanStats(){
       try{
-        const { data, meta } = await fetchJsonSmart(RAW_CLAN_URL_BASE, RAW_CLAN_FALLBACK, "clan_stats.json");
+        const { data, meta } = await fetchJsonSmart(RAW_CLAN_URL_BASE, RAW_CLAN_FALLBACKS, "clan_stats.json");
         clanStats = normalizeClanStats(data) || null;
 
         const line = formatMetaLine("Clan stats fetch", meta);
@@ -2325,7 +2336,7 @@
     // =========================
     async function fetchCwlIndex(){
       try{
-        const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACK, "cwl_index.json");
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_INDEX_URL_BASE, RAW_CWL_INDEX_FALLBACKS, "cwl_index.json");
         cwlIndex = data;
         setText("cwl-index-status", formatMetaLine("CWL index fetch", meta));
       }catch(e){
@@ -2337,7 +2348,7 @@
 
     async function fetchCwlCurrent(){
       try{
-        const { data, meta } = await fetchJsonSmart(RAW_CWL_CURRENT_URL_BASE, RAW_CWL_CURRENT_FALLBACK, "cwl_current.json");
+        const { data, meta } = await fetchJsonSmart(RAW_CWL_CURRENT_URL_BASE, RAW_CWL_CURRENT_FALLBACKS, "cwl_current.json");
         cwlCurrent = data;
         setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
       }catch(e){
@@ -2361,9 +2372,10 @@
       // ✅ rollups
       if(isCwlRollupKey(key)){
         const pagesUrl = `./cwl_rollups/${encodeURIComponent(key)}.json`;
-        const rawUrl   = `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
+        const rawUrl   = `${RAW_DATA_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
+        const backups  = [pagesUrl, `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`];
         try{
-          const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_rollups:${key}`);
+          const { data, meta } = await fetchJsonSmart(rawUrl, backups, `cwl_rollups:${key}`);
           cwlSelectedPayload = data;
           setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
         }catch(e){
@@ -2377,10 +2389,11 @@
       
       // ✅ monthly snapshot
       const pagesUrl = `./cwl_history/${encodeURIComponent(key)}.json`;
-      const rawUrl   = `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(key)}.json`;
+      const rawUrl   = `${RAW_DATA_BASE}cwl_history/${encodeURIComponent(key)}.json`;
+      const backups  = [pagesUrl, `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(key)}.json`];
     
       try{
-        const { data, meta } = await fetchJsonSmart(pagesUrl, rawUrl, `cwl_history:${key}`);
+        const { data, meta } = await fetchJsonSmart(rawUrl, backups, `cwl_history:${key}`);
         cwlSelectedPayload = data;
         setText("cwl-fetch-status", formatMetaLine("CWL fetch", meta));
       }catch(e){
