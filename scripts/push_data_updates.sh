@@ -4,6 +4,7 @@ set -euo pipefail
 LOCK_FILE=${LOCK_FILE:-/tmp/based-data-update.lock}
 LOG_FILE=${LOG_FILE:-}
 REPO_DIR=${REPO_DIR:-$(pwd)}
+EXPECTED_REMOTE_SUBSTRING="cocbased/based"
 
 log(){
   local msg="[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $*"
@@ -11,6 +12,11 @@ log(){
   if [[ -n "$LOG_FILE" ]]; then
     echo "$msg" >> "$LOG_FILE"
   fi
+}
+
+fail(){
+  log "ERROR: $*"
+  exit 1
 }
 
 log "Starting data branch update run."
@@ -25,8 +31,25 @@ sleep $((RANDOM % 4))
 
 cd "$REPO_DIR"
 
+log "Validating repository context."
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  fail "REPO_DIR is not inside a git work tree: $REPO_DIR"
+fi
+
+origin_url=$(git remote get-url origin 2>/dev/null || true)
+if [[ -z "$origin_url" ]]; then
+  fail "origin remote is not configured."
+fi
+if [[ "$origin_url" != *"$EXPECTED_REMOTE_SUBSTRING"* ]]; then
+  fail "origin remote does not match expected repo ($EXPECTED_REMOTE_SUBSTRING): $origin_url"
+fi
+
 log "Fetching origin/data."
 git fetch origin data
+
+if ! git show-ref --verify --quiet refs/remotes/origin/data; then
+  fail "origin/data does not exist. Aborting to avoid creating an empty data branch."
+fi
 
 log "Switching to data branch."
 git switch data 2>/dev/null || git switch -c data origin/data
@@ -34,7 +57,8 @@ git switch data 2>/dev/null || git switch -c data origin/data
 log "Resetting working tree to origin/data."
 git reset --hard origin/data
 
-git clean -fd
+log "Cleaning untracked files (preserving JSON payloads)."
+git clean -fd -e '*.json' -e 'cwl_history/*.json' -e 'cwl_rollups/*.json'
 
 log "Staging JSON payloads."
 git add -A -- war.json war_detail.json members.json clan_stats.json cwl_current.json cwl_index.json
@@ -50,6 +74,11 @@ log "Committing JSON updates."
 git commit -m "Update data JSON $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
 log "Pushing data branch."
-git push origin data
+if ! git push origin data; then
+  log "Initial push failed; attempting one retry after rebase."
+  git fetch origin data
+  git rebase origin/data
+  git push origin data
+fi
 
 log "Data branch update complete."
