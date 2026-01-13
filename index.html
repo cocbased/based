@@ -1552,6 +1552,11 @@
     function setPtrLabel(text){
       if(ptrLabel) ptrLabel.textContent = text;
     }
+    function vibrateRefresh(){
+      if("vibrate" in navigator){
+        try{ navigator.vibrate(20); }catch(e){}
+      }
+    }
     function setPtrOffset(px){
       if(ptrEl) ptrEl.style.setProperty("--ptr-offset", `${px}px`);
     }
@@ -1574,9 +1579,10 @@
       setPtrLabel("Refreshing...");
     }
 
-    function getScrollTop(){
-      const scroller = document.scrollingElement || document.documentElement;
-      return scroller ? scroller.scrollTop : window.scrollY;
+    function getPtrScrollTop(){
+      const scroller = document.scrollingElement || document.documentElement || document.body;
+      if(scroller && typeof scroller.scrollTop === "number") return scroller.scrollTop;
+      return (typeof window.scrollY === "number") ? window.scrollY : 0;
     }
 
     async function refreshPwaCache(){
@@ -1612,11 +1618,12 @@
     function setupPullToRefresh(){
       if(!ptrEl || !ptrLabel) return;
       if(!isPwaInstalled()) return;
-      if(!("ontouchstart" in window)) return;
+      const touchEnabled = ("ontouchstart" in window) || (navigator.maxTouchPoints || 0) > 0;
+      if(!touchEnabled) return;
 
       window.addEventListener("touchstart", (event) => {
         if(ptrRefreshing) return;
-        if(getScrollTop() > 0) return;
+        if(getPtrScrollTop() > 0) return;
         const touch = event.touches[0];
         if(!touch) return;
         ptrStartY = touch.clientY;
@@ -1668,6 +1675,7 @@
           ptrRefreshing = true;
           markPtrRefreshing();
           setPtrOffset(PTR_MIN_VISIBLE);
+          vibrateRefresh();
           finishRefresh();
           return;
         }
