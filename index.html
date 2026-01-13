@@ -116,6 +116,57 @@
       box-sizing:border-box;
       overscroll-behavior-x: none;
     }
+
+    .pull-to-refresh{
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 1000;
+      --ptr-offset: 0px;
+      transform: translateY(calc(-100% + var(--ptr-offset)));
+      transition: transform 140ms ease-out;
+    }
+    .pull-to-refresh__pill{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(12,12,12,0.92);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      font-size: 12px;
+      letter-spacing: .02em;
+      color: rgba(255,255,255,0.88);
+    }
+    .pull-to-refresh__spinner{
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      opacity: 0;
+      transition: opacity 150ms ease;
+      animation: ptr-spin 0.8s linear infinite;
+    }
+    .pull-to-refresh.is-pulling .pull-to-refresh__spinner,
+    .pull-to-refresh.is-ready .pull-to-refresh__spinner,
+    .pull-to-refresh.is-refreshing .pull-to-refresh__spinner{
+      opacity: 1;
+    }
+    .pull-to-refresh.is-ready .pull-to-refresh__label{
+      font-weight: 700;
+      color: #fff;
+    }
+    @keyframes ptr-spin{
+      to{ transform: rotate(360deg); }
+    }
   
     .app-icon{ width:90px; height:90px; margin-bottom:12px; border-radius:20px; object-fit:contain; }
     .logo{ width:100%; max-width:225px; height:auto; margin-bottom:16px; object-fit:contain; }
@@ -1161,6 +1212,12 @@
 </head>
 
 <body>
+  <div class="pull-to-refresh" id="pullToRefresh" aria-live="polite">
+    <div class="pull-to-refresh__pill">
+      <span class="pull-to-refresh__spinner" aria-hidden="true"></span>
+      <span class="pull-to-refresh__label" id="pullToRefreshLabel">Pull to refresh</span>
+    </div>
+  </div>
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
@@ -1475,6 +1532,135 @@
         if(el){ el.textContent = text; return true; }
       }
       return false;
+    }
+
+    // =========================
+    // PWA Pull-to-Refresh (iOS Safari standalone)
+    // =========================
+    const ptrEl = document.getElementById("pullToRefresh");
+    const ptrLabel = document.getElementById("pullToRefreshLabel");
+    const PTR_MAX = 120;
+    const PTR_TRIGGER = 80;
+    const PTR_MIN_VISIBLE = 6;
+    const PTR_MIN_SPIN_MS = 600;
+    let ptrStartY = 0;
+    let ptrPulling = false;
+    let ptrReady = false;
+    let ptrRefreshing = false;
+
+    function setPtrLabel(text){
+      if(ptrLabel) ptrLabel.textContent = text;
+    }
+    function setPtrOffset(px){
+      if(ptrEl) ptrEl.style.setProperty("--ptr-offset", `${px}px`);
+    }
+    function resetPtr(){
+      ptrPulling = false;
+      ptrReady = false;
+      ptrRefreshing = false;
+      setPtrOffset(0);
+      if(ptrEl) ptrEl.classList.remove("is-pulling", "is-ready", "is-refreshing");
+      setPtrLabel("Pull to refresh");
+    }
+    function markPtrPulling(){
+      if(ptrEl) ptrEl.classList.add("is-pulling");
+    }
+    function markPtrReady(){
+      if(ptrEl) ptrEl.classList.add("is-ready");
+    }
+    function markPtrRefreshing(){
+      if(ptrEl) ptrEl.classList.add("is-refreshing");
+      setPtrLabel("Refreshing...");
+    }
+
+    function getScrollTop(){
+      const scroller = document.scrollingElement || document.documentElement;
+      return scroller ? scroller.scrollTop : window.scrollY;
+    }
+
+    async function refreshCurrentRoute(){
+      const route = normalizeRoute(location.hash);
+      const tasks = [];
+      if(route === "home"){
+        tasks.push(fetchClanStats(), fetchMembersData());
+      } else if(route === "war"){
+        tasks.push(fetchClanStats(), fetchWarData(), fetchWarDetail());
+      } else if(route === "cwl"){
+        tasks.push(fetchClanStats(), fetchCwlIndex(), fetchCwlCurrent());
+      } else if(route === "more"){
+        updateRecurringTimers();
+      }
+      await Promise.all(tasks);
+    }
+
+    function setupPullToRefresh(){
+      if(!ptrEl || !ptrLabel) return;
+      if(!isPwaInstalled()) return;
+      if(!("ontouchstart" in window)) return;
+
+      window.addEventListener("touchstart", (event) => {
+        if(ptrRefreshing) return;
+        if(getScrollTop() > 0) return;
+        const touch = event.touches[0];
+        if(!touch) return;
+        ptrStartY = touch.clientY;
+        ptrPulling = true;
+        ptrReady = false;
+        markPtrPulling();
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (event) => {
+        if(!ptrPulling || ptrRefreshing) return;
+        const touch = event.touches[0];
+        if(!touch) return;
+        const delta = Math.max(0, touch.clientY - ptrStartY);
+        if(delta > 0){
+          event.preventDefault();
+        }
+        const clamped = Math.min(PTR_MAX, delta);
+        setPtrOffset(clamped);
+        if(clamped >= PTR_TRIGGER){
+          if(!ptrReady){
+            ptrReady = true;
+            markPtrReady();
+            setPtrLabel("Release to refresh");
+          }
+        } else {
+          if(ptrReady){
+            ptrReady = false;
+            if(ptrEl) ptrEl.classList.remove("is-ready");
+            setPtrLabel("Pull to refresh");
+          }
+        }
+      }, { passive: false });
+
+      async function finishRefresh(){
+        const started = performance.now();
+        try{
+          await refreshCurrentRoute();
+        }catch(e){}
+        const elapsed = performance.now() - started;
+        const wait = Math.max(0, PTR_MIN_SPIN_MS - elapsed);
+        if(wait > 0) await new Promise(r => setTimeout(r, wait));
+        resetPtr();
+      }
+
+      window.addEventListener("touchend", () => {
+        if(!ptrPulling || ptrRefreshing) return;
+        if(ptrReady){
+          ptrRefreshing = true;
+          markPtrRefreshing();
+          setPtrOffset(PTR_MIN_VISIBLE);
+          finishRefresh();
+          return;
+        }
+        resetPtr();
+      }, { passive: true });
+
+      window.addEventListener("touchcancel", () => {
+        if(ptrRefreshing) return;
+        resetPtr();
+      }, { passive: true });
     }
 
     // =========================
@@ -4139,6 +4325,7 @@
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
     renderRoute();
+    setupPullToRefresh();
 
     window.addEventListener("hashchange", renderRoute);
     window.addEventListener("pageshow", renderRoute);
