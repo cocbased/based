@@ -1,0 +1,1182 @@
+
+    :root{
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tabbar-h: 92px;
+      --tabbar-bg: rgba(12,12,12,0.96);
+      --tabbar-border: rgba(255,255,255,0.10);
+  
+      --m-emoji-col: 30px;
+      --m-name-col: 102px;
+  
+      --cards-max: 680px;
+  
+      /* ✅ UI colors used for scrollbar + dividers */
+      --card-bg: #0b1829;
+      --card-border: #2b3b55;
+      --scroll-track: rgba(0,0,0,0.22);
+      --scroll-thumb: var(--card-border);
+  
+      --sep-strong: rgba(255,255,255,0.16);
+      --sep-soft: rgba(255,255,255,0.10);
+  
+      /* ✅ CWL "War" column tint (dark grey) */
+      --cwl-war-bg: rgba(22, 22, 22, 0.92);
+      --cwl-war-bg-soft: rgba(18, 18, 18, 0.72);
+  
+      --rounds-gutter: 38px; /* space reserved for the carousel arrows */
+  
+      /* ✅ DEFAULT sticky offset = Member table "#" col width */
+      --cwl-sticky-1: 44px;
+    }
+  
+    html{ overflow-y: scroll; scrollbar-gutter: stable both-edges; }
+  
+    /* ✅ Non-PWA scrollbar styling (safe to apply globally; mobile/PWA mostly ignores) */
+    html, body{
+      scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+      scrollbar-width: thin;
+    }
+    /* WebKit scrollbars */
+    ::-webkit-scrollbar{ width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track{ background: var(--scroll-track); }
+    ::-webkit-scrollbar-thumb{
+      background: var(--scroll-thumb);
+      border-radius: 999px;
+      border: 2px solid var(--scroll-track);
+    }
+    ::-webkit-scrollbar-thumb:hover{ filter: brightness(1.08); }
+  
+    /* Scroll containers */
+    .members-wrap::-webkit-scrollbar,
+    .cwl-table-wrap::-webkit-scrollbar,
+    .war-chart-wrap::-webkit-scrollbar,
+    .dragscroll::-webkit-scrollbar{
+      height: 10px;
+    }
+    .members-wrap::-webkit-scrollbar-track,
+    .cwl-table-wrap::-webkit-scrollbar-track,
+    .war-chart-wrap::-webkit-scrollbar-track,
+    .dragscroll::-webkit-scrollbar-track{
+      background: var(--scroll-track);
+      border-radius: 999px;
+    }
+    .members-wrap::-webkit-scrollbar-thumb,
+    .cwl-table-wrap::-webkit-scrollbar-thumb,
+    .war-chart-wrap::-webkit-scrollbar-thumb,
+    .dragscroll::-webkit-scrollbar-thumb{
+      background: var(--scroll-thumb);
+      border-radius: 999px;
+      border: 2px solid var(--scroll-track);
+    }
+  
+    .topnav{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .topnav::-webkit-scrollbar{ display:none; }
+    .topnav a{ flex: 0 0 auto; }
+    .stage, #app{ min-height: 0; }
+  
+    body, body *{
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, select, option, button{
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+  
+    body{
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      padding:24px 16px;
+      box-sizing:border-box;
+      overscroll-behavior-x: none;
+    }
+
+    #pull-refresh{
+      position: fixed;
+      top: env(safe-area-inset-top, 0px);
+      left: 0;
+      right: 0;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-70px);
+      opacity: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #pull-refresh.is-pulling,
+    #pull-refresh.is-refreshing{
+      opacity: 1;
+    }
+    #pull-refresh.is-refreshing{
+      transform: translateY(0);
+    }
+    .pull-refresh-spinner{
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: rgba(255,255,255,0.85);
+      animation: pull-spin 0.9s linear infinite;
+    }
+    #pull-refresh.is-pulling .pull-refresh-spinner{
+      animation-play-state: paused;
+    }
+    @keyframes pull-spin{
+      to{ transform: rotate(360deg); }
+    }
+
+    .app-icon{ width:90px; height:90px; margin-bottom:12px; border-radius:20px; object-fit:contain; }
+    .logo{ width:100%; max-width:225px; height:auto; margin-bottom:16px; object-fit:contain; }
+  
+    .clan-tag-link{
+      color:#fff;
+      text-decoration:none;
+      opacity:.85;
+      font-size:14px;
+      display:inline-block;
+      margin:8px 0 10px;
+    }
+    .clan-tag-link:hover{ text-decoration:underline; opacity:1; }
+  
+    .topnav{
+      width:100%;
+      max-width:560px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      padding:10px 8px 18px;
+      box-sizing:border-box;
+    }
+    .topnav a{
+      text-decoration:none;
+      color:#fff;
+      opacity:0.82;
+      font-size:13px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      white-space:nowrap;
+    }
+    .topnav a.active{
+      opacity:1;
+      font-weight:700;
+      border-color: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.08);
+    }
+  
+    .stage{ width:100%; max-width:560px; position:relative; flex:1; display:flex; justify-content:center; }
+    #app{ width:100%; max-width:560px; display:flex; flex-direction:column; align-items:center; flex:1; touch-action:auto; }
+  
+    .cards{
+      width:100%;
+      max-width: min(var(--cards-max), 100%);
+      margin-bottom:24px;
+      padding:12px 16px;
+      border-radius:12px;
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      box-sizing:border-box;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+    }
+    .cards-title{ margin:0 0 6px; font-size:16px; text-align:center; font-weight:700; }
+    .section-title{
+      margin:10px 0 6px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
+    }
+    .divider{ height:1px; background:rgba(255,255,255,.12); margin:10px 0; }
+    .row{ display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:2px 0; gap:12px; }
+    .row-label{ font-weight:600; white-space:nowrap; }
+    .row-value{ font-family:monospace; text-align:right; flex:1; }
+  
+    .clan-desc-block{ text-align:center; white-space: pre-line; line-height: 1.25; opacity: .95; padding: 2px 0 6px; }
+    #rankings-block{ display:none; }
+  
+    .war-board{ text-align:center; margin-top:6px; }
+    .war-timer{ font-family:monospace; font-weight:900; font-size:14px; margin:6px 0 10px; }
+    .war-grid-3{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; }
+    .war-vs{ font-weight:900; font-size:14px; opacity:.7; }
+    .war-name{
+      font-weight:800; font-size:13px; letter-spacing:.05em;
+      text-transform:uppercase; margin-bottom:6px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .war-stat, .war-substat{
+      font-family:monospace; font-weight:900; font-size:14px;
+      display:flex; justify-content:center; align-items:center; gap:6px;
+    }
+    .war-stat{ margin-top:6px; }
+    .war-substat{ margin-top:8px; opacity:.95; }
+    .war-green{ color:#38d172; font-weight:900; }
+    .record-green{ color:#38d172; font-weight:900; }
+  
+    .dragscroll{
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      cursor: grab;
+    }
+    .dragscroll.is-dragging{ cursor: grabbing; }
+    .dragscroll, .dragscroll *{
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  
+    .war-chart-wrap{ margin-top: 12px; }
+    .war-mode-title{
+      margin: 10px 0 10px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
+    }
+  
+    .war-chart-block{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+      border-radius: 10px;
+      overflow: hidden;
+      color:#fff;
+    }
+    .war-chart-block + .war-chart-block{ margin-top: 10px; }
+  
+    .war-chart-head{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+  
+    .war-chart-clan{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-width: 0;
+      justify-content:center;
+    }
+  
+    .war-sheet{ width:100%; display:block; }
+  
+    .war-sheet-row{
+      display:grid;
+      grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 40px 64px 36px;
+      align-items: stretch;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      min-height: 38px;
+    }
+    .war-sheet-row:last-child{ border-bottom:none; }
+  
+    .war-cell{
+      padding: 8px 8px;
+      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      border-right: none !important;
+      color:#fff;
+      min-width: 0;
+    }
+  
+    .war-cell.stack { white-space: normal; }
+    .war-cell.mono{ font-family: monospace; white-space:nowrap; }
+    .war-cell.center{ justify-content:center; text-align:center; }
+    .war-cell.right{ justify-content:flex-end; text-align:right; }
+    .war-cell.bold{ font-weight: 900; }
+    .war-cell.numcol{ padding-right: 6px; opacity: .95; }
+  
+    .war-player{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .war-player .name{
+      font-weight:900;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+    }
+    .war-player .role{
+      font-size:11px;
+      opacity:.70;
+      white-space:nowrap;
+    }
+    .war-name-role{
+      font-size:11px;
+      opacity:.70;
+      font-weight:600;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+  
+    .war-leader-underline{
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-weight: 900;
+    }
+  
+    .war-role-emoji{
+      font-size:14px;
+      line-height:1;
+      transform: translateY(1px);
+      flex: 0 0 auto;
+      opacity: .95;
+    }
+  
+    .atk2{ display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; }
+    .atkline{
+      display:flex;
+      align-items:center;
+      width:100%;
+      font-family:monospace;
+      font-size:11px;
+      opacity:.95;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
+    }
+  
+    .war-cell.defender{ justify-content:flex-end; text-align:right; }
+    .war-cell.defender .atk2{ align-items:flex-end; }
+    .war-cell.defender .atkline{ justify-content:flex-end; text-align:right; }
+  
+    .stars{ display:flex; align-items:center; justify-content:center; gap:4px; font-variant-numeric: tabular-nums; }
+    .star{
+      font-size:13px; line-height:1;
+      color: rgba(255,215,0,0.95);
+      text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    }
+    .star.dim{ color: rgba(255,255,255,0.18); text-shadow:none; }
+    .muted{ opacity:.65; }
+  
+    .tiny-status{
+      display:none;
+      text-align:center;
+      font-family:monospace;
+      font-size:11px;
+      opacity:.70;
+      margin-top: 8px;
+    }
+  
+    @media (max-width: 420px){
+      .war-cell.defender{ justify-content: flex-start; text-align: left; }
+      .war-cell.defender .atk2{ align-items: flex-start; }
+      .war-cell.defender .atkline{
+        justify-content: flex-start;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+  
+      :root{ --rounds-gutter: 22px; }
+    }
+  
+    /* =========================
+       Members (Home)
+       ========================= */
+    .members-headerbar{
+      background: transparent; border:none; border-radius:0;
+      padding:0; margin:0 0 8px;
+  
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 12px;
+      row-gap: 6px;
+      align-items:center;
+    }
+    .members-leaderline{ grid-column:1/2; grid-row:1/2; justify-self:start; }
+    .members-elderline{ grid-column:1/2; grid-row:2/3; justify-self:start; }
+  
+    .members-keyline{ display:flex; align-items:center; gap:10px; white-space:nowrap; }
+    .key-emoji{ font-size:14px; line-height:1; }
+    .key-text{ font-size:12px; line-height:1.2; }
+    .legend-underline{ text-decoration: underline; text-underline-offset: 2px; font-weight: 400; }
+  
+    .members-scroll-inline{
+      grid-column:2/3;
+      grid-row:2/3;
+      display:flex;
+      justify-content:center;
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      white-space: nowrap;
+      line-height: 1;
+      pointer-events:none;
+      justify-self:center;
+    }
+    .members-sortbtn-wrap{ grid-column:3/4; grid-row:1/3; justify-self:end; align-self:center; }
+  
+    .sort-btn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 96px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.06);
+      color:#fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+      text-align:center;
+    }
+    .sort-btn-label{
+      display:block;
+      width:100%;
+      text-align:center;
+      pointer-events:none;
+    }
+    .sort-btn select{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      opacity:0;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      text-align:center;
+      text-align-last:center;
+    }
+    .sort-btn select option{ background:#0b1829; color:#fff; text-align:center; }
+  
+    .members-wrap{
+      width:100%;
+      margin-top:2px;
+      overflow-x:auto;
+      overflow-y:visible;
+      -webkit-overflow-scrolling: touch;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+    }
+    .members-table{
+      width:100%;
+      min-width: 720px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size:13px;
+      table-layout: fixed;
+    }
+    .members-table thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #0b1829;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 10px;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.85;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    .members-table th:nth-child(1),
+    .members-table td:nth-child(1){
+      position: sticky;
+      left: 0;
+      z-index: 7;
+      background: #0b1829;
+      border-right: none;
+    }
+    .members-table thead th:nth-child(1){ z-index: 9; }
+  
+    .members-table th:nth-child(2),
+    .members-table td:nth-child(2){
+      position: sticky;
+      left: var(--members-sticky-1, var(--m-emoji-col));
+      z-index: 6;
+      background: #0b1829;
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    .members-table thead th:nth-child(2){ z-index: 8; }
+  
+    .members-table tbody td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+    }
+    .members-table tbody tr:last-child td{ border-bottom:none; }
+    .members-table td.m-emoji,
+    .members-table th.m-emoji{
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: nowrap !important;
+    }
+    .m-emoji{ text-align:right; font-size:14px; padding: 10px 6px 10px 10px; letter-spacing:0; }
+    .m-user-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .m-user-name.m-leader{ font-weight:400; text-decoration: underline; text-underline-offset: 2px; }
+    .m-num{ font-family: monospace; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; }
+  
+    .links{
+      width:100%;
+      max-width:280px;
+      margin: 12px auto 0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+    .link-btn{
+      width:100%;
+      text-align:center;
+      display:block;
+      padding:12px;
+      font-size:16px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      background-color:#fff;
+      color:#000;
+      text-decoration:none;
+      box-sizing:border-box;
+    }
+    .install-btn{
+      background-color:#ffcc00;
+      color:#000;
+      border:2px solid #000;
+      padding:12px 20px;
+      font-weight:700;
+      border-radius:12px;
+    }
+  
+    .page-footer{
+      margin-top:auto;
+      width:100%;
+      padding:18px 0 0;
+      font-size:14px;
+      opacity:.7;
+      text-align:center;
+    }
+  
+    body.has-pwa-tabs{
+      padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px);
+    }
+    .pwa-tabbar{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--tabbar-h);
+      padding-bottom: var(--safe-bottom);
+      background: var(--tabbar-bg);
+      border-top: 1px solid var(--tabbar-border);
+      z-index: 9999;
+      display: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      will-change: transform;
+      transform: translate3d(0,0,0);
+      transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+    }
+    .pwa-tabbar.is-hidden{
+      transform: translate3d(0, calc(var(--tabbar-h) + var(--safe-bottom) + 6px), 0);
+      pointer-events: none;
+    }
+    .pwa-tabbar .tabs{
+      height: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      padding: 10px 10px 12px;
+      box-sizing: border-box;
+      gap: 8px;
+    }
+    .pwa-tabbar a{
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      color:#fff;
+      opacity: 0.78;
+      border-radius: 16px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .tab-inner{
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 6px;
+      padding: 10px 6px;
+      box-sizing: border-box;
+    }
+    .pwa-tabbar a .icon{ width: 22px; height: 22px; display:block; transform: translateY(-3px); }
+    .pwa-tabbar a .icon img{
+      width: 22px;
+      height: 22px;
+      display:block;
+      object-fit:contain;
+      -webkit-user-drag:none;
+      user-select:none;
+      pointer-events:none;
+    }
+    .pwa-tabbar a .label{ font-size: 11px; line-height: 1; opacity: 0.95; transform: translateY(-2px); font-weight: 500; }
+    .pwa-tabbar a.active{ opacity: 1; }
+  
+    /* =========================
+       ✅ CWL
+       ========================= */
+    .cwl-headerbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin: 6px 0 6px;
+    }
+    .cwl-headerbar .left{
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.85;
+      white-space:nowrap;
+    }
+    .cwl-pill{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 140px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.06);
+      color:#fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      white-space:nowrap;
+    }
+    .cwl-pill select{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      opacity:0;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .cwl-pill select option{ background:#0b1829; color:#fff; }
+  
+    /* =========================
+       ✅ CWL title dropdown (replaces Current pill)
+       ========================= */
+    .cwl-titlebar{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin: 0 0 10px;
+    }
+  
+    .cwl-title-dd{
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      max-width: 320px;
+      padding: 0 8px;
+      white-space: nowrap;
+
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+  
+    .cwl-title-dd .caret{
+      font-size: 12px;
+      opacity: 0.75;
+      transform: translateY(1px);
+    }
+  
+    .cwl-title-dd select{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      opacity:0;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .cwl-title-dd select option{ background:#0b1829; color:#fff; text-align:center; }
+  
+    .cwl-table-wrap{
+      width:100%;
+      overflow-x:auto;
+      overflow-y:visible;
+      -webkit-overflow-scrolling: touch;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+    }
+  
+    .cwl-table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size:12.5px;
+      table-layout: fixed;
+    }
+  
+    .cwl-table thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #0b1829;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 10px;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+      text-align:center;
+      box-sizing: border-box;
+    }
+  
+    .cwl-table tbody td{
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align:center;
+      font-family: monospace;
+      box-sizing: border-box;
+    }
+    .cwl-table tbody tr:last-child td{ border-bottom:none; }
+  
+    .cwl-table .left{ text-align:left; font-family: inherit; }
+    .cwl-table .right{ text-align:right; }
+    .cwl-table .mono{ font-family: monospace; }
+    .cwl-table .bold{ font-weight:900; }
+    .cwl-table .muted{ opacity:.70; }
+  
+    /* War numeric cells (⭐ and 🎯) should never ellipsize */
+    .cwl-table td.cwl-warcell:not(.left){
+      text-overflow: clip;
+    }
+  
+    .cwl-table.cwl-wide thead th{ padding: 10px 8px; }
+    .cwl-table.cwl-wide tbody td{ padding: 9px 8px; }
+  
+    /* ✅ League Overview highlights */
+    .cwl-league .rank-good td{ color: rgba(56, 209, 114, 0.95); font-weight: 800; }
+    .cwl-league .rank-bad  td{ color: rgba(255, 92, 92, 0.92); font-weight: 800; }
+  
+    /* ✅ Member Overview: perfect performance highlight (first 9 columns only) */
+    .cwl-perfect td:nth-child(-n+9){
+      color: rgba(56, 209, 114, 0.95) !important;
+      font-weight: 400 !important;
+    }
+  
+    .cwl-war-sword{ display:inline-block; margin-right:6px; }
+  
+    .cwl-war-oppname{
+      display:inline-block;
+      max-width: 88px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      vertical-align:bottom;
+      color: rgba(255,255,255,0.85);
+    }
+  
+    .cwl-wide{ min-width: 1220px; }
+  
+    /* ✅ League overview table: set correct sticky width + min width */
+    .cwl-league{
+      min-width: 700px;
+      width: 100%;
+      --cwl-sticky-1: 52px; /* ✅ FIX: League "Rank" col width is 52px */
+    }
+  
+    .cwl-table.cwl-league thead th{ padding: 8px 6px; }
+    .cwl-table.cwl-league tbody td{ padding: 8px 6px; }
+  
+    /* =========================================================
+       ✅ FIXED sticky scheme for ALL CWL tables
+       - Member table uses default --cwl-sticky-1: 44px
+       - League table overrides it to 52px (above)
+       ========================================================= */
+    .cwl-table th.sticky-1,
+    .cwl-table td.sticky-1{
+      position: sticky;
+      left: 0;
+      z-index: 7;
+      background: #0b1829;
+      text-align:center;
+      font-family: monospace;
+      border-right: none;
+    }
+  
+    .cwl-table th.sticky-2,
+    .cwl-table td.sticky-2{
+      position: sticky;
+      left: var(--cwl-sticky-1); /* ✅ FIX: correct per table */
+      z-index: 6;
+      background: #0b1829;
+      text-align:left;
+      font-family: inherit;
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+  
+    .cwl-table thead th.sticky-1{ z-index: 9; }
+    .cwl-table thead th.sticky-2{ z-index: 8; }
+  
+    .cwl-table td.sticky-1{
+      text-overflow: clip;
+      overflow: visible;
+    }
+  
+    .cwl-rk{
+      text-align:center;
+      font-family: monospace;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+  
+    /* ✅ War group headers + war column tint */
+    .cwl-warhead{
+      background: var(--cwl-war-bg) !important;
+      border-left: 1px solid rgba(255,255,255,0.10);
+      border-right: 1px solid rgba(255,255,255,0.10);
+    }
+    .cwl-warcell{ background: var(--cwl-war-bg-soft); }
+  
+    .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-warcell{
+      background: var(--cwl-war-bg) !important;
+    }
+  
+    .cwl-table.cwl-wide thead tr:nth-child(2) th.cwl-day-start{
+      background: rgba(10,10,10,0.92) !important;
+    }
+  
+    .cwl-note{
+      opacity:.75;
+      font-size:13px;
+      text-align:center;
+      padding: 6px 0 2px;
+    }
+  
+    .cwl-subheaderbar{
+      background: transparent; border:none; border-radius:0;
+      padding:0; margin:0 0 8px;
+  
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto;
+      column-gap: 12px;
+      align-items:center;
+    }
+    .cwl-scroll-inline{
+      grid-column:2/3;
+      display:flex;
+      justify-content:center;
+      text-align:center;
+      font-size:10px;
+      letter-spacing:.03em;
+      opacity:.78;
+      white-space: nowrap;
+      line-height: 1;
+      pointer-events:none;
+      padding: 2px 0 0;
+      justify-self:center;
+    }
+    .cwl-sortbtn-wrap{
+      grid-column:3/4;
+      justify-self:end;
+      align-self:center;
+    }
+  
+    .cwl-general-sep{ border-right: 1px solid var(--sep-strong) !important; }
+  
+    .cwl-day-start{
+      border-left: 1px solid var(--sep-strong) !important;
+      background: rgba(10,10,10,0.78);
+    }
+    .cwl-day-end{ border-right: 1px solid var(--sep-strong) !important; }
+  
+    /* =========================
+       FIX: Hide header borders only for the LEFT "general" section in CWL Member Overview
+       ========================= */
+    .cwl-table.cwl-wide thead tr th:nth-child(-n+9){
+      border-left: none !important;
+      border-right: none !important;
+    }
+  
+    .cwl-table.cwl-wide thead tr:first-child th.muted{
+      border-bottom: none !important;
+    }
+  
+    .cwl-table.cwl-wide thead tr:first-child th.cwl-warhead{
+      border-left: 1px solid rgba(255,255,255,0.10) !important;
+      border-right: 1px solid rgba(255,255,255,0.10) !important;
+    }
+  
+    /* =========================
+       ✅ CWL ROUNDS (STACKED MATCHUPS)
+       ========================= */
+    .rounds-stats, .rounds-stat{ color: rgba(255,255,255,0.92); }
+  
+    .rounds-wrap{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+  
+    .rounds-round{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.10);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+  
+    .rounds-round-title{
+      text-align:center;
+      font-weight: 400;
+      font-size: 12px;
+      padding:8px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      letter-spacing:.02em;
+      opacity: .90;
+    }
+  
+    .rounds-table{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+  
+    .rounds-match{
+      display:flex;
+      flex-direction:column;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      box-sizing: border-box;
+    }
+  
+    .rounds-match + .rounds-match{
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+  
+    .rounds-side{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 14px;
+      min-width:0;
+    }
+  
+    .rounds-mid{
+      display:flex;
+      justify-content:flex-start;
+      align-items:center;
+      padding: 3px 14px;
+      line-height: 1;
+      font-size: 11px;
+      opacity: .75;
+      border: none;
+      white-space: nowrap;
+    }
+  
+    .rounds-name{
+      flex: 1 1 auto;
+      font-weight: 400;
+      font-size: 12px;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+  
+    .rounds-stats{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-left:auto;
+      font-family: monospace;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  
+    .rounds-stat{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-weight: 400;
+    }
+  
+    .rounds-win{ color: rgba(56, 209, 114, 0.95); font-weight:400; }
+    .rounds-lose{ color: rgba(255, 92, 92, 0.92); font-weight:400; }
+    .rounds-neutral{ color: rgba(255,255,255,0.92); font-weight:400; }
+  
+    /* =========================
+       ✅ CWL ROUNDS CAROUSEL
+       ========================= */
+    .rounds-carousel{
+      position: relative;
+      width: 100%;
+    }
+  
+    .rounds-track{
+      display:flex;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling: touch;
+  
+      scroll-snap-type: x mandatory;
+      gap: 10px;
+  
+      padding: 0 var(--rounds-gutter);
+  
+      scroll-padding-left: var(--rounds-gutter);
+      scroll-padding-right: var(--rounds-gutter);
+  
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+  
+    .rounds-track::before,
+    .rounds-track::after{
+      content:"";
+      flex: 0 0 var(--rounds-gutter);
+    }
+  
+    .rounds-slide{
+      flex: 0 0 calc(100% - (var(--rounds-gutter) * 2));
+      scroll-snap-align: center;
+      box-sizing: border-box;
+    }
+  
+    .rounds-arrow{
+      position:absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: #000;
+      color: #fff;
+      opacity: 1;
+      border: 1px solid rgba(255,255,255,0.22);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      z-index: 50;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+  
+    .rounds-arrow:active{ transform: translateY(-50%) scale(0.98); }
+  
+    .rounds-arrow.left{ left: 3px; }
+    .rounds-arrow.right{ right: 3px; }
+  
+    .rounds-arrow[disabled]{ display:none; }
+  
+    .rounds-slide{
+      opacity: 0.35;
+      filter: brightness(0.75);
+      transition: opacity 60ms ease, filter 60ms ease;
+    }
+  
+    .rounds-slide.is-active{
+      opacity: 1;
+      filter: none;
+    }
+  
+    .cwl-league-under-title{
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      opacity: 0.92;
+      margin: 4px 0 10px;
+    }
+  
+    /* =========================================================
+       CWL Rollup Mode (Year / All-Time)
+       ========================================================= */
+    body.cwl-rollup #cwl-members-head tr:first-child{ display:none; }
+  
+    /* try both in case your table doesn't have the id */
+    body.cwl-rollup #cwl-member-table colgroup col:nth-child(n+10){ display:none; }
+    body.cwl-rollup .cwl-table.cwl-wide colgroup col:nth-child(n+10){ display:none; }
+  
+    body.cwl-rollup #cwl-members-head tr:nth-child(2) th:nth-child(n+10){ display:none; }
+    body.cwl-rollup #cwl-memberoverview-body td:nth-child(n+10){ display:none; }
+
+    /* ✅ Rollup (Year/All-Time) column widths: keep the summary table compact */
+    body.cwl-rollup .cwl-table.cwl-wide{
+      width: max-content;
+      min-width: 0;
+    }
+  
