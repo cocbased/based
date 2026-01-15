@@ -12,10 +12,10 @@ CLAN_TAG = "#2QQYJC08Y"
 COC_API_BASE = "https://api.clashofclans.com/v1"
 
 REPO_DIR = "/home/admin/based"
-OUT_CURRENT = os.path.join(REPO_DIR, "cwl_current.json")
-OUT_INDEX   = os.path.join(REPO_DIR, "cwl_index.json")
-HISTORY_DIR = os.path.join(REPO_DIR, "cwl_history")
-TABLES_DIR  = os.path.join(REPO_DIR, "cwl_tables")
+OUT_CURRENT = os.path.join(REPO_DIR, "data", "cwl_current.json")
+OUT_INDEX   = os.path.join(REPO_DIR, "data", "cwl_index.json")
+HISTORY_DIR = os.path.join(REPO_DIR, "data", "cwl_history")
+TABLES_DIR  = os.path.join(REPO_DIR, "data", "cwl_tables")
 
 # =========================
 # HTTP helper
