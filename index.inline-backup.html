@@ -1,36 +1,44 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Core metadata -->
   <meta charset="UTF-8" />
   <title>B•A•S•E•D — Home</title>
 
+  <!-- App icons & manifest (relative for GitHub Pages) -->
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="favicon.png">
 
+  <!-- Viewport + theme -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-  <link rel="stylesheet" href="./styles.css?v=1">
+  <!-- Stylesheet (cache-busted) -->
+  <link rel="stylesheet" href="./css/styles.css?v=1">
 
-
+  <!-- Analytics -->
   <script data-goatcounter="https://based.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 
 <body>
+  <!-- Pull-to-refresh container (PWA only) -->
   <div id="pull-refresh" aria-hidden="true">
     <div class="pull-refresh-spinner" aria-hidden="true"></div>
   </div>
+
+  <!-- Branding -->
   <img src="icontransparent.png" alt="B•A•S•E•D icon" class="app-icon" />
   <img src="logo.png" alt="B•A•S•E•D logo" class="logo" onerror="this.style.display='none';" />
 
+  <!-- Clan tag deep link -->
   <a class="clan-tag-link"
      href="https://link.clashofclans.com/en/?action=OpenClanProfile&tag=2QQYJC08Y"
      target="_blank" rel="noopener noreferrer">#2QQYJC08Y</a>
 
+  <!-- Desktop/top navigation -->
   <nav class="topnav" id="topNav" aria-label="Top navigation">
     <a href="#/home" data-route="home">Home</a>
     <a href="#/cwl" data-route="cwl">CWL</a>
@@ -39,10 +47,12 @@
     <a href="#/more" data-route="more">More</a>
   </nav>
 
+  <!-- App mount point -->
   <div class="stage" id="stage">
     <div id="app" role="main" aria-live="polite"></div>
   </div>
 
+  <!-- PWA bottom tabbar -->
   <nav class="pwa-tabbar" id="pwaTabbar" aria-label="Bottom navigation">
     <div class="tabs">
       <a href="#/home" data-route="home" data-img-key="home"><div class="tab-inner"><span class="icon" aria-hidden="true"><img alt="" /></span><span class="label">Home</span></div></a>
@@ -53,7 +63,8 @@
     </div>
   </nav>
 
-  <script src="./app.js?v=1" defer></script>
+  <!-- App script (cache-busted; defer to keep HTML load order) -->
+  <script src="./js/app.js?v=1" defer></script>
 
 </body>
 </html>

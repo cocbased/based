@@ -135,11 +135,11 @@
     // Tab bar icon preloading (keeps icon swaps snappy)
     const ICON_VER = "v1";
     const ICON_FILES = [
-      "home-active.png","home-inactive.png",
-      "cwl-active.png","cwl-inactive.png",
-      "war-active.png","war-inactive.png",
-      "my-stats-active.png","my-stats-inactive.png",
-      "more-active.png","more-inactive.png"
+      "./images/home-active.png","./images/home-inactive.png",
+      "./images/cwl-active.png","./images/cwl-inactive.png",
+      "./images/war-active.png","./images/war-inactive.png",
+      "./images/my-stats-active.png","./images/my-stats-inactive.png",
+      "./images/more-active.png","./images/more-inactive.png"
     ];
     (function preloadTabIcons(){
       ICON_FILES.forEach(src => { const i = new Image(); i.src = `${src}?v=${ICON_VER}`; });
@@ -157,7 +157,7 @@
         if(!key || !img) return;
 
         const isActive = (a.getAttribute("data-route") === route);
-        const file = isActive ? `${key}-active.png` : `${key}-inactive.png`;
+        const file = isActive ? `./images/${key}-active.png` : `./images/${key}-inactive.png`;
 
         img.src = `${file}?v=${ICON_VER}`;
         img.loading = "eager";
@@ -772,13 +772,13 @@
     const RAW_CWL_INDEX_URL_BASE   = `${RAW_DATA_BASE}cwl_index.json`;
 
     // Fallbacks
-    const RAW_FALLBACK_BASE = "https://cdn.jsdelivr.net/gh/cocbased/based@main/";
-    const RAW_WAR_FALLBACKS         = ["./war.json", `${RAW_FALLBACK_BASE}war.json`];
-    const RAW_WAR_DETAIL_FALLBACKS  = ["./war_detail.json", `${RAW_FALLBACK_BASE}war_detail.json`];
-    const RAW_CLAN_FALLBACKS        = ["./clan_stats.json", `${RAW_FALLBACK_BASE}clan_stats.json`];
-    const RAW_MEMBERS_FALLBACKS     = ["./members.json", `${RAW_FALLBACK_BASE}members.json`];
-    const RAW_CWL_CURRENT_FALLBACKS = ["./cwl_current.json", `${RAW_FALLBACK_BASE}cwl_current.json`];
-    const RAW_CWL_INDEX_FALLBACKS   = ["./cwl_index.json", `${RAW_FALLBACK_BASE}cwl_index.json`];
+    const RAW_FALLBACK_BASE = "https://cdn.jsdelivr.net/gh/cocbased/based@main/data/";
+    const RAW_WAR_FALLBACKS         = ["./data/war.json", `${RAW_FALLBACK_BASE}war.json`];
+    const RAW_WAR_DETAIL_FALLBACKS  = ["./data/war_detail.json", `${RAW_FALLBACK_BASE}war_detail.json`];
+    const RAW_CLAN_FALLBACKS        = ["./data/clan_stats.json", `${RAW_FALLBACK_BASE}clan_stats.json`];
+    const RAW_MEMBERS_FALLBACKS     = ["./data/members.json", `${RAW_FALLBACK_BASE}members.json`];
+    const RAW_CWL_CURRENT_FALLBACKS = ["./data/cwl_current.json", `${RAW_FALLBACK_BASE}cwl_current.json`];
+    const RAW_CWL_INDEX_FALLBACKS   = ["./data/cwl_index.json", `${RAW_FALLBACK_BASE}cwl_index.json`];
 
     // =========================
     // State + intervals
@@ -1275,7 +1275,7 @@
     
       // ✅ rollups
       if(isCwlRollupKey(key)){
-        const pagesUrl = `./cwl_rollups/${encodeURIComponent(key)}.json`;
+        const pagesUrl = `./data/cwl_rollups/${encodeURIComponent(key)}.json`;
         const rawUrl   = `${RAW_DATA_BASE}cwl_rollups/${encodeURIComponent(key)}.json`;
         const backups  = [pagesUrl, `${RAW_FALLBACK_BASE}cwl_rollups/${encodeURIComponent(key)}.json`];
         try{
@@ -1292,7 +1292,7 @@
 
       
       // ✅ monthly snapshot
-      const pagesUrl = `./cwl_history/${encodeURIComponent(key)}.json`;
+      const pagesUrl = `./data/cwl_history/${encodeURIComponent(key)}.json`;
       const rawUrl   = `${RAW_DATA_BASE}cwl_history/${encodeURIComponent(key)}.json`;
       const backups  = [pagesUrl, `${RAW_FALLBACK_BASE}cwl_history/${encodeURIComponent(key)}.json`];
     
