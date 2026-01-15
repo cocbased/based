@@ -2290,6 +2290,10 @@
       return primary;
     }
 
+    function isFallbackMeta(meta){
+      return typeof meta?.via === "string" && meta.via.startsWith("fallback");
+    }
+
     function formatMetaLine(label, meta){
       if(!meta) return `${label}: ${stampTime()} ❌`;
       const changedTxt = meta.unchanged ? "UNCHANGED" : "CHANGED";
@@ -2305,7 +2309,7 @@
       try{
         const previous = warData;
         const { data, meta } = await fetchJsonSmart(RAW_WAR_URL_BASE, RAW_WAR_FALLBACKS, "war.json");
-        warData = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
+        warData = (isFallbackMeta(meta) && previous && isNewerWarSnapshot(previous, data))
           ? previous
           : data;
 
@@ -2327,7 +2331,7 @@
       try{
         const previous = warDetail;
         const { data, meta } = await fetchJsonSmart(RAW_WAR_DETAIL_URL_BASE, RAW_WAR_DETAIL_FALLBACKS, "war_detail.json");
-        warDetail = (meta.via === "fallback" && previous && isNewerWarSnapshot(previous, data))
+        warDetail = (isFallbackMeta(meta) && previous && isNewerWarSnapshot(previous, data))
           ? previous
           : data;
         if(warDetail && warDetail.state && warDetail.state !== "notInWar"){
