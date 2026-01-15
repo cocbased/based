@@ -1,6 +1,10 @@
+    // ============================================================
+    // App bootstrap (no behavior changes; comments for clarity)
+    // ============================================================
 
     // ============================================================
     // ✅ REAL "never updates" fix:
+    // Purge any cached SW assets once per client, then reload.
     // ============================================================
     (async function purgePwaCachesOnce(){
       const KEY = "based_pwa_cache_purged_v3";
@@ -29,12 +33,14 @@
     // =========================
     // Core helpers
     // =========================
+    // PWA detection (standalone display / iOS flag)
     function isPwaInstalled(){
       const standaloneDisplay = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
       const iosStandalone = (typeof navigator !== "undefined") && ("standalone" in navigator) && navigator.standalone;
       return !!(standaloneDisplay || iosStandalone);
     }
 
+    // Pull-to-refresh (PWA + touch-only)
     function initPullToRefresh(){
       if(!("ontouchstart" in window)) return;
       if(!isPwaInstalled()) return;
@@ -107,6 +113,7 @@
       });
     }
 
+    // Normalize hash routes to known app routes
     function normalizeRoute(hash){
       const raw = (hash || "").replace(/^#\/?/, "").trim().toLowerCase();
       if(!raw || raw === "index.html") return "home";
@@ -118,12 +125,14 @@
       return "home";
     }
 
+    // Apply active state to nav + tabbar links
     function setActiveNav(route){
       document.querySelectorAll("[data-route]").forEach(a => {
         a.classList.toggle("active", (a.getAttribute("data-route") || "") === route);
       });
     }
 
+    // Tab bar icon preloading (keeps icon swaps snappy)
     const ICON_VER = "v1";
     const ICON_FILES = [
       "home-active.png","home-inactive.png",
@@ -136,6 +145,7 @@
       ICON_FILES.forEach(src => { const i = new Image(); i.src = `${src}?v=${ICON_VER}`; });
     })();
 
+    // Swap tabbar icons based on active route (PWA only)
     function applyPwaImageIconStates(route){
       if(!isPwaInstalled()) return;
       const tabbar = document.getElementById("pwaTabbar");
@@ -158,10 +168,12 @@
     // =========================
     // PWA tabbar hide-on-scroll
     // =========================
+    // Throttled on scroll to avoid jank.
     let _pwaScrollBound = false;
     let _lastScrollY = 0;
     let _rafPending = false;
 
+    // Cross-browser scrollTop helper
     function getScrollTop(){
       const se = document.scrollingElement || document.documentElement;
       return (typeof window.scrollY === "number") ? window.scrollY : (se ? se.scrollTop : 0);
@@ -177,6 +189,7 @@
       if(tabbar) tabbar.classList.add("is-hidden");
     }
 
+    // Attach the auto-hide scroll listener (PWA only)
     function bindPwaTabbarAutoHide(){
       if(_pwaScrollBound) return;
       if(!isPwaInstalled()) return;
@@ -220,6 +233,7 @@
       window.addEventListener("scroll", onScroll, { passive:true });
     }
 
+    // Remove the auto-hide scroll listener
     function unbindPwaTabbarAutoHide(){
       const fn = window.__pwaTabbarScrollHandler;
       if(fn){
@@ -233,6 +247,7 @@
     // =========================
     // Drag-to-scroll for any .dragscroll
     // =========================
+    // Enables desktop click/drag scrolling for wide tables.
     function enableDragScroll(el){
       if(!el || el.dataset.dragscroll === "1") return;
       el.dataset.dragscroll = "1";
@@ -280,10 +295,12 @@
       el.addEventListener("click", onClickCapture, true);
     }
 
+    // Scan and enable drag-scroll behavior on all matching elements
     function enableDragScrollEverywhere(){
       document.querySelectorAll(".dragscroll").forEach(enableDragScroll);
     }
 
+    // Show/hide scroll hint when a container actually overflows
     function setScrollHintIfScrollable(wrapId, hintId){
       const wrap = document.getElementById(wrapId);
       const hint = document.getElementById(hintId);
@@ -293,6 +310,7 @@
       hint.style.display = isScrollable ? "flex" : "none";
     }
 
+    // Measure sticky columns and set CSS variables for accurate offsets
     function updateStickyOffsets(){
       const membersTable = document.querySelector(".members-table");
       if(membersTable){
@@ -320,6 +338,7 @@
       });
     }
 
+    // Toggle top nav vs. PWA tabbar based on install state
     function setupNavUI(){
       const pwa = isPwaInstalled();
       const topNav = document.getElementById("topNav");
@@ -340,6 +359,7 @@
       }
     }
 
+    // Basic HTML-escape for injected strings
     function escapeHtml(s){
       return String(s || "")
         .replace(/&/g,"&amp;")
@@ -360,6 +380,7 @@
     // =========================
     // Templates
     // =========================
+    // Render functions return HTML strings for the route content.
     const app = document.getElementById("app");
 
     function pageShellCards(title, subtitle){
@@ -2892,6 +2913,8 @@
     // =========================
     // Loops per route
     // =========================
+    // These timers are intentionally kept per-section to preserve update cadence.
+    // Home page fetch cadence
     function startHomeLoop(){
       clearIntervals(homeIntervals);
       membersSortMode = "role";
@@ -2901,6 +2924,7 @@
       homeIntervals.push(setInterval(fetchMembersData, 10000));
     }
 
+    // War page fetch cadence + re-render loop
     function startWarLoop(){
       clearIntervals(warIntervals);
       warFetched = false;
@@ -2916,12 +2940,14 @@
       warIntervals.push(setInterval(renderWarSection, 1000));
     }
 
+    // More page timer loop (countdowns only)
     function startMoreLoop(){
       clearIntervals(moreIntervals);
       updateRecurringTimers();
       moreIntervals.push(setInterval(updateRecurringTimers, 1000));
     }
 
+    // CWL page fetch cadence + carousel reset
     function startCwlLoop(){
       clearIntervals(cwlIntervals);
     
@@ -2946,6 +2972,7 @@
     // =========================
     // More page timers
     // =========================
+    // Uses UTC so dates match in-game schedule.
     function makeUTC(y,m,d,h,mi=0){ return new Date(Date.UTC(y,m,d,h,mi,0)); }
 
     function getNextRaidWeekendEnd(now){
@@ -2995,6 +3022,7 @@
     // =========================
     // Router
     // =========================
+    // Hash-based routing; keeps route changes synchronous.
     function setDocTitle(route){
       const map = {
         home:"B•A•S•E•D — Home",
@@ -3006,6 +3034,7 @@
       document.title = map[route] || "B•A•S•E•D";
     }
 
+    // Render the route, wire UI, and start the correct data loop
     function renderRoute(){
       const route = normalizeRoute(location.hash);
 
@@ -3032,11 +3061,13 @@
       if(isPwaInstalled()) bindPwaTabbarAutoHide();
     }
 
+    // Initial boot: ensure a hash and render once
     if(!location.hash) location.hash = "#/home";
     setupNavUI();
     initPullToRefresh();
     renderRoute();
 
+    // Keep view in sync with navigation + lifecycle events
     window.addEventListener("hashchange", renderRoute);
     window.addEventListener("pageshow", renderRoute);
     window.addEventListener("resize", () => {
@@ -3046,6 +3077,7 @@
       if(document.visibilityState === "visible") renderRoute();
     });
 
+    // Surface global errors in the war chart mount (non-fatal)
     window.addEventListener("error", (e) => {
       const mount = document.getElementById("war-chart-mount");
       if(mount){
@@ -3054,6 +3086,7 @@
         </div>`;
       }
     });
+    // Surface unhandled promise rejections similarly
     window.addEventListener("unhandledrejection", (e) => {
       const mount = document.getElementById("war-chart-mount");
       if(mount){
